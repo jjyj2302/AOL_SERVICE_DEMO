@@ -59,31 +59,11 @@ def register_services(ioc_lookup_service_module) -> None:
             'api_key_name': 'bgpview',
             'supported_ioc_types': [IOC_TYPES['IPV4'], IOC_TYPES['IPV6']],
         },
-        'checkphish': {
-            'func': ioc_lookup_service_module.checkphish_ai,
-            'name': 'CheckPhish',
-            'api_key_name': 'checkphishai',
-            'supported_ioc_types': [IOC_TYPES['IPV4'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL']],
-        },
         'crowdsec': {
             'func': ioc_lookup_service_module.crowdsec,
             'name': 'CrowdSec',
             'api_key_name': 'crowdsec',
             'supported_ioc_types': [IOC_TYPES['IPV4']],
-        },
-        'crowdstrike': {
-            'func': ioc_lookup_service_module.crowdstrike_indicators_lookup,
-            'name': 'CrowdStrike',
-            'multi_key': True,
-            'api_key_names': ['crowdstrike_client_id', 'crowdstrike_client_secret'],
-            'api_key_params': {
-                'client_id': 'crowdstrike_client_id', 
-                'client_secret': 'crowdstrike_client_secret'
-            },
-            'supported_ioc_types': [
-                IOC_TYPES['IPV4'], IOC_TYPES['IPV6'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL'], 
-                IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256'], IOC_TYPES['EMAIL']
-            ],
         },
         'emailrepio': {
             'func': ioc_lookup_service_module.emailrep_email_check,
@@ -113,55 +93,11 @@ def register_services(ioc_lookup_service_module) -> None:
             'api_key_name': 'hunterio_api_key',
             'supported_ioc_types': [IOC_TYPES['EMAIL']],
         },
-        'ipqualityscore': {
-            'func': ioc_lookup_service_module.ipqualityscore_ip_check,
-            'name': 'IPQualityScore',
-            'api_key_name': 'ipqualityscore',
-            'supported_ioc_types': [IOC_TYPES['IPV4']],
-        },
-        'maltiverse': {
-            'func': ioc_lookup_service_module.maltiverse_check,
-            'name': 'Maltiverse',
-            'api_key_name': 'maltiverse',
-            'supported_ioc_types': [
-                IOC_TYPES['IPV4'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL'], 
-                IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256']
-            ],
-            'requires_type': True,
-            'ioc_type_param': 'endpoint',
-            'type_map': {
-                IOC_TYPES['IPV4']: 'ip',
-                IOC_TYPES['DOMAIN']: 'hostname',
-                IOC_TYPES['URL']: 'url',
-                IOC_TYPES['MD5']: 'sample',
-                IOC_TYPES['SHA1']: 'sample',
-                IOC_TYPES['SHA256']: 'sample',
-            },
-        },
         'malwarebazaar': {
             'func': ioc_lookup_service_module.malwarebazaar_hash_check,
             'name': 'MalwareBazaar',
             'api_key_name': 'malwarebazaar',
             'supported_ioc_types': [IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256']],
-        },
-        'mandiant': {
-            'func': ioc_lookup_service_module.mandiant_ioc_lookup,
-            'name': 'Mandiant',
-            'multi_key': True,
-            'api_key_names': ['mandiant_key', 'mandiant_secret'],
-            'api_key_params': {'api_key': 'mandiant_key', 'api_secret': 'mandiant_secret'},
-            'supported_ioc_types': [
-                IOC_TYPES['IPV4'], IOC_TYPES['IPV6'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL'], 
-                IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256'], IOC_TYPES['EMAIL']
-            ],
-            'requires_type': True,
-            'ioc_type_param': 'ioc_type',
-            'type_map': {
-                IOC_TYPES['IPV4']: 'ip', IOC_TYPES['IPV6']: 'ip',
-                IOC_TYPES['DOMAIN']: 'domain', IOC_TYPES['URL']: 'url',
-                IOC_TYPES['MD5']: 'hash', IOC_TYPES['SHA1']: 'hash', IOC_TYPES['SHA256']: 'hash',
-                IOC_TYPES['EMAIL']: 'email',
-            }
         },
         'nistnvd': {
             'func': ioc_lookup_service_module.search_nist_nvd,
@@ -215,16 +151,6 @@ def register_services(ioc_lookup_service_module) -> None:
             'supported_ioc_types': [
                 IOC_TYPES['IPV4'], IOC_TYPES['IPV6'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL'], 
                 IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256']
-            ],
-        },
-        'twitter': {
-            'func': ioc_lookup_service_module.search_twitter,
-            'name': 'Twitter/X',
-            'api_key_name': 'twitter_bearer_token',
-            'supported_ioc_types': [
-                IOC_TYPES['IPV4'], IOC_TYPES['IPV6'], IOC_TYPES['DOMAIN'], IOC_TYPES['URL'], 
-                IOC_TYPES['EMAIL'], IOC_TYPES['MD5'], IOC_TYPES['SHA1'], IOC_TYPES['SHA256'], 
-                IOC_TYPES['CVE']
             ],
         },
         'urlhaus': {

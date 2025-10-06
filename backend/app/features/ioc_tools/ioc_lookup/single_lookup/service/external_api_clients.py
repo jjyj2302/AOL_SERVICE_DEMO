@@ -141,9 +141,13 @@ def check_bgpview(ioc: str) -> Dict[str, Any]:
     response = requests.get(url=f'https://api.bgpview.io/ip/{ioc}')
     return handle_request_errors("BGPView", response)
 
+"""
+REMOVED: CheckPhish API - 유료 필수 (제안가 $115,000)
+제거 날짜: 2025-10-06
+대체: URLScan.io + Google Safe Browsing (무료)
 
 def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
-    """
+    
     Perform URL/domain phishing check using CheckPhish API.
     
     Args:
@@ -152,7 +156,7 @@ def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing scan results or error information
-    """
+
     if not apikey:
         return {"error": 401, "message": "CheckPhish API key is missing."}
 
@@ -163,7 +167,7 @@ def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
         json={'apiKey': apikey, 'urlInfo': {'url': ioc}}
     )
     return handle_request_errors("CheckPhish", response)
-
+"""
 
 def crowdsec(ioc: str, apikey: str) -> Dict[str, Any]:
     """
@@ -187,9 +191,13 @@ def crowdsec(ioc: str, apikey: str) -> Dict[str, Any]:
     )
     return handle_request_errors("CrowdSec", response)
 
+"""
+REMOVED: CrowdStrike Falcon API - 유료 필수 (최소 월 $8.99/user + API 별도)
+제거 날짜: 2025-10-06
+대체: AlienVault OTX + VirusTotal (무료)
 
 def crowdstrike_indicators_lookup(ioc: str, client_id: str, client_secret: str) -> Dict[str, Any]:
-    """
+
     Perform IOC lookup using CrowdStrike Falcon Intelligence API.
     
     Args:
@@ -199,7 +207,7 @@ def crowdstrike_indicators_lookup(ioc: str, client_id: str, client_secret: str) 
         
     Returns:
         Dictionary containing intelligence data or error information
-    """
+    
     if not client_id or not client_secret:
         return {"error": 401, "message": "CrowdStrike credentials missing."}
 
@@ -226,7 +234,7 @@ def crowdstrike_indicators_lookup(ioc: str, client_id: str, client_secret: str) 
         headers={'Authorization': f'Bearer {access_token}'}
     )
     return handle_request_errors("CrowdStrike", response)
-
+"""
 
 def emailrep_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     """
@@ -322,9 +330,12 @@ def hunter_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     )
     return handle_request_errors("Hunter.io", response)
 
+"""
+REMOVED: IPQualityScore API - 유료 필수 (연 평균 $45,000)
+제거 날짜: 2025-10-06
+대체: AbuseIPDB + ipinfo.io (무료)
 
 def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
-    """
     Perform IP quality and fraud scoring using IPQualityScore API.
     
     Args:
@@ -333,7 +344,7 @@ def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing quality score data or error information
-    """
+
     if not apikey:
         return {"error": 401, "message": "IPQualityScore API key is missing."}
     
@@ -341,10 +352,14 @@ def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
     
     response = requests.get(url=f'https://www.ipqualityscore.com/api/json/ip/{apikey}/{ioc}')
     return handle_request_errors("IPQualityScore", response)
+"""
 
-
+"""
+REMOVED: Maltiverse API - 유료 필수 (가격 비공개)
+제거 날짜: 2025-10-06
+대체: AlienVault OTX + VirusTotal (무료)
 def maltiverse_check(ioc: str, endpoint: str, apikey: str) -> Dict[str, Any]:
-    """
+    
     Perform IOC lookup using Maltiverse API.
     
     Args:
@@ -354,7 +369,7 @@ def maltiverse_check(ioc: str, endpoint: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing threat intelligence data or error information
-    """
+
     if not apikey:
         return {"error": 401, "message": "Maltiverse API key is missing."}
     
@@ -365,7 +380,7 @@ def maltiverse_check(ioc: str, endpoint: str, apikey: str) -> Dict[str, Any]:
         headers={'Authorization': f'Bearer {apikey}'}
     )
     return handle_request_errors("Maltiverse", response)
-
+"""
 
 def malwarebazaar_hash_check(ioc: str) -> Dict[str, Any]:
     """
@@ -385,9 +400,12 @@ def malwarebazaar_hash_check(ioc: str) -> Dict[str, Any]:
     )
     return handle_request_errors("MalwareBazaar", response)
 
-
+"""
+REMOVED: Mandiant Advantage API - 유료 필수 (맞춤 견적, 연 수천만원)
+제거 날짜: 2025-10-06
+대체: AlienVault OTX + ThreatFox (무료)
 def mandiant_ioc_lookup(ioc: str, ioc_type: str, api_key: str, api_secret: str) -> Dict[str, Any]:
-    """
+    
     Perform IOC lookup using Mandiant Advantage API.
     
     Args:
@@ -398,7 +416,7 @@ def mandiant_ioc_lookup(ioc: str, ioc_type: str, api_key: str, api_secret: str) 
         
     Returns:
         Dictionary containing threat intelligence data or error information
-    """
+
     if not api_key or not api_secret:
         return {"error": 401, "message": "Mandiant credentials missing."}
 
@@ -424,7 +442,7 @@ def mandiant_ioc_lookup(ioc: str, ioc_type: str, api_key: str, api_secret: str) 
         json={"requests": [{"type": ioc_type, "value": ioc}]}
     )
     return handle_request_errors("Mandiant", response)
-
+"""
 
 def search_nist_nvd(ioc: str, apikey: str) -> Dict[str, Any]:
     """
@@ -596,9 +614,12 @@ def threatfox_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
     )
     return handle_request_errors("ThreatFox", response)
 
-
+"""
+REMOVED: Twitter API - 유료 필수 (가격 비공개)
+제거 날짜: 2025-10-06
+대체 : Google 검색 (site:twitter.com) + SerpAPI
 def search_twitter(ioc: str, apikey: str) -> Dict[str, Any]:
-    """
+    '''
     Search for IOC mentions on Twitter/X using Twitter API v2.
     
     Args:
@@ -607,7 +628,7 @@ def search_twitter(ioc: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing search results or error information
-    """
+    '''
     if not apikey:
         return {"error": 401, "message": "Twitter Bearer Token is missing."}
     
@@ -619,7 +640,7 @@ def search_twitter(ioc: str, apikey: str) -> Dict[str, Any]:
         headers={'Authorization': f'Bearer {apikey}'}
     )
     return handle_request_errors("Twitter/X", response)
-
+"""
 
 def urlhaus_url_check(ioc: str) -> Dict[str, Any]:
     """
