@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  backend:
+    networks:
+      - otk-network
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    volumes:
+      - ./data:/backend/data
+
+  frontend:
+    networks:
+        - otk-network
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "4000:80"
+
+networks:
+  otk-network:
+    driver: bridge
