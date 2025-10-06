@@ -15,7 +15,7 @@ LLM Agent가 사용할 수 있도록 한다.
 
 from typing import List, Dict, Any, Optional
 from langchain.tools import Tool, StructuredTool
-from pydantic import BaseModel, Field, EmailStr # EmilStr: 이메일 형식 검증용
+from pydantic import BaseModel, Field, EmailStr,  IPvAnyAddress  # EmilStr: 이메일 형식 검증용
 from sqlalchemy.orm import Session
 
 # 기존 API 클라이언트 IMPORT.
@@ -182,9 +182,185 @@ class OSINTToolFactory:
     
     # 2. IP Tools (5개)
     def create_ip_tools(self) -> List[Tool]:
-        """ IP 분석 도구 5개 생성 """
-        # TODO : Step 5에서 구현
-        return []
+        """ 
+        IP 주소 분석 도구 5개 생성
+        Tools :
+        1. AbuseIPDB - IP 악성 행위 신고 데이터베이스
+        2. VirusTotal - IP 평판 및 악성 코드 연관성
+        3. Shodan - IP 포트 및 서비스 정보
+        4. CrowdSec - 커뮤니티 기반 IP 평판
+        5. AlientVault OTX - 위협 인텔리전스 피드
+         """
+        # 입력 검증 스키마 (함수 내 중복 정의 방지)
+        class IPInput(BaseModel):
+            """IP 주소 입력 검증 (IPv4/IPv6 모두 지원)"""
+            ip: IPvAnyAddress = Field(description="조사할 유효한 IPv4 또는 IPv6 주소")
+        
+        tools = []
+
+        # 1. AbuseIPDB
+        if 'abuseipdb' in self.api_keys:
+            def abuseipdb_check(ip: str) -> dict:
+                """AbuseIPDB API 호출 래퍼 함수"""
+                return external_api_clients.abuseipdb_ip_check(
+                    ioc=ip,
+                    apikey=self.api_keys['abuseipdb']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=abuseipdb_check,
+                name="abuseipdb_check",
+                description="""Check IP reputation and abuse reports from a community-driven database (AbuseIPDB).
+                USE WHEN:
+                - Investigating suspicious IPs found in logs/IR
+                - Evaluating threat level before adding to firewall blacklists
+                - Reviewing historical abuse patterns (port-scan, brute-force, spam)
+                RETURNS:
+                { "abuseConfidenceScore": int(0-100), "totalReports": int, "countryCode": str,
+                "domain": str, "isp": str, "asn": str, "usageType": str,
+                "reports": [ { "category": [int], "comment": str, "reportedAt": str } ] }
+
+                LIMIT:
+                Free tier daily quota; 429 on exceed. Community-driven → false positives possible
+                (especially shared/VPN/CDN/hosting IPs).
+
+                INTERPRETATION:
+                Higher score = stronger signal, not absolute proof. Always check recency and categories,
+                and corroborate with other sources.
+
+                DON'T USE:
+                As sole verdict, or to label shared/recycled IPs “malicious” without temporal/context data.
+                """, args_schema=IPInput
+            ))
+
+        # 2. VirusTotal
+        if 'virustotal' in self.api_keys:
+            def  virustotal_ip_check(ip: str) -> dict:
+                """VirusTotal IP API 호출 래퍼 함수"""
+                return external_api_clients.virustotal(
+                    ioc=ip,
+                    apikey=self.api_keys['virustotal'],
+                    type='ip' # IP 타입 명시
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=virustotal_ip_check,
+                name="virustotal_ip_lookup",
+                description="""Cross-validate IP reputation and relationships via multi-vendor telemetry (VirusTotal).
+                USE WHEN:
+                - Verifying suspicious IPs during malware/IOC analysis
+                - Investigating C2 infrastructure, passive DNS, related domains/URLs/samples
+                RETURNS:
+                { "last_analysis_stats": { "malicious": int, "suspicious": int, "harmless": int, "undetected": int },
+                "resolutions": [ { "hostname": str, "last_resolved": str } ],
+                "detected_urls": [ { "url": str, "positives": int, "scan_date": str } ],
+                "whois": str, "asn": str, "country": str,
+                "detected_communicating_samples": [ { "sha256": str, "date": str } ] }
+                LIMIT:
+                Strict free-quota/rate limits (204/429 when exhausted). Zero/clean results ≠ safe; new/targeted
+                threats can be missed.
+                INTERPRETATION:
+                Use as initial assessment and for correlation—not a final verdict. Consider time windows/caching.
+                DON'T USE:
+                As sole decision factor or for real-time guarantees (results can be delayed/cached).
+                """, args_schema=IPInput
+            ))
+        
+         # 3. Shodan
+        if 'shodan' in self.api_keys:
+            def shodan_ip_check(ip: str) -> dict:
+                """Shodan API 호출 래퍼 함수"""
+                return external_api_clients.check_shodan(
+                    ioc=ip,
+                    apikey=self.api_keys['shodan'],
+                    method='ip'  # IP 검색 모드
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=shodan_ip_check,
+                name="shodan_ip_scan",
+                description="""Retrieve exposed services/ports/banners/SSL for an IP from Internet-wide scans (Shodan).
+                USE WHEN:
+                - Discovering attack surface and unintended exposures
+                - Fingerprinting C2/misconfigured services (product/version/banner/SSL)
+                - IoT/device discovery and posture assessment
+                RETURNS:
+                { "ports": [int], "hostnames": [str],
+                "services": [ { "port": int, "product": str, "version": str, "banner": str, "ssl": { ... } } ],
+                "vulns": [ "CVE-..." ], "org": str, "asn": str,
+                "location": { "country": str, "city": str, "lat": float, "lon": float }, "os": str, "tags": [str] }
+                LIMIT:
+                Free tier heavily restricted; historical data lag (weeks–months). No internal/private IP coverage.
+                INTERPRETATION:
+                Validate whether exposures are intentional. Pay attention to expired certs, unexpected open ports,
+                default configs.
+                DON'T USE:
+                For active scanning or real-time port state; for RFC1918/internal ranges; or for misuse (responsible use).
+                """, args_schema=IPInput
+            ))
+
+        # 4. CrowdSec
+        if 'crowdsec' in self.api_keys:
+            def crowdsec_check(ip: str) -> dict:
+                """CrowdSec API 호출 래퍼 함수"""
+                return external_api_clients.crowdsec(
+                    ioc=ip,
+                    apikey=self.api_keys['crowdsec']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=crowdsec_check,
+                name="crowdsec_reputation_check",
+                description="""Check IP against CrowdSec community signals for behaviors and recent sightings.
+                USE WHEN:
+                - Validating automated blocking decisions from CrowdSec agents
+                - Correlating log findings (ssh-bf/http-scan/web-exploit) with community reports
+                RETURNS:
+                { "behaviors": [ "ssh-bf", "http-scan", ... ],
+                "reputation": "malicious|suspicious|safe", "confidence": int(0-100),
+                "seen_by": int, "first_seen": str, "last_seen": str }
+                LIMIT:
+                Free tier has retention/coverage constraints; 429 on exceed. Regional coverage may vary.
+                INTERPRETATION:
+                Combine confidence with seen_by (wider consensus = stronger signal). Corroborate with local telemetry.
+                DON'T USE:
+                As sole blocking criterion, in regions with low coverage, or for long-range (beyond retention) history.
+                """, args_schema=IPInput
+            ))
+        
+        # 5. AlienVault OTX
+        if 'alienvault' in self.api_keys:
+            def alienvault_ip_check(ip: str) -> dict:
+                """AlienVault OTX API 호출 래퍼 함수"""
+                return external_api_clients.alienvaultotx(
+                    ioc=ip,
+                    apikey=self.api_keys['alienvault'],
+                    type='ip'  # IP 타입 명시
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=alienvault_ip_check,
+                name="alienvault_ip_intelligence",
+                description="""Enrich IP with AlienVault OTX pulses: community threat reports and related IOCs.
+                USE WHEN:
+                 - Adding campaign/actor context (tags/TLP/industries) to an IP
+                 - Expanding to related indicators (domains/URLs/hashes) and passive DNS
+                RETURNS:
+                { "pulses": [ { "name": str, "description": str, "tags": [str], "indicators": [ ... ] } ],
+                "related_indicators": [ { "type": "domain|url|hash", "value": str } ],
+                "passive_dns": [ { "hostname": str, "last_seen": str } ],
+                "asn": str, "geo": { "country": str } }
+                LIMIT:
+                Free quota/rate limits; community quality varies and updates can lag.
+                INTERPRETATION:
+                Prefer multiple/verified pulses and recent updates; use cross-source consensus.
+                DON'T USE:
+                As a real-time blocking source or single-source truth for attribution.
+                """, args_schema=IPInput
+            ))
+        
+        return tools
+
     
     # 3. Domain Tools (3개)
     def create_domain_tools(self) -> List[Tool]:
