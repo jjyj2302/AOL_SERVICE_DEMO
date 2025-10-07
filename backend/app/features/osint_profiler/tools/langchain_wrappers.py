@@ -460,9 +460,99 @@ class OSINTToolFactory:
     
     # 4. Hash Tools (3개)
     def create_hash_tools(self) -> List[Tool]:
-        """ 해시 분석 도구 3개 생성 """
-        # TODO : Step 7에서 구현
-        return []
+        """
+        해시 분석 도구 3개 생성
+        Tools:
+        1. VirusTotal - 멀티 AV 엔진 파일 분석
+        2. MalwareBazaar - 멀웨어 샘플 DB 검색
+        3. ThreatFox - IOC 위협 인텔리전스
+        """
+        tools = []
+
+        # Pydantic 입력 스키마 (해시 검증)
+        class HashInput(BaseModel):
+            hash_value: str = Field(
+                description="파일 해시 (MD5, SHA1, SHA256 형식). 예: a1b2c3d4e5f6..."
+            )
+
+        # 1. VirusTotal Hash Check
+        if 'virustotal' in self.api_keys:
+            def virustotal_hash_check(hash_value: str) -> dict:
+                """VirusTotal 멀티 AV 엔진 파일 해시 분석"""
+                return external_api_clients.virustotal(
+                    ioc=hash_value,
+                    type='hash',
+                    apikey=self.api_keys['virustotal']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=virustotal_hash_check,
+                name="virustotal_hash_lookup",
+                description="""Multi-AV(70+) hash reputation & behavior analysis.
+                USE WHEN:
+                - Quick malicious verdict needed
+                - Engine-wise detections/community comments/relations(IP·domain) required
+                - IR metadata(first/last_seen) fast retrieval
+                RETURNS:
+                - last_analysis_stats(detection ratio), file meta(name/size/type), behavior(network·file·registry), relation graph, comments/reputation
+                LIMITS:
+                - Public: ~4 req/min, ~500 req/day (subject to change)
+                - Hash-only lookup recommended (no upload for policy compliance)
+                DON'T USE:
+                - Novel/unregistered hash(may return empty)
+                - Already confirmed malicious by internal/MBZ(save quota)
+                WORKFLOW: MalwareBazaar(free screening) → VirusTotal(accurate verdict) → extract relations(IP·domain) → expand IOCs""", args_schema=HashInput
+            ))
+
+        # 2. MalwareBazaar Hash Check (무료, API 키 불필요)
+        def malwarebazaar_hash_check(hash_value: str) -> dict:
+            """MalwareBazaar 멀웨어 샘플 DB 검색"""
+            return external_api_clients.malwarebazaar_hash_check(ioc=hash_value)
+
+        tools.append(StructuredTool.from_function(
+            func=malwarebazaar_hash_check,
+            name="malwarebazaar_hash_lookup",
+            description="""abuse.ch community malware sample DB lookup(free/no key).
+            USE WHEN:
+            - 1st-pass 'known sample' screening(save VT quota)
+            - Family/tags/signature(YARA)·first/last_seen needed
+            RETURNS:
+            - family/alias, tags, file_type/name/size, first_seen/last_seen, signature(YARA), (research) download link
+            LIMITS:
+            - Free, minimal rate limit(service quality consideration)
+            DON'T USE:
+            - Benign files(mostly unregistered)
+            - Zero-day/very recent samples(update lag possible)
+            WORKFLOW: Use as first-pass filter → if matched, get family/tags → proceed to VT for detailed analysis""", args_schema=HashInput
+        ))
+
+        # 3. ThreatFox Hash Check
+        if 'threatfox' in self.api_keys:
+            def threatfox_hash_check(hash_value: str) -> dict:
+                """ThreatFox IOC 위협 인텔리전스 검색"""
+                return external_api_clients.threatfox_ip_check(
+                    ioc=hash_value,
+                    apikey=self.api_keys['threatfox']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=threatfox_hash_check,
+                name="threatfox_hash_lookup",
+                description="""abuse.ch ThreatFox IOC DB hash-based threat intel lookup.
+                USE WHEN:
+                - Hash ↔ campaign/family mapping, C2/payload type identification
+                - Latest intel(confidence/first_seen/tags) for rule enrichment
+                RETURNS:
+                - malware_alias/printable, threat_type(payload/c2 etc), confidence_level, first_seen, tags, reference links
+                LIMITS:
+                - Free, minor rate limit exists(public figures vary)
+                DON'T USE:
+                - Old sample long-term history(focus on recent threats)
+                - Simple sample meta only(→ MBZ first)
+                WORKFLOW: Use after MBZ/VT for campaign context → extract C2 servers/domains → expand IOCs for infrastructure mapping""", args_schema=HashInput
+            ))
+
+        return tools
     
     # 5. URL Tools (1개)
     def create_url_tools(self) -> List[Tool]:
