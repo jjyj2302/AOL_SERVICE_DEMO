@@ -364,9 +364,99 @@ class OSINTToolFactory:
     
     # 3. Domain Tools (3개)
     def create_domain_tools(self) -> List[Tool]:
-        """ 도메인 분석 도구 3개 생성 """
-        # TODO : Step 6에서 구현
-        return []
+        """ 
+        도메인 분석 도구 3개 생성 
+        Tools :
+        1. VirusTotal - 도메인 평판 및 관계 분석
+        2. Google Safe Browsing - 악성 도메인 탐지
+        3. URLScan.io - 도메인 스캔 및 스크린샷
+        """
+        # 입력 검증 스키마
+        class DomainInput(BaseModel):
+            """ 도메인 입력 검증 """
+            domain: str = Field(description="조사할 유효한 도메인 이름 (예: example.com)")
+        tools = []
+
+        # 1. VirusTotal
+        if 'virustotal' in self.api_keys:
+            def virustotal_domain_check(domain: str) -> dict:
+                """VirusTotal 도메인 API 호출 래퍼 함수"""
+                return external_api_clients.virustotal(
+                    ioc=domain,
+                    apikey=self.api_keys['virustotal'],
+                    type='domain' # 도메인 타입 명시
+                )
+            tools.append(StructuredTool.from_function(
+                func=virustotal_domain_check,
+                name="virustotal_domain_lookup",
+                description="""Multi-AV domain reputation check for SOC/threat hunting workflows.
+                USE WHEN:
+                - Phishing/malware domain investigation (70+ AV engines consensus)
+                - Infrastructure mapping (IP relations, subdomains, connected files)
+                - Brand impersonation detection via favicon hash/domain patterns
+                RETURNS:
+                { "last_analysis_stats": { "malicious": int, "harmless": int },
+                "categories": {}, "dns_records": {}, "subdomains": [],
+                "whois": str, "detected_urls": [] }
+                INTERPRETATION:
+                0/70=clean, 50+/70=high-risk. Check Relations tab for pivot points.
+                Recent registration + low popularity + detections = likely malicious.
+                LIMITS: Rate limit 204/429. May miss zero-hour threats.
+                """, args_schema=DomainInput
+            ))
+        
+        # 2. Google Safe Browsing
+        if 'safeBrowse' in self.api_keys:
+            def safebrowsing_domain_check(domain: str) -> dict:
+                """Google Safe Browsing API 호출 래퍼 함수 (도메인 체크용으로 URL 형식 변환)"""
+                # Safe Browsing API는 URL 단위로 체크하므로 도메인을 URL로 변환해야 한다.
+                url = f"http://{domain}"
+                return external_api_clients.safeBrowse_url_check(
+                    ioc=url,
+                    apikey=self.api_keys['safeBrowse']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=safebrowsing_domain_check,
+                name="safebrowsing_domain_check",
+                description="""Real-time phishing/malware blocklist used by Chrome/Gmail.
+                USE WHEN:
+                - Pre-click URL validation in email security workflows
+                - Enterprise browser protection policy enforcement
+                - Automated bulk URL scanning via pysafebrowsing
+                RETURNS:
+                { "matches": [ { "threatType": "MALWARE|SOCIAL_ENGINEERING",
+                "threat": { "url": str } } ] }
+                Empty matches = not blacklisted (≠safe).
+                USE CASE: Gmail Enhanced Safe Browsing, Chrome Enterprise blocking.
+                LIMITS: Daily quota. Conservative detection (new threats delayed).
+                """, args_schema=DomainInput
+            ))
+
+        # 3. URLScan.io 
+        # URLScan.io의 Search API는 완전 무료이고 API 키가 선택 사항이므로 무조건 추가
+        def urlscan_domain_check(domain: str) -> dict:
+            """URLScan.io API 호출 래퍼 함수"""
+            return external_api_clients.urlscanio(ioc=domain)
+        
+        tools.append(StructuredTool.from_function(
+            func=urlsca_domain_check,
+            name="urlscan_domain_search",
+            description="""Visual/behavioral domain analysis with screenshots and HTTP traces.
+            USE WHEN:
+            - Phishing kit detection (POST credentials, brand logos)
+            - Typosquatting discovery via favicon hash queries
+            - Email security automation (Tines/SOAR integration)
+            QUERY EXAMPLES:
+            date:[now-7d TO now] AND task.method:POST (credential harvesting)
+            page.domain:/.*paypal.*/ NOT paypal.com (brand abuse)
+            RETURNS:
+            { "results": [{ "page": {}, "screenshot": url, "stats": {} }] }
+            INTERPRETATION: Check screenshots for visual deception, POST requests for data theft.
+            LIMITS: Free tier rate limits. No real-time scanning without API key.
+            """, args_schema=DomainInput
+        ))
+        return tools
     
     # 4. Hash Tools (3개)
     def create_hash_tools(self) -> List[Tool]:
