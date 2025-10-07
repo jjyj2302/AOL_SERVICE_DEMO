@@ -440,7 +440,7 @@ class OSINTToolFactory:
             return external_api_clients.urlscanio(ioc=domain)
         
         tools.append(StructuredTool.from_function(
-            func=urlsca_domain_check,
+            func=urlscan_domain_check,
             name="urlscan_domain_search",
             description="""Visual/behavioral domain analysis with screenshots and HTTP traces.
             USE WHEN:
@@ -556,21 +556,223 @@ class OSINTToolFactory:
     
     # 5. URL Tools (1개)
     def create_url_tools(self) -> List[Tool]:
-        """ URL 분석 도구 1개 생성 """
-        # TODO : Step 8에서 구현
-        return []
+        """
+        URL 분석 도구 1개 생성
+        Tools:
+        1. URLhaus - abuse.ch 악성 URL 데이터베이스
+        """
+        tools = []
+
+        # Pydantic 입력 스키마 (URL 검증)
+        class URLInput(BaseModel):
+            url: str = Field(
+                description="조사할 URL (전체 URL 형식). 예: https://example.com/path"
+            )
+
+        # 1. URLhaus URL Check (무료, API 키 불필요)
+        def urlhaus_url_check(url: str) -> dict:
+            """URLhaus 악성 URL 데이터베이스 검색"""
+            return external_api_clients.urlhaus_url_check(ioc=url)
+
+        tools.append(StructuredTool.from_function(
+            func=urlhaus_url_check,
+            name="urlhaus_url_lookup",
+            description="""abuse.ch URLhaus malicious-URL DB lookup (free/no key).
+            USE WHEN:
+            - Verify phishing/malware-distribution URLs; need payload/hash/tags
+            fast
+            - Quick prescreen before VT/URLScan; save higher-cost quotas
+            RETURNS:
+            - url_status(online/offline), threat(malware_download/phishing), tags
+            - payload_hash/filename/signature, reporter, first_seen/last_online
+            - host/domain, referenced URLhaus ID(s)
+            LIMITS:
+            - Free; fair-use rate limits; coverage may lag for brand-new URLs
+            DON'T USE:
+            - Benign/internal links as "reputation" source (mostly not indexed)
+            WORKFLOW:
+            - URLhaus prescreen → if hit: enrich payload/threat fields
+            - Extract host/domain → DomainAgent (DNS/WHOIS/relations)
+            - Extract IPs → IPAgent (infra map, ASN/risk score)""", args_schema=URLInput
+        ))
+
+        return tools
     
     # 6. GitHub Tools (1개)
     def create_github_tools(self) -> List[Tool]:
-        """ GitHub 분석 도구 1개 생성 """
-        # TODO : Step 9에서 구현
-        return []
+        """
+        GitHub 분석 도구 1개 생성
+        Tools:
+        1. GitHub Code Search - IOC가 코드에 하드코딩된 경우 검색
+        """
+        tools = []
+
+        # Pydantic 입력 스키마 (GitHub 검색)
+        class GitHubInput(BaseModel):
+            ioc: str = Field(
+                description="검색할 IOC (IP, domain, email, API key 등). 예: 192.168.1.1"
+            )
+
+        # 1. GitHub Code Search
+        if 'github_pat' in self.api_keys:
+            def github_code_search(ioc: str) -> dict:
+                """GitHub 코드 저장소에서 IOC 검색"""
+                return external_api_clients.search_github(
+                    ioc=ioc,
+                    access_token=self.api_keys['github_pat']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=github_code_search,
+                name="github_code_search",
+                description="""GitHub code IOC/secret search (public repos).
+                USE WHEN:
+                - Hardcoded creds/C2 IPs/leaked secrets/API keys
+                RETURNS:
+                - total_count, items[repo/path/snippet/lines/sha/score]
+                LIMITS:
+                - 30/min PAT (10 unauth); max 1k results; default branch only; <384KB
+                file
+                DON'T USE:
+                - Common strings (false positives); private repos (need org access)
+                INTERPRET:
+                - score → sha age → code context → repo owner reputation
+                WORKFLOW:
+                - Search IOC → identify repos/owners → extract related IOCs → expand investigation""", args_schema=GitHubInput
+            ))
+
+        return tools
     
-    # 7. Misc Tools (4개)
+    # 7. Misc Tools (4개) 기타 도구들
     def create_misc_tools(self) -> List[Tool]:
-        """ 기타 분석 도구 4개 생성 """
-        # TODO : Step 10에서 구현
-        return []
+        """
+        기타 분석 도구 4개 생성
+        Tools:
+        1. BGPView - IP BGP/ASN 정보, IP 인프라 귀속 분석
+        2. NIST NVD - CVE 취약점 검색
+        3. Pulsedive - 종합 위협 인텔리전스
+        4. Reddit - 소셜 미디어 OSINT
+        """
+        tools = []
+
+        # Pydantic 입력 스키마들
+        class IPInput(BaseModel):
+            ip: str = Field(
+                description="조사할 IP 주소. 예: 8.8.8.8"
+            )
+
+        class CVEInput(BaseModel):
+            cve_id: str = Field(
+                description="CVE 식별자. 예: CVE-2021-44228"
+            )
+
+        class IOCInput(BaseModel):
+            ioc: str = Field(
+                description="조사할 IOC (IP, domain, hash, URL 등)"
+            )
+
+        # 1. BGPView (무료, API 키 불필요)
+        # 해당 IP가 누구 소유의 IP 인가를 판단한다. 
+        def bgpview_check(ip: str) -> dict:
+            """BGPView IP BGP/ASN 정보 검색"""
+            return external_api_clients.check_bgpview(ioc=ip)
+
+        tools.append(StructuredTool.from_function(
+            func=bgpview_check,
+            name="bgpview_ip_lookup",
+            description="""BGPView — IP→BGP/ASN intel (free/no key)
+            USE WHEN: map IP→ASN/ISP & prefixes; infra attribution; range expand
+            RETURNS: asn{num,name,country,alloc_at}; prefixes[]; rir;
+            peering/ix(if any); ptr
+            LIMITS: fair-use; 429 on bursts→≥2s backoff; data may lag; BGP is
+            observational
+            DON'T USE: RFC1918/unrouted; as ownership proof (cross-check
+            RDAP/WHOIS)
+            INTERPRET: ASN≠owner; use upstream/downstream to infer provider/scale
+            FLOW: IPAgent→BGPView→RDAP/WHOIS cross-check→expand by
+            ASN/prefix→pattern hunt
+            TIPS: cache results; retry+backoff; fallback: HE BGP Toolkit /
+            RIPEstat / Team Cymru""", args_schema=IPInput
+        ))
+
+        # 2. NIST NVD CVE Search
+        # 공격 대상의 취약점을 분석한다.
+        if 'nist_nvd_api_key' in self.api_keys:
+            def nist_nvd_search(cve_id: str) -> dict:
+                """NIST NVD CVE 취약점 정보 검색"""
+                return external_api_clients.search_nist_nvd(
+                    ioc=cve_id,
+                    apikey=self.api_keys['nist_nvd_api_key'] 
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=nist_nvd_search,
+                name="nist_nvd_cve_lookup",
+                description="""NIST NVD — CVE intel (free / key-optional)
+                USE WHEN: CVE details/CVSS; affected products/versions; exploit refs
+                RETURNS: desc; cvss{v2,v3,vector,severity}; CPE[affected products]; refs; published/modified
+                LIMITS: 5/30s(no key) → 50/30s(key); add ≥6s backoff; paging ≤~2000; 403/429 on exceed; NVD lag(24–48h)
+                DON’T USE: non-CVE IDs (use vendor advisories); real-time 0-days
+                INTERPRET: CVSS ≠ exploitability → check EPSS/CISA KEV; prefer v3 over v2
+                FLOW: scan/log → extract CVE → NVD lookup → CPE match → HashAgent(exploit/patch) → action
+                TIPS: batch+cache; retry on 429; alt: CVE.org / vendor advisories""", args_schema=CVEInput
+            ))
+
+        # 3. Pulsedive Threat Intel
+        # 종합 위협 인텔리전스 플랫폼. 여러 피드를 하나로 통합한다. 
+        if 'pulsedive' in self.api_keys:
+            def pulsedive_check(ioc: str) -> dict:
+                """Pulsedive 종합 위협 인텔리전스 검색"""
+                return external_api_clients.check_pulsedive(
+                    ioc=ioc,
+                    apikey=self.api_keys['pulsedive']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=pulsedive_check,
+                name="pulsedive_ioc_lookup",
+                description="""Pulsedive — multi-feed IOC threat intel (API key req.)
+                USE WHEN: SIEM/SOAR enrichment; IR quick risk/classification; hunting bulk analyze
+                RETURNS: risk{score(0-100),factors}; indicator_type;
+                analysis{passive(WHOIS/DNS),active(HTTP/SSL/ports)};
+                threats/campaigns; tags/refs; JSON/CSV/STIX
+                LIMITS: Free 30 req/min, 1000 req/day; plan-based quotas; rate-limit
+                headers; active scans take seconds; community-fed→verify with other sources
+                DON'T USE: as sole reputation source; deep historical analytics
+                (limited retention)
+                INTERPRET: ≥80 high-risk/act; 50-79 investigate; <50 monitor; combine with VT/AbuseIPDB consensus
+                FLOW: primary checks(VT/AbuseIPDB/URLhaus)→Pulsedive enrich→pull
+                campaigns/attrs→pivot/expand
+                TIPS: batch & cache; backoff on 429; log remaining quota from headers; prefer JSON over CSV for automation""", args_schema=IOCInput
+            ))
+
+        # 4. Reddit Search
+        # 커뮤니티 논의에서 IOC 언급/관련 인시던트 검색
+        if 'reddit_cid' in self.api_keys and  'reddit_cs' in self.api_keys:
+            def reddit_search(ioc: str) -> dict:
+                """Reddit 소셜 미디어 OSINT 검색"""
+                return external_api_clients.search_reddit(
+                    ioc=ioc,
+                    client_id=self.api_keys['reddit_cid'],
+                    client_secret=self.api_keys['reddit_cs']
+                )
+
+            tools.append(StructuredTool.from_function(
+                func=reddit_search,
+                name="reddit_ioc_search",
+                description="""Reddit — social OSINT (OAuth req: client_id/secret)
+                USE WHEN: community discussions/incident reports; victim/researcher mentions in r/netsec, r/cybersecurity; hacker chatter in underground subreddits; early threat signals
+                RETURNS: posts[{title,selftext,author,subreddit,score,created_utc,url, num_comments}]; comments; permalink (JSON)
+                LIMITS: OAuth 60 req/min; user_agent required; page≈25;
+                private/restricted subs blocked; token refresh every 60min; 429 on bulk
+                DON'T USE: as technical reputation source (use threat intel feeds);
+                real-time IR (posting lag); deleted/removed content
+                INTERPRET: score+comments+recency for signal strength; check author history (karma/age); use hour/day time filter for fresh signals; underground subs may use code/slang 
+                FLOW: After technical analysis→Reddit for community context→identify related incidents→extract additional IOCs from discussions
+                TIPS: batch & cache; backoff on 429; store post IDs for dedup; search r/blueteam, r/asknetsec for defensive context""", args_schema=IOCInput
+            ))
+
+        return tools
     
     # 통합 메서드
     def create_all_tools(self) -> List[Tool]:
