@@ -1,7 +1,9 @@
-# OSINT 프로파일링 자동화 통합 계획서 (v2.0)
+# OSINT 프로파일링 자동화 통합 계획서 (v2.1)
 
 **업데이트 날짜**: 2025-10-07
-**변경 사항**: Week 2-3 프론트엔드 통합 전략 수정 (중복 제거 + 점진적 검증)
+**변경 사항**:
+- v2.0: Week 2-3 프론트엔드 통합 전략 수정 (중복 제거 + 점진적 검증)
+- v2.1: 전문화 Multi-Agent 아키텍처로 변경 (단일 Agent → 타입별 전문 Agent + Orchestrator)
 
 ---
 
@@ -107,85 +109,175 @@ pytest tests/test_osint_tools_wrapper.py -v
 
 ---
 
-## 📆 Week 2: ReAct Agent + 대화형 프론트엔드 통합 (7일)
+## 📆 Week 2: 전문화 Agent 구현 + 대화형 프론트엔드 통합 (7일)
 
-### ⭐ **핵심 변경: 백엔드 + 프론트 동시 개발**
+### ⭐ **핵심 아키텍처: 전문화된 Multi-Agent 시스템**
 
-### Day 1-3: ReAct Agent 백엔드 (3일)
+각 IOC 타입별로 전문화된 Agent를 구현하여 토큰 효율성과 전문성을 극대화합니다.
 
-#### 2.1 LLM Map-Reduce 유틸리티
-**파일:** `backend/app/features/osint_profiler/utils/content_processor.py`
-- 대용량 텍스트 청크 분할
-- Map-Reduce 패턴으로 요약
+```
+OSINTOrchestrator (Week 3에서 구현)
+  ├─ EmailAgent (Email Tools 3개)
+  ├─ IPAgent (IP Tools 5개)
+  ├─ DomainAgent (Domain Tools 3개)
+  ├─ HashAgent (Hash Tools 3개)
+  ├─ URLAgent (URL Tools 1개)
+  ├─ GitHubAgent (GitHub Tools 1개)
+  └─ MiscAgent (Misc Tools 4개)
+```
 
-#### 2.2 ReAct Agent 구현
-**파일:** `backend/app/features/osint_profiler/agents/web_agent.py`
+**장점:**
+- ✅ 토큰 효율: 각 Agent는 자기 도구만 봄 (70-80% 절약)
+- ✅ 전문성: 타입별 최적화된 프롬프트
+- ✅ 확장성: 새 타입 추가 쉬움
+- ✅ 병렬 실행: 여러 Agent 동시 실행 가능
+
+### Day 1-3: 전문화 Agent 백엔드 (3일)
+
+#### 2.1 Base Agent 클래스
+**파일:** `backend/app/features/osint_profiler/agents/base_agent.py`
 
 ```python
-class OSINTWebAgent:
-    """
-    ReAct 패턴 OSINT 조사 에이전트
+from abc import ABC, abstractmethod
+from typing import List, Dict, Any
+from langchain.agents import initialize_agent, AgentType
+from langchain.tools import Tool
 
-    Thought (생각) → Action (도구 실행) → Observation (결과 분석) 루프
+class BaseOSINTAgent(ABC):
+    """
+    모든 OSINT Agent의 기본 클래스
     """
 
     def __init__(self, db: Session, llm_model: str = "gpt-4"):
-        self.llm = self._setup_llm()  # ChatOpenAI/ChatAnthropic/ChatGoogleGenerativeAI
-        self.tools = OSINTToolFactory(db).create_all_tools()  # 18개 도구
+        self.db = db
+        self.llm = self._setup_llm(llm_model)
+        self.tools = self._create_tools()
+        self.agent = self._initialize_agent()
 
-        # LangChain ReAct Agent 초기화
-        self.agent = initialize_agent(
+    @abstractmethod
+    def _create_tools(self) -> List[Tool]:
+        """각 Agent가 구현해야 할 도구 생성 메서드"""
+        pass
+
+    def _initialize_agent(self):
+        """LangChain ReAct Agent 초기화"""
+        return initialize_agent(
             tools=self.tools,
             llm=self.llm,
             agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            max_iterations=10
+            max_iterations=10,
+            verbose=True
         )
 
     async def investigate(self, query: str, context: str = "") -> Dict[str, Any]:
-        """
-        OSINT 조사 수행
+        """OSINT 조사 수행"""
+        prompt = f"{context}\n\nInvestigate: {query}" if context else f"Investigate: {query}"
+        result = await self.agent.ainvoke({"input": prompt})
 
-        Returns:
-            {
-                "query": "araiunity@gmail.com",
-                "result": "조사 결과 최종 결론...",
-                "intermediate_steps": [...],  # 실행된 도구 목록
-                "tool_calls": 3
-            }
-        """
+        return {
+            "query": query,
+            "agent_type": self.__class__.__name__,
+            "result": result["output"],
+            "tool_calls": len(result["intermediate_steps"]),
+            "tools_used": [step[0].tool for step in result["intermediate_steps"]]
+        }
+```
+
+#### 2.2 전문화된 Agent 구현
+**파일:** `backend/app/features/osint_profiler/agents/specialized_agents.py`
+
+```python
+from .base_agent import BaseOSINTAgent
+from ..tools.langchain_wrappers import OSINTToolFactory
+
+class EmailAgent(BaseOSINTAgent):
+    """Email OSINT 전문 Agent (HIBP, EmailRep, Hunter)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_email_tools()
+
+class IPAgent(BaseOSINTAgent):
+    """IP OSINT 전문 Agent (AbuseIPDB, VirusTotal, Shodan, CrowdSec, AlienVault)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_ip_tools()
+
+class DomainAgent(BaseOSINTAgent):
+    """Domain OSINT 전문 Agent (VirusTotal, SafeBrowsing, URLScan)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_domain_tools()
+
+class HashAgent(BaseOSINTAgent):
+    """Hash OSINT 전문 Agent (VirusTotal, MalwareBazaar, ThreatFox)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_hash_tools()
+
+class URLAgent(BaseOSINTAgent):
+    """URL OSINT 전문 Agent (URLhaus)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_url_tools()
+
+class GitHubAgent(BaseOSINTAgent):
+    """GitHub OSINT 전문 Agent (GitHub Code Search)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_github_tools()
+
+class MiscAgent(BaseOSINTAgent):
+    """기타 OSINT 전문 Agent (BGPView, NIST NVD, Pulsedive, Reddit)"""
+
+    def _create_tools(self):
+        return OSINTToolFactory(self.db).create_misc_tools()
 ```
 
 #### 2.3 FastAPI 엔드포인트
 **파일:** `backend/app/features/osint_profiler/routers/osint_routes.py`
 
 ```python
-@router.post("/api/osint/investigate")
-async def investigate_ioc(request: InvestigationRequest, db: Session = Depends(get_db)):
+from .agents.specialized_agents import (
+    EmailAgent, IPAgent, DomainAgent, HashAgent,
+    URLAgent, GitHubAgent, MiscAgent
+)
+
+# 타입별 Agent 매핑
+AGENT_MAP = {
+    "email": EmailAgent,
+    "ip": IPAgent,
+    "domain": DomainAgent,
+    "hash": HashAgent,
+    "url": URLAgent,
+    "github": GitHubAgent,
+    "misc": MiscAgent
+}
+
+@router.post("/api/osint/investigate/{agent_type}")
+async def investigate_by_type(
+    agent_type: str,
+    request: InvestigationRequest,
+    db: Session = Depends(get_db)
+):
     """
-    LLM 자동 조사 엔드포인트
+    타입별 전문 Agent를 사용한 조사
+
+    Path Parameters:
+        agent_type: "email" | "ip" | "domain" | "hash" | "url" | "github" | "misc"
 
     Request:
-        query: "1.2.3.4"
-        context: "의심스러운 IP"
-        llm_model: "gpt-4"
-        max_iterations: 10
-
-    Response:
-        result: "조사 결과..."
-        tool_calls: 3
-        intermediate_steps: [...]
+        query: "ioc_value"
+        context: "추가 컨텍스트 (선택)"
+        llm_model: "gpt-4" (선택)
     """
-    agent = OSINTWebAgent(db, llm_model=request.llm_model)
+    if agent_type not in AGENT_MAP:
+        raise HTTPException(status_code=400, detail=f"Unknown agent type: {agent_type}")
+
+    AgentClass = AGENT_MAP[agent_type]
+    agent = AgentClass(db, llm_model=request.llm_model or "gpt-4")
     result = await agent.investigate(request.query, request.context)
+
     return result
-```
-
-#### 2.4 메인 앱에 라우터 등록
-```python
-# backend/app/main.py
-from app.features.osint_profiler.routers import osint_routes
-
-app.include_router(osint_routes.router)
 ```
 
 ---
@@ -525,13 +617,14 @@ import OSINTChatPage from './components/osint-profiler/OSINTChatPage';
 ---
 
 ### Week 2 완료 기준
-- ✅ ReAct Agent 정상 동작 (백엔드)
-- ✅ `/api/osint/investigate` 엔드포인트 동작
+- ✅ BaseOSINTAgent 추상 클래스 완성
+- ✅ 7개 전문화 Agent 구현 완료 (Email, IP, Domain, Hash, URL, GitHub, Misc)
+- ✅ 타입별 API 엔드포인트 동작 (`/api/osint/investigate/{agent_type}`)
+- ✅ 각 Agent별 테스트 성공
 - ✅ `OSINTChat.jsx` 컴포넌트 완성
 - ✅ Email Analyzer에 Chat 모드 추가
 - ✅ IOC Lookup에 Chat 모드 추가
 - ✅ 독립 OSINT Chat 페이지 추가
-- ✅ 실제 조사 테스트 성공 (이메일/IP 각 1건)
 
 **테스트 시나리오:**
 ```bash
@@ -548,85 +641,169 @@ curl -X POST "http://localhost:8000/api/osint/investigate" \
 
 ---
 
-## 📆 Week 3: Knowledge Agent + 피드백 루프 + 통합 UI (7일)
+## 📆 Week 3: Orchestrator + IOC 자동 확장 + 통합 UI (7일)
 
-### Day 1-4: Knowledge Agent 백엔드 (4일)
+### Day 1-4: Orchestrator 백엔드 (4일)
 
-#### 3.1 Knowledge Agent 구현
-**파일:** `backend/app/features/osint_profiler/agents/knowledge_agent.py`
+#### 3.1 OSINTOrchestrator 구현
+**파일:** `backend/app/features/osint_profiler/agents/orchestrator.py`
 
 ```python
-class OSINTKnowledgeAgent:
-    """
-    LLM 기반 OSINT 조사 오케스트레이터
+from typing import Dict, Any, List
+import re
+from .specialized_agents import (
+    EmailAgent, IPAgent, DomainAgent, HashAgent,
+    URLAgent, GitHubAgent, MiscAgent
+)
 
-    여러 ReAct Agent를 조율하고 피드백 루프를 통해 심화 조사 수행
+class OSINTOrchestrator:
     """
+    전문화된 OSINT Agent들을 조율하는 프로파일러
+
+    기능:
+    1. 쿼리 타입 자동 감지 (email/ip/domain/hash/url)
+    2. 적절한 Agent 선택 및 실행
+    3. IOC 발견 시 자동 확장 조사 (Feedback Loop)
+    4. 모든 결과 통합 및 종합 프로파일 생성
+    """
+
+    def __init__(self, db: Session, llm_model: str = "gpt-4"):
+        self.db = db
+        self.llm_model = llm_model
+
+        # 모든 전문 Agent 초기화
+        self.agents = {
+            "email": EmailAgent(db, llm_model),
+            "ip": IPAgent(db, llm_model),
+            "domain": DomainAgent(db, llm_model),
+            "hash": HashAgent(db, llm_model),
+            "url": URLAgent(db, llm_model),
+            "github": GitHubAgent(db, llm_model),
+            "misc": MiscAgent(db, llm_model)
+        }
+
+    def _detect_type(self, query: str) -> str:
+        """쿼리 타입 자동 감지 (regex 기반)"""
+        if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', query):
+            return "email"
+        if re.match(r'^(\d{1,3}\.){3}\d{1,3}$', query):
+            return "ip"
+        if re.match(r'^[a-fA-F0-9]{32,64}$', query):
+            return "hash"
+        if query.startswith(('http://', 'https://')):
+            return "url"
+        return "domain"
+
+    def _extract_iocs(self, result: str) -> Dict[str, List[str]]:
+        """결과에서 추가 IOC 추출"""
+        iocs = {
+            "emails": re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', result),
+            "ips": re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', result),
+            "domains": re.findall(r'\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b', result)
+        }
+        return {k: list(set(v)) for k, v in iocs.items() if v}
 
     async def investigate(
         self,
-        initial_query: str,
-        deep_dive_rounds: int = 2,
-        topics_per_round: int = 3,
-        max_api_calls: int = 20
+        query: str,
+        auto_expand: bool = True,
+        max_depth: int = 2,
+        max_iocs: int = 5
     ) -> Dict[str, Any]:
         """
-        반복적 OSINT 조사 수행
+        종합 OSINT 조사 수행
 
-        Round 0: 초기 조사 (ReAct Agent)
-        Round 1: LLM이 추가 주제 결정 → 조사
-        Round 2: LLM이 추가 주제 결정 → 조사
+        Args:
+            query: 조사 대상 IOC
+            auto_expand: IOC 자동 확장 조사 여부
+            max_depth: 최대 확장 깊이
+            max_iocs: 각 타입별 최대 조사 IOC 개수
 
         Returns:
             {
-                "total_rounds": 3,
-                "findings": [round별 발견사항],
-                "summary": "최종 요약",
-                "total_api_calls": 15
+                "primary_query": "araiunity@gmail.com",
+                "primary_type": "email",
+                "primary_result": {...},
+                "expanded_results": [...],
+                "ioc_graph": {...},
+                "profile": "종합 프로파일"
             }
         """
+
+        # 1. Primary 조사
+        primary_type = self._detect_type(query)
+        primary_agent = self.agents[primary_type]
+        primary_result = await primary_agent.investigate(query)
+
+        results = [primary_result]
+        investigated_iocs = {query}
+
+        # 2. Auto Expansion (선택)
+        if auto_expand:
+            current_depth = 0
+            to_investigate = [primary_result]
+
+            while current_depth < max_depth and to_investigate:
+                current_depth += 1
+                next_round = []
+
+                for result in to_investigate:
+                    found_iocs = self._extract_iocs(result["result"])
+
+                    for ioc_type, ioc_list in found_iocs.items():
+                        agent_type = ioc_type.rstrip('s')
+
+                        for ioc in ioc_list[:max_iocs]:
+                            if ioc not in investigated_iocs:
+                                agent = self.agents.get(agent_type)
+                                if agent:
+                                    expanded_result = await agent.investigate(ioc)
+                                    results.append(expanded_result)
+                                    next_round.append(expanded_result)
+                                    investigated_iocs.add(ioc)
+
+                to_investigate = next_round
+
+        # 3. 결과 통합 및 프로파일 생성
+        profile = self._create_profile(results)
+        ioc_graph = self._build_ioc_graph(results)
+
+        return {
+            "primary_query": query,
+            "primary_type": primary_type,
+            "primary_result": primary_result,
+            "expanded_results": results[1:],
+            "total_investigations": len(results),
+            "ioc_graph": ioc_graph,
+            "profile": profile
+        }
 ```
 
-#### 3.2 피드백 루프 워크플로우
-**파일:** `backend/app/features/osint_profiler/workflows/feedback_loop.py`
-
+#### 3.2 FastAPI 엔드포인트
 ```python
-class FeedbackLoopWorkflow:
+@router.post("/api/osint/orchestrate")
+async def orchestrate_investigation(
+    request: OrchestratorRequest,
+    db: Session = Depends(get_db)
+):
     """
-    자동 IOC 확장 조사
+    Orchestrator를 사용한 종합 조사
 
-    예: 이메일 조사 → 도메인 발견 → 도메인 조사 → IP 발견 → IP 조사
+    Request:
+        query: "ioc_value"
+        auto_expand: true (IOC 자동 확장)
+        max_depth: 2 (최대 확장 깊이)
+        max_iocs: 5 (각 타입별 최대 조사 개수)
     """
+    orchestrator = OSINTOrchestrator(db, llm_model=request.llm_model or "gpt-4")
+    result = await orchestrator.investigate(
+        query=request.query,
+        auto_expand=request.auto_expand,
+        max_depth=request.max_depth,
+        max_iocs=request.max_iocs
+    )
 
-    async def investigate_with_auto_expansion(
-        self,
-        initial_ioc: str,
-        max_expansion_depth: int = 3,
-        max_total_iocs: int = 10
-    ) -> Dict[str, Any]:
-        """
-        BFS로 IOC 자동 확장
-
-        Returns:
-            {
-                "investigated_iocs": ["email", "domain", "ip"],
-                "ioc_graph": {
-                    "nodes": [...],
-                    "edges": [...]
-                }
-            }
-        """
-```
-
-#### 3.3 엔드포인트 추가
-```python
-@router.post("/api/osint/knowledge-agent")
-async def knowledge_agent_investigate(request, db):
-    """심화 조사 (2-3 라운드)"""
-
-@router.post("/api/osint/feedback-loop")
-async def feedback_loop_investigation(request, db):
-    """자동 확장 조사 (IOC 그래프)"""
+    return result
 ```
 
 ---
@@ -718,11 +895,12 @@ Total IOCs: 4개, IOC 그래프 생성
 ---
 
 ### Week 3 완료 기준
-- ✅ Knowledge Agent 정상 동작
-- ✅ 피드백 루프 정상 동작
-- ✅ IOC 자동 확장 동작 (이메일 → 도메인 → IP)
-- ✅ 통합 UI 완성 (Knowledge Agent 설정 패널)
-- ✅ IOC 그래프 시각화 (선택)
+- ✅ OSINTOrchestrator 정상 동작
+- ✅ 쿼리 타입 자동 감지 동작
+- ✅ IOC 자동 확장 조사 동작 (email → domain → ip)
+- ✅ IOC 그래프 생성 기능
+- ✅ 종합 프로파일 생성 기능
+- ✅ 통합 UI 완성 (Orchestrator 설정 패널)
 - ✅ 모든 테스트 시나리오 성공
 
 ---
@@ -733,14 +911,13 @@ Total IOCs: 4개, IOC 그래프 생성
 ```
 backend/app/features/osint_profiler/
 ├── tools/
-│   └── langchain_wrappers.py       # 18개 LangChain Tools
+│   └── langchain_wrappers.py       # 18개 LangChain Tools (Week 1)
 ├── agents/
-│   ├── web_agent.py                # ReAct Agent
-│   └── knowledge_agent.py          # Knowledge Agent
+│   ├── base_agent.py               # BaseOSINTAgent 추상 클래스 (Week 2)
+│   ├── specialized_agents.py       # 7개 전문화 Agent (Week 2)
+│   └── orchestrator.py             # OSINTOrchestrator (Week 3)
 ├── utils/
-│   └── content_processor.py        # Map-Reduce
-├── workflows/
-│   └── feedback_loop.py            # 자동 IOC 확장
+│   └── content_processor.py        # Map-Reduce (선택)
 └── routers/
     └── osint_routes.py             # FastAPI 엔드포인트
 ```
@@ -750,7 +927,7 @@ backend/app/features/osint_profiler/
 frontend/src/components/osint-profiler/
 ├── OSINTChat.jsx                   # ⭐ 공용 대화형 컴포넌트
 ├── OSINTChatPage.jsx               # 독립 Chat 페이지
-├── KnowledgeChat.jsx               # Knowledge Agent UI
+├── OrchestratorChat.jsx            # Orchestrator UI (Week 3)
 └── IOCGraphVisualization.jsx       # IOC 그래프 (선택)
 
 통합된 페이지:
@@ -760,33 +937,42 @@ frontend/src/components/osint-profiler/
 
 ### API 엔드포인트
 ```
-POST /api/osint/investigate          # Week 2: ReAct Agent
-POST /api/osint/knowledge-agent       # Week 3: Knowledge Agent
-POST /api/osint/feedback-loop         # Week 3: 자동 확장
-GET  /api/osint/tools                 # Week 2: 도구 목록
+# Week 2: 타입별 전문 Agent
+POST /api/osint/investigate/email
+POST /api/osint/investigate/ip
+POST /api/osint/investigate/domain
+POST /api/osint/investigate/hash
+POST /api/osint/investigate/url
+POST /api/osint/investigate/github
+POST /api/osint/investigate/misc
+
+# Week 3: Orchestrator
+POST /api/osint/orchestrate           # 종합 조사 + 자동 확장
+GET  /api/osint/tools                 # 도구 목록
 ```
 
 ---
 
-## ✅ v2.0 주요 개선사항
+## ✅ v2.1 주요 개선사항
 
-| 항목 | v1.0 (원래 계획) | v2.0 (수정) | 개선 효과 |
+| 항목 | v2.0 (단일 Agent) | v2.1 (Multi-Agent) | 개선 효과 |
 |------|-----------------|------------|----------|
-| **프론트 개발 시점** | Week 3.5 별도 | Week 2 통합 | ✅ 1주 단축 |
-| **대화형 UI 개수** | Email/IP/Domain 3개 | 공용 1개 | ✅ 중복 -600줄 |
-| **백엔드 검증** | Week 3.5 시작 시 | Week 2 중간 | ✅ 빠른 피드백 |
-| **유지보수** | 3곳 수정 필요 | 1곳만 수정 | ✅ 유지보수 1/3 |
-| **총 작업 기간** | 3주 + 9일 | 3주 | ✅ 9일 절감 |
+| **Agent 구조** | 1개 범용 Agent | 7개 전문 Agent | ✅ 토큰 70-80% 절약 |
+| **도구 개수/Agent** | 18개 | 3-5개 | ✅ 컨텍스트 효율 |
+| **전문성** | 범용 조사 | 타입별 최적화 | ✅ 정확도 향상 |
+| **확장성** | 도구 추가 시 복잡 | Agent 추가로 해결 | ✅ 유지보수 용이 |
+| **병렬 실행** | 불가능 | 가능 | ✅ 성능 향상 |
+| **프로파일링** | 단순 결과 나열 | Orchestrator 통합 | ✅ 진짜 프로파일러 |
 
 ---
 
 ## 🚀 다음 단계
 
-1. **지금**: IP Tools 5개 구현 (Step 5)
-2. Domain/Hash/URL Tools 완성
-3. Week 2: ReAct Agent + 공용 Chat UI
-4. Week 3: Knowledge Agent + 통합
-5. Phase 2: Profil3r 통합 (선택)
+1. **지금**: Hash Tools 3개 구현
+2. URL/GitHub/Misc Tools 6개 완성 (Week 1 완료)
+3. Week 2: 전문화 Agent 7개 구현 + 공용 Chat UI
+4. Week 3: Orchestrator + IOC 자동 확장
+5. Week 4 (선택): 사례 기반 학습 (RAG) 추가
 
 **예상 완료일**: 2025년 10월 28일 (3주 후)
 
