@@ -7,8 +7,17 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: backend
+    # ===== HOT RELOAD 설정 (개발 환경 전용) =====
+    # 최종 프로덕션 배포 시 아래 volumes와 command를 제거하거나 수정 필요
     volumes:
+      # 로컬 코드를 컨테이너에 실시간 마운트 (코드 변경 즉시 반영)
+      - ./backend:/backend
+      # 데이터 영속성을 위한 볼륨 (프로덕션에서도 유지)
       - ./data:/backend/data
+    # --reload 옵션: 파일 변경 감지 시 자동 재시작
+    # 프로덕션: "uvicorn main:app --host 0.0.0.0 --port 8000" 사용 (--reload 제거)
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    # ============================================
 
   frontend:
     networks:
@@ -16,9 +25,22 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      # ===== HOT RELOAD 설정 (개발 환경 전용) =====
+      # 개발 환경: Dockerfile.dev 사용
+      # 프로덕션: Dockerfile 사용 (기본값)
+      # dockerfile: Dockerfile.dev  # 개발 시 이 줄을 주석 해제하고 Dockerfile을 주석 처리
+      # ============================================
     container_name: frontend
     ports:
       - "4000:80"
+    # ===== HOT RELOAD 설정 (개발 환경 전용) =====
+    # Dockerfile.dev 사용 시 아래 volumes 주석 해제
+    # volumes:
+    #   - ./frontend/src:/app/src  # 소스 코드 실시간 반영
+    #   - ./frontend/public:/app/public  # 정적 파일 실시간 반영
+    #   - /app/node_modules  # 컨테이너의 node_modules 보호
+    # 포트도 3000으로 변경: "4000:3000"
+    # ============================================
 
 networks:
   otk-network:

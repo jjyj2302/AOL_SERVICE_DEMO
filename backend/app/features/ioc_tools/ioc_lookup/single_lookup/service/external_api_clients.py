@@ -138,16 +138,22 @@ def check_bgpview(ioc: str) -> Dict[str, Any]:
     """
     logger.debug(f"Checking IP {ioc} with BGPView")
     
-    response = requests.get(url=f'https://api.bgpview.io/ip/{ioc}')
+    # Cloudflare 봇 차단 우회를 위해 User-Agent 추가
+    # BGPView는 API 키가 필요 없지만, Cloudflare Bot Protection이 활성화되어
+    # 기본 requests User-Agent를 차단한다. 이를 우회하기 위해 정상 브라우저로 위장 필요
+    response = requests.get(
+        url=f'https://api.bgpview.io/ip/{ioc}',
+        headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, likeGecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'application/json'
+        }
+    )
     return handle_request_errors("BGPView", response)
 
-"""
-REMOVED: CheckPhish API - 유료 필수 (제안가 $115,000)
-제거 날짜: 2025-10-06
-대체: URLScan.io + Google Safe Browsing (무료)
+
 
 def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
-    
+    """
     Perform URL/domain phishing check using CheckPhish API.
     
     Args:
@@ -156,7 +162,7 @@ def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing scan results or error information
-
+    """
     if not apikey:
         return {"error": 401, "message": "CheckPhish API key is missing."}
 
@@ -167,7 +173,7 @@ def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
         json={'apiKey': apikey, 'urlInfo': {'url': ioc}}
     )
     return handle_request_errors("CheckPhish", response)
-"""
+
 
 def crowdsec(ioc: str, apikey: str) -> Dict[str, Any]:
     """
@@ -259,28 +265,28 @@ def emailrep_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     return handle_request_errors("EmailRep.io", response)
 
 
-def search_github(ioc: str, access_token: str) -> Dict[str, Any]:
-    """
-    Search for IOC mentions in GitHub code repositories.
-    
-    Args:
-        ioc: IOC value to search for
-        access_token: GitHub Personal Access Token
-        
-    Returns:
-        Dictionary containing search results or error information
-    """
-    if not access_token:
-        return {"error": 401, "message": "GitHub PAT is missing."}
-    
-    logger.debug(f"Searching for IOC {ioc} on GitHub")
-    
-    response = requests.get(
-        url='https://api.github.com/search/code',
-        params={'q': f'"{ioc}"'},
-        headers={'Authorization': f'Bearer {access_token}', 'Accept': 'application/vnd.github.v3+json'}
-    )
-    return handle_request_errors("GitHub", response)
+def search_github(ioc: str, apikey: str) -> Dict[str, Any]:  # access_token → apikey
+      """
+      Search for IOC mentions in GitHub code repositories.
+
+      Args:
+          ioc: IOC value to search for
+          apikey: GitHub Personal Access Token  # 여기도 수정
+
+      Returns:
+          Dictionary containing search results or error information
+      """
+      if not apikey:  # 오류 수정 : access_token → apikey
+          return {"error": 401, "message": "GitHub PAT is missing."}
+
+      logger.debug(f"Searching for IOC {ioc} on GitHub")
+
+      response = requests.get(
+          url='https://api.github.com/search/code',
+          params={'q': f'"{ioc}"'},
+          headers={'Authorization': f'Bearer {apikey}', 'Accept': 'application/vnd.github.v3+json'}  # 오류 수정 : access_token → apikey
+      )
+      return handle_request_errors("GitHub", response)
 
 
 def haveibeenpwnd_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
@@ -330,12 +336,10 @@ def hunter_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     )
     return handle_request_errors("Hunter.io", response)
 
-"""
-REMOVED: IPQualityScore API - 유료 필수 (연 평균 $45,000)
-제거 날짜: 2025-10-06
-대체: AbuseIPDB + ipinfo.io (무료)
+
 
 def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
+    """ 
     Perform IP quality and fraud scoring using IPQualityScore API.
     
     Args:
@@ -344,7 +348,7 @@ def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
         
     Returns:
         Dictionary containing quality score data or error information
-
+    """
     if not apikey:
         return {"error": 401, "message": "IPQualityScore API key is missing."}
     
@@ -352,7 +356,7 @@ def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
     
     response = requests.get(url=f'https://www.ipqualityscore.com/api/json/ip/{apikey}/{ioc}')
     return handle_request_errors("IPQualityScore", response)
-"""
+
 
 """
 REMOVED: Maltiverse API - 유료 필수 (가격 비공개)
@@ -382,20 +386,25 @@ def maltiverse_check(ioc: str, endpoint: str, apikey: str) -> Dict[str, Any]:
     return handle_request_errors("Maltiverse", response)
 """
 
-def malwarebazaar_hash_check(ioc: str) -> Dict[str, Any]:
+def malwarebazaar_hash_check(ioc: str, apikey: str) -> Dict[str, Any]:
     """
     Perform hash lookup using MalwareBazaar API.
-    
+
     Args:
         ioc: File hash to lookup
-        
+        apikey: MalwareBazaar API key (abuse.ch Auth-Key)
+
     Returns:
         Dictionary containing malware information or error information
     """
+    if not apikey:
+        return {"error": 401, "message": "MalwareBazaar API key is missing."}
+
     logger.debug(f"Checking hash {ioc} with MalwareBazaar")
-    
+
     response = requests.post(
         url='https://mb-api.abuse.ch/api/v1/',
+        headers={'Auth-Key': apikey},
         data={'query': 'get_info', 'hash': ioc}
     )
     return handle_request_errors("MalwareBazaar", response)
@@ -559,7 +568,7 @@ def safeBrowse_url_check(ioc: str, apikey: str) -> Dict[str, Any]:
         }
     }
     response = requests.post(
-        url=f'https://safeBrowse.googleapis.com/v4/threatMatches:find?key={apikey}',
+        url=f'https://safebrowsing.googleapis.com/v4/threatMatches:find?key={apikey}',
         json=payload
     )
     return handle_request_errors("Google Safe Browse", response)
@@ -609,7 +618,7 @@ def threatfox_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
     
     response = requests.post(
         url='https://threatfox-api.abuse.ch/api/v1/',
-        headers={'API-KEY': apikey},
+        headers={'Auth-Key': apikey},
         json={'query': 'search_ioc', 'search_term': ioc}
     )
     return handle_request_errors("ThreatFox", response)
@@ -642,20 +651,25 @@ def search_twitter(ioc: str, apikey: str) -> Dict[str, Any]:
     return handle_request_errors("Twitter/X", response)
 """
 
-def urlhaus_url_check(ioc: str) -> Dict[str, Any]:
+def urlhaus_url_check(ioc: str, apikey: str) -> Dict[str, Any]:
     """
     Perform URL lookup using URLhaus API.
-    
+
     Args:
         ioc: URL to check
-        
+        apikey: URLhaus API key (abuse.ch Auth-Key)
+
     Returns:
         Dictionary containing URL information or error information
     """
+    if not apikey:
+        return {"error": 401, "message": "URLhaus API key is missing."}
+
     logger.debug(f"Checking URL {ioc} with URLhaus")
-    
+
     response = requests.post(
         url='https://urlhaus-api.abuse.ch/v1/url/',
+        headers={'Auth-Key': apikey},
         data={'url': ioc}
     )
     return handle_request_errors("URLhaus", response)

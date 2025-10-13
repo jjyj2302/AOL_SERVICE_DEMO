@@ -37,10 +37,10 @@ class OSINTToolFactory:
     def _load_api_keys(self) -> Dict[str, str]:
         """
         DB에서 API 키를 조회하여 딕셔너리로 반환.
+        get_apikey()가 dict를 반환하는 경우도 처리합니다.
         Returns:
             Dict[str, str]: {api_key_name: api_key_value}
         """
-        # TODO : 18개 서비스의 API 키 로드 구현
         api_keys = {}
 
         # 필요한 API 키 목록
@@ -67,8 +67,16 @@ class OSINTToolFactory:
 
         for key_name in key_names:
             try:
-                key_value = get_apikey(self.db, key_name)
-                if key_value:
+                result = get_apikey(self.db, key_name)
+
+                # get_apikey()가 dict를 반환하는 경우 'key' 필드 추출
+                if isinstance(result, dict):
+                    key_value = result.get('key', '')
+                else:
+                    key_value = result
+
+                # 유효한 키 값이 있으면 저장
+                if key_value and key_value.strip():
                     api_keys[key_name] = key_value
             except Exception as e:
                 # API 키가 없어도 계속 진행 (선택적 도구)
@@ -507,7 +515,9 @@ class OSINTToolFactory:
         # 2. MalwareBazaar Hash Check (무료, API 키 불필요)
         def malwarebazaar_hash_check(hash_value: str) -> dict:
             """MalwareBazaar 멀웨어 샘플 DB 검색"""
-            return external_api_clients.malwarebazaar_hash_check(ioc=hash_value)
+            # abuse.ch API는 키 선택사항이지만 함수 시그니처상 필요.
+            apikey = self.api_keys.get('malwarebazaar', '')
+            return external_api_clients.malwarebazaar_hash_check(ioc=hash_value, apikey=apikey)
 
         tools.append(StructuredTool.from_function(
             func=malwarebazaar_hash_check,
@@ -572,7 +582,9 @@ class OSINTToolFactory:
         # 1. URLhaus URL Check (무료, API 키 불필요)
         def urlhaus_url_check(url: str) -> dict:
             """URLhaus 악성 URL 데이터베이스 검색"""
-            return external_api_clients.urlhaus_url_check(ioc=url)
+             # abuse.ch API는 키 선택사항이지만 함수 시그니처상 필요
+            apikey = self.api_keys.get('urlhaus', '')
+            return external_api_clients.urlhaus_url_check(ioc=url, apikey=apikey)
 
         tools.append(StructuredTool.from_function(
             func=urlhaus_url_check,
@@ -619,7 +631,7 @@ class OSINTToolFactory:
                 """GitHub 코드 저장소에서 IOC 검색"""
                 return external_api_clients.search_github(
                     ioc=ioc,
-                    access_token=self.api_keys['github_pat']
+                    apikey=self.api_keys['github_pat']  # access_token → apikey로 수정
                 )
 
             tools.append(StructuredTool.from_function(

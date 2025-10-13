@@ -56,8 +56,14 @@ def register_services(ioc_lookup_service_module) -> None:
         'bgpview': {
             'func': ioc_lookup_service_module.check_bgpview,
             'name': 'BGPView',
-            'api_key_name': 'bgpview',
+            'api_key_name': None,
             'supported_ioc_types': [IOC_TYPES['IPV4'], IOC_TYPES['IPV6']],
+        },
+        'checkphish': {  
+          'func': ioc_lookup_service_module.checkphish_ai,
+          'name': 'CheckPhish',
+          'api_key_name': 'checkphishai',
+          'supported_ioc_types': [IOC_TYPES['URL'], IOC_TYPES['DOMAIN']],
         },
         'crowdsec': {
             'func': ioc_lookup_service_module.crowdsec,
@@ -92,6 +98,12 @@ def register_services(ioc_lookup_service_module) -> None:
             'name': 'Hunter.io',
             'api_key_name': 'hunterio_api_key',
             'supported_ioc_types': [IOC_TYPES['EMAIL']],
+        },
+        'ipqualityscore': {
+            'func': ioc_lookup_service_module.ipqualityscore_ip_check,
+            'name': 'IPQualityScore',
+            'api_key_name': 'ipqualityscore',
+            'supported_ioc_types': [IOC_TYPES['IPV4']],
         },
         'malwarebazaar': {
             'func': ioc_lookup_service_module.malwarebazaar_hash_check,
