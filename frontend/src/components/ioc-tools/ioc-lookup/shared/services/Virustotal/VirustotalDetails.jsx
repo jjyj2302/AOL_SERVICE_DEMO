@@ -14,22 +14,21 @@ import CrowdsourcedIDSRules from "./Virustotal/CrowdsourcedIDSRules";
 import LastAnalysisResults from "./Virustotal/LastAnalysisResults";
 import Whois from "./Virustotal/Whois";
 import ThreatClassification from "./Virustotal/ThreatClassification";
-
-import NoDetails from "../NoDetails"; 
+import NoDetails from "../NoDetails";
 
 export default function VirustotalDetailsComponent({ result, ioc }) {
 
-  if (!result) { 
-     return (
+  if (!result) {
+    return (
       <Box sx={{ margin: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
         <NoDetails message="Loading VirusTotal details..." />
       </Box>
     );
   }
-  
+
   if (result.error || result.data?.error) {
     const errorMessage = result.error?.message || result.data?.error?.message || result.error || "Unknown error";
-     return (
+    return (
       <Box sx={{ margin: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
         <NoDetails message={`Error fetching VirusTotal details: ${errorMessage}`} />
       </Box>
@@ -49,27 +48,27 @@ export default function VirustotalDetailsComponent({ result, ioc }) {
 
   const malCount = analysisStats.malicious || 0;
   const totalEngines = (analysisStats.harmless || 0) +
-                       (analysisStats.malicious || 0) +
-                       (analysisStats.suspicious || 0) +
-                       (analysisStats.timeout || 0) +
-                       (analysisStats.undetected || 0);
+    (analysisStats.malicious || 0) +
+    (analysisStats.suspicious || 0) +
+    (analysisStats.timeout || 0) +
+    (analysisStats.undetected || 0);
 
   return (
-    <Box sx={{ margin: 1, mt:0 }}> 
-      <Box 
+    <Box sx={{ margin: 1, mt: 0 }}>
+      <Box
         sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' }, 
-            gap: 2, 
-            mb: 2, 
-            alignItems: 'stretch',
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: 2,
+          mb: 2,
+          alignItems: 'stretch',
         }}
       >
-        <Details malCount={malCount} result={result} ioc={ioc} /> 
+        <Details malCount={malCount} result={result} ioc={ioc} />
         <AnalysisStatistics
-            malCount={malCount}
-            totalEngines={totalEngines}
-            result={result}
+          malCount={malCount}
+          totalEngines={totalEngines}
+          result={result}
         />
       </Box>
 
@@ -97,7 +96,7 @@ export default function VirustotalDetailsComponent({ result, ioc }) {
         <Filenames result={result} />
       )}
 
-      {attributes.elf_info && attributes.elf_info.section_list?.length > 0 && ( 
+      {attributes.elf_info && attributes.elf_info.section_list?.length > 0 && (
         <ELFInformation result={result} />
       )}
 
@@ -109,9 +108,10 @@ export default function VirustotalDetailsComponent({ result, ioc }) {
         <LastAnalysisResults result={result} />
       )}
 
-      {attributes.whois && ( 
+      {attributes.whois && (
         <Whois result={result} />
       )}
+
     </Box>
   );
 }
