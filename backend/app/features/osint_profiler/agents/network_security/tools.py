@@ -24,17 +24,16 @@ from app.core.settings.api_keys.crud.api_keys_settings_crud import get_apikey
 
 # Pydantic Input Schemas
 class IPInput(BaseModel):
-      """IP 주소 입력 검증 스키마 (IPv4/IPv6)"""
-      ip: IPvAnyAddress = Field(
-          description="조사할 IP 주소 (IPv4/IPv6). 예: '8.8.8.8' 또는 '2001:4860:4860::8888'"
-      )
+    """IP 주소 입력 검증 스키마 (IPv4/IPv6)"""
+    ip: IPvAnyAddress = Field(
+        description="조사할 IP 주소 (IPv4/IPv6). 예: '8.8.8.8' 또는 '2001:4860:4860::8888'"
+    )
 
-
-  class DomainInput(BaseModel):
-      """도메인 입력 검증 스키마"""
-      domain: str = Field(
-          description="조사할 도메인 이름. 예: 'example.com'"
-      )
+class DomainInput(BaseModel):
+    """도메인 입력 검증 스키마"""
+    domain: str = Field(
+        description="조사할 도메인 이름. 예: 'example.com'"
+    )
 
 # IP Analysis Tools
 def create_ip_tools(agent_instance) -> List[Tool]:
@@ -58,12 +57,12 @@ def create_ip_tools(agent_instance) -> List[Tool]:
 
     # 1. AbuseIPDB
     abuseipdb_key = get_apikey(db, "abuseipdb")
-    if abuseipdb_key:
+    if abuseipdb_key.get('key'):
         def abuseipdb_check(ip: str) -> dict:
             """AbuseIPDB IP 평판 조회"""
             return external_api_clients.abuseipdb_ip_check(
                 ioc=ip,
-                apikey=abuseipdb_key
+                apikey=abuseipdb_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -94,13 +93,13 @@ def create_ip_tools(agent_instance) -> List[Tool]:
 
     # 2. VirusTotal IP
     vt_key = get_apikey(db, "virustotal")
-    if vt_key:
+    if vt_key.get('key'):
         def virustotal_ip_check(ip: str) -> dict:
             """VirusTotal IP 평판 조회"""
             return external_api_clients.virustotal(
                 ioc=ip,
                 type='ip',
-                apikey=vt_key
+                apikey=vt_key['key']
             )
         tools.append(StructuredTool.from_function(
             func=virustotal_ip_check,
@@ -131,12 +130,12 @@ def create_ip_tools(agent_instance) -> List[Tool]:
     
     # 3. Shodan
     shodan_key = get_apikey(db, "shodan")
-    if shodan_key:
+    if shodan_key.get('key'):
         def shodan_ip_check(ip:str) -> dict:
             """Shodan 인터넷 스캔 데이터 조회"""
             return external_api_clients.check_shodan(
                 ioc=ip,
-                apikey=shodan_key,
+                apikey=shodan_key['key'],
                 method='ip'
             )
         
@@ -171,12 +170,12 @@ def create_ip_tools(agent_instance) -> List[Tool]:
 
     # 4. CrowdSec
     crowdsec_key = get_apikey(db, "crowdsec")
-    if crowdsec_key:
+    if crowdsec_key.get('key'):
         def crowdsec_check(ip: str) -> dict:
             """CrowdSec 커뮤니티 평판 조회"""
             return external_api_clients.crowdsec(
                 ioc=ip,
-                apikey=crowdsec_key
+                apikey=crowdsec_key['key']
             )
         
         tools.append(StructuredTool.from_function(
@@ -204,13 +203,13 @@ def create_ip_tools(agent_instance) -> List[Tool]:
     
     # 5. AlientVault OTX
     alienvault_key = get_apikey(db, "alienvault")
-    if alienvault_key:
+    if alienvault_key.get('key'):
         def alienvault_ip_check(ip: str) -> dict:
             """AlienVault OTX 위협 인텔리전스 조회"""
             return external_api_clients.alienvaultotx(
                 ioc=ip,
                 type='ip',
-                apikey=alienvault_key
+                apikey=alienvault_key['key']
             )
         
         tools.append(StructuredTool.from_function(
@@ -256,13 +255,13 @@ def create_domain_tools(agent_instance) -> List[Tool]:
 
     # 1. VirusTotal Domain
     vt_key = get_apikey(db, "virustotal")
-    if vt_key:
+    if vt_key.get('key'):
         def virustotal_domain_check(domain: str) -> dict:
               """VirusTotal 도메인 평판 조회"""
               return external_api_clients.virustotal(
                   ioc=domain,
                   type='domain',
-                  apikey=vt_key
+                  apikey=vt_key['key']
               )
 
         tools.append(StructuredTool.from_function(
@@ -289,13 +288,13 @@ def create_domain_tools(agent_instance) -> List[Tool]:
     
     # 2. Google Safe Browsing
     safebrowse_key = get_apikey(db, "safeBrowse")
-    if safebrowse_key:
+    if safebrowse_key.get('key'):
         def safebrowsing_domain_check(domain: str) -> dict:
             """Google Safe Browsing 도메인 체크"""
             url = f"http://{domain}"
             return external_api_clients.safeBrowse_url_check(
                 ioc=url,
-                apikey=safebrowse_key
+                apikey=safebrowse_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -352,21 +351,21 @@ def create_bgp_tools(agent_instance) -> List[Tool]:
     tools = []
     db = agent_instance.db
     def bgpview_check(ip: str) -> dict:
-          """BGPView IP→ASN/BGP 정보 조회"""
-          return external_api_clients.check_bgpview(ioc=ip)
+        """BGPView IP→ASN/BGP 정보 조회"""
+        return external_api_clients.check_bgpview(ioc=ip)
 
     tools.append(StructuredTool.from_function(
-          func=bgpview_check,
-          name="bgpview_ip_lookup",
-          description="""BGPView — IP→BGP/ASN intel (free/no key)
-          USE WHEN: map IP→ASN/ISP & prefixes; infra attribution; range expand
-          RETURNS: asn{num,name,country,alloc_at}; prefixes[]; rir; peering/ix(if any); ptr
-          LIMITS: fair-use; 429 on bursts→≥2s backoff; data may lag; BGP is observational
-          DON'T USE: RFC1918/unrouted; as ownership proof (cross-check RDAP/WHOIS)
-          INTERPRET: ASN≠owner; use upstream/downstream to infer provider/scale
-          FLOW: IPAgent→BGPView→RDAP/WHOIS cross-check→expand by ASN/prefix→pattern hunt
-          TIPS: cache results; retry+backoff; fallback: HE BGP Toolkit / RIPEstat / Team Cymru""",
-          args_schema=IPInput
-      ))
+        func=bgpview_check,
+        name="bgpview_ip_lookup",
+        description="""BGPView — IP→BGP/ASN intel (free/no key)
+        USE WHEN: map IP→ASN/ISP & prefixes; infra attribution; range expand
+        RETURNS: asn{num,name,country,alloc_at}; prefixes[]; rir; peering/ix(if any); ptr
+        LIMITS: fair-use; 429 on bursts→≥2s backoff; data may lag; BGP is observational
+        DON'T USE: RFC1918/unrouted; as ownership proof (cross-check RDAP/WHOIS)
+        INTERPRET: ASN≠owner; use upstream/downstream to infer provider/scale
+        FLOW: IPAgent→BGPView→RDAP/WHOIS cross-check→expand by ASN/prefix→pattern hunt
+        TIPS: cache results; retry+backoff; fallback: HE BGP Toolkit / RIPEstat / Team Cymru""",
+        args_schema=IPInput
+    ))
 
-      return tools
+    return tools

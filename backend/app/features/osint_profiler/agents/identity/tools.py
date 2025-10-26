@@ -53,7 +53,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
 
     # 1. Have I Been Pwned
     hibp_key = get_apikey(db, "haveibeenpwned")
-    if hibp_key:
+    if hibp_key.get('key'):
         def hibp_check(email: str) -> dict:
             """
             Have I Been Pwned 데이터 유출 이력 조회
@@ -64,7 +64,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
             """
             return external_api_clients.haveibeenpwnd_email_check(
                 ioc=email,
-                apikey=hibp_key
+                apikey=hibp_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -85,7 +85,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
 
     # 2. EmailRep.io
     emailrep_key = get_apikey(db, "emailrepio")
-    if emailrep_key:
+    if emailrep_key.get('key'):
         def emailrep_check(email: str) -> dict:
             """
             EmailRep.io 이메일 평판 조회
@@ -96,7 +96,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
             """
             return external_api_clients.emailrep_email_check(
                 ioc=email,
-                apikey=emailrep_key
+                apikey=emailrep_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -115,7 +115,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
 
       # 3. Hunter.io
     hunter_key = get_apikey(db, "hunterio")
-    if hunter_key:
+    if hunter_key.get('key'):
         def hunter_verify(email: str) -> dict:
             """
             Hunter.io 이메일 검증
@@ -128,7 +128,7 @@ def create_email_tools(agent_instance) -> List[Tool]:
             """
             return external_api_clients.hunter_email_check(
                 ioc=email,
-                apikey=hunter_key
+                apikey=hunter_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -163,7 +163,7 @@ def create_github_tools(agent_instance) -> List[Tool]:
 
     # GitHub Code Search
     github_key = get_apikey(db, "github_pat")
-    if github_key:
+    if github_key.get('key'):
         def github_code_search(ioc: str) -> dict:
             """
             GitHub 코드 저장소에서 IOC 검색
@@ -174,7 +174,7 @@ def create_github_tools(agent_instance) -> List[Tool]:
             """
             return external_api_clients.search_github(
                 ioc=ioc,
-                apikey=github_key
+                apikey=github_key['key']
             )
 
         tools.append(StructuredTool.from_function(
@@ -218,7 +218,7 @@ def create_reddit_tools(agent_instance) -> List[Tool]:
     reddit_cid = get_apikey(db, "reddit_cid")
     reddit_cs = get_apikey(db, "reddit_cs")
 
-    if reddit_cid and reddit_cs:
+    if reddit_cid and reddit_cid.get('key') and reddit_cs and reddit_cs.get('key'):
         def reddit_search(ioc: str) -> dict:
             """
             Reddit 소셜 미디어 OSINT 검색
@@ -229,8 +229,8 @@ def create_reddit_tools(agent_instance) -> List[Tool]:
             """
             return external_api_clients.search_reddit(
                 ioc=ioc,
-                client_id=reddit_cid,
-                client_secret=reddit_cs
+                client_id=reddit_cid['key'],
+                client_secret=reddit_cs['key']
             )
 
         tools.append(StructuredTool.from_function(
