@@ -697,12 +697,12 @@ def urlscanio(ioc: str) -> Dict[str, Any]:
 def virustotal(ioc: str, type: str, apikey: str) -> Dict[str, Any]:
     """
     Perform IOC lookup using VirusTotal API v3.
-    
+
     Args:
         ioc: IOC value to lookup
         type: Type of IOC (ip, domain, url, hash)
         apikey: VirusTotal API key
-        
+
     Returns:
         Dictionary containing analysis results or error information
     """
@@ -711,16 +711,166 @@ def virustotal(ioc: str, type: str, apikey: str) -> Dict[str, Any]:
 
     type_map = {'ip': 'ip_addresses', 'domain': 'domains', 'url': 'urls', 'hash': 'files'}
     indicator_type = type_map.get(type, 'ip_addresses')
-    
+
     if indicator_type == 'urls':
         ioc_safe = b64encode(ioc.encode()).decode().strip("=")
     else:
         ioc_safe = ioc
-    
+
     logger.debug(f"Checking {type} {ioc} with VirusTotal")
-        
+
     response = requests.get(
         url=f'https://www.virustotal.com/api/v3/{indicator_type}/{ioc_safe}',
         headers={'x-apikey': apikey}
     )
     return handle_request_errors("VirusTotal", response)
+
+
+def virustotal_domain_resolutions(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    도메인의 DNS 해상도(Passive DNS) 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        DNS 해상도 정보 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching DNS resolutions for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/resolutions',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Resolutions", response)
+
+
+def virustotal_domain_siblings(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    같은 IP에 호스팅된 형제 도메인 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        형제 도메인 정보 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching siblings for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/siblings',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Siblings", response)
+
+
+def virustotal_domain_communicating_files(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    해당 도메인과 통신한 파일 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        통신 파일 정보 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching communicating files for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/communicating_files',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Communicating Files", response)
+
+
+def virustotal_domain_referrer_files(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    해당 도메인을 참조하는 파일 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        참조 파일 정보 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching referrer files for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/referrer_files',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Referrer Files", response)
+
+
+def virustotal_domain_historical_ssl_certificates(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    도메인의 과거 SSL 인증서 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        SSL 인증서 히스토리 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching historical SSL certificates for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/historical_ssl_certificates',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Historical SSL", response)
+
+
+def virustotal_domain_subdomains(domain: str, apikey: str, limit: int = 40) -> Dict[str, Any]:
+    """
+    도메인의 하위 도메인 조회
+
+    Args:
+        domain: 조회할 도메인
+        apikey: VirusTotal API 키
+        limit: 반환할 최대 결과 수 (기본값: 40)
+
+    Returns:
+        하위 도메인 정보 또는 에러 정보
+    """
+    if not apikey:
+        return {"error": 401, "message": "VirusTotal API key is missing."}
+
+    logger.debug(f"Fetching subdomains for domain {domain}")
+
+    response = requests.get(
+        url=f'https://www.virustotal.com/api/v3/domains/{domain}/subdomains',
+        headers={'x-apikey': apikey},
+        params={'limit': limit}
+    )
+    return handle_request_errors("VirusTotal Subdomains", response)

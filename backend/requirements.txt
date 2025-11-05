@@ -2,11 +2,14 @@ aiohttp
 APScheduler
 fastapi[all]
 feedparser
+langchain
 langchain-community
 langchain_core
 langchain_openai
 langchain-anthropic
 langchain-google-genai
+langgraph
+langgraph-supervisor
 openai
 mitreattack_python
 newspaper4k
