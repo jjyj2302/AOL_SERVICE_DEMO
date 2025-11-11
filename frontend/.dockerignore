@@ -4,3 +4,33 @@ build
 .dockerignore
 Dockerfile
 Dockerfile.prod
+
+# Build outputs
+dist/
+.next/
+out/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.eslintcache
+.cache/
+*.tsbuildinfo

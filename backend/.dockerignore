@@ -9,3 +9,32 @@ pip-log.txt
 .mypy_cache
 .pytest_cache
 .gitignore
+
+# Virtual environments (매우 중요!)
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+
+# Python build
+*.egg-info/
+dist/
+build/
+*.egg
+
+# OS
+.DS_Store
+Thumbs.db
