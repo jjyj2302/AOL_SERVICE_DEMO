@@ -9,14 +9,8 @@ import CssBaseline from "@mui/material/CssBaseline";
 import HealthCheck from "./HealthCheck";
 import Main from "./Main";
 import NotFound from "./components/NotFound";
-import CvssCalculator from "./components/cvss-calculator/CvssCalculator";
-import Monitoring from "./components/domain-monitoring/Monitoring";
-import EmailAnalyzer from "./components/email-analyzer/EmailAnalyzer";
 import IocTools from "./components/ioc-tools/IocTools";
-import Newsfeed from "./components/newsfeed/Newsfeed";
 import Settings from "./components/settings/Settings";
-import Rules from "./components/rule-creator/Rules";
-import AiTemplates from "./components/llm_templates/AiTemplates";
 
 import {
   apiKeysState,
@@ -110,15 +104,9 @@ function App() {
         <HealthCheck>
           <Routes>
             <Route path="/" element={<Main />}>
-              <Route index element={<Navigate to="/newsfeed" replace />} />
-              <Route path="newsfeed/*" element={<Newsfeed />} />
-              <Route path="settings/*" element={<Settings />} />
-              <Route path="ai-templates/*" element={<AiTemplates />} />
+              <Route index element={<Navigate to="/ioc-tools/lookup" replace />} />
               <Route path="ioc-tools/*" element={<IocTools />} />
-              <Route path="email-analyzer/*" element={<EmailAnalyzer />} />
-              <Route path="domain-monitoring/*" element={<Monitoring />} />
-              <Route path="cvss-calculator/*" element={<CvssCalculator />} />
-              <Route path="rules/*" element={<Rules />} />
+              <Route path="settings/*" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
