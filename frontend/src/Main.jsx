@@ -1,37 +1,28 @@
 import React, { useState, useContext } from "react";
 import { useRecoilValue } from "recoil";
-import { modulesState, generalSettingsState, apiKeysState } from "./state";
+import { generalSettingsState } from "./state";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
 import MenuIcon from "@mui/icons-material/Menu";
 import SettingsIcon from "@mui/icons-material/Settings";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { ColorModeContext } from "./App";
 import SidebarTabs from "./components/SidebarTabs";
-import { iocToolsTabs } from "./sidebarConfig";
+import SearchHistory from "./components/SearchHistory";
 import {
-  mainMenuItems,
-  aiTemplatesTabs,
-  newsfeedTabs,
-  settingsTabs,
-  rulesTabs,
+  iocToolsTabs,
 } from "./sidebarConfig";
 import AOL_logo_light from "./images/AOL_logo_light.png";
 
 const drawerWidth = 240;
-const menuItems = mainMenuItems;
 
 export default function Main() {
-  const modules = useRecoilValue(modulesState);
-  const apiKeys = useRecoilValue(apiKeysState);
   const generalSettings = useRecoilValue(generalSettingsState);
   const colorMode = useContext(ColorModeContext);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,39 +40,72 @@ export default function Main() {
   }
 
   const getSidebarContent = () => {
-    if (location.pathname.startsWith("/ai-templates") && apiKeys.openai) {
-      return <SidebarTabs title="AI Templates" tabs={aiTemplatesTabs} />;
-    }
-    if (location.pathname.startsWith("/newsfeed")) {
-      return <SidebarTabs title="" tabs={newsfeedTabs} />;
-    }
-    if (location.pathname.startsWith("/ioc-tools")) {
-      return <SidebarTabs title="" tabs={iocToolsTabs} />;
-    }
-    if (location.pathname.startsWith("/settings")) {
-      return <SidebarTabs title="" tabs={settingsTabs} />;
-    }
-    if (location.pathname.startsWith("/rules")) {
-      return <SidebarTabs title="" tabs={rulesTabs} />;
-    }
-    return null;
+    // Always show IOC Tools sidebar
+    return <SidebarTabs title="IOC Tools" tabs={iocToolsTabs} />;
   };
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (item.name === "AI Templates") {
-      return apiKeys.openai;
-    }
-    return modules[item.name]?.enabled ?? item.enabled;
-  });
-
   const sidebarContent = getSidebarContent();
-  const showSidebar = sidebarContent !== null;
+  const showSidebar = true; // Always show IOC Tools sidebar
 
   const drawer = showSidebar ? (
-    <div>
-      <Divider />
-      {sidebarContent}
-    </div>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
+    }}>
+      <Box>
+        <Divider />
+        {sidebarContent}
+        <Divider sx={{ my: 1 }} />
+        <SearchHistory />
+      </Box>
+
+      {/* Spacer to push buttons to bottom */}
+      <Box sx={{ flexGrow: 1 }} />
+
+      {/* Bottom buttons */}
+      <Box sx={{
+        p: 2,
+        borderTop: 1,
+        borderColor: 'divider',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1
+      }}>
+        <IconButton
+          onClick={colorMode.toggleColorMode}
+          sx={{
+            justifyContent: 'flex-start',
+            gap: 2,
+            px: 2
+          }}
+        >
+          {generalSettings.darkmode ? (
+            <Brightness7Icon />
+          ) : (
+            <Brightness4Icon />
+          )}
+          <Box component="span" sx={{ fontSize: '0.875rem' }}>
+            {generalSettings.darkmode ? 'Light Mode' : 'Dark Mode'}
+          </Box>
+        </IconButton>
+
+        <IconButton
+          component={Link}
+          to="/settings"
+          sx={{
+            justifyContent: 'flex-start',
+            gap: 2,
+            px: 2
+          }}
+        >
+          <SettingsIcon />
+          <Box component="span" sx={{ fontSize: '0.875rem' }}>
+            Settings
+          </Box>
+        </IconButton>
+      </Box>
+    </Box>
   ) : null;
 
   return (
@@ -131,59 +155,8 @@ export default function Main() {
           />
 
           <Box sx={{ display: { xs: "none", md: "flex" }, flexGrow: 1 }}>
-            {filteredMenuItems.map((item, index) => {
-              console.log(`Menu item: ${item.name}`, {
-                modules,
-                moduleEnabled: modules[item.name]?.enabled,
-              });
-
-              const isEnabled = modules[item.name]?.enabled ?? item.enabled;
-
-              return (
-                isEnabled && (
-                  <Button
-                    key={index}
-                    color="inherit"
-                    component={Link}
-                    to={item.path}
-                    startIcon={item.icon}
-                    sx={{
-                      ml: 2,
-                      bgcolor: location.pathname.startsWith(item.path)
-                        ? "rgba(255,255,255,0.2)"
-                        : "transparent",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.3)",
-                      },
-                    }}
-                  >
-                    {item.name}
-                  </Button>
-                )
-              );
-            })}
+            {/* Top menu removed - using sidebar instead */}
           </Box>
-          {/*
-          <IconButton color="inherit" component={Link} to="/alerts" sx={{ mr: 2 }}>
-            <NotificationsIcon />
-          </IconButton>
-          */}
-          <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
-            {generalSettings.darkmode ? (
-              <Brightness7Icon />
-            ) : (
-              <Brightness4Icon />
-            )}
-          </IconButton>
-
-          <IconButton
-            color="inherit"
-            component={Link}
-            to="/settings"
-            sx={{ mr: 2 }}
-          >
-            <SettingsIcon />
-          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -198,6 +171,7 @@ export default function Main() {
                 width: drawerWidth,
                 boxSizing: "border-box",
                 marginTop: "64px",
+                height: "calc(100vh - 64px)",
               },
               display: { xs: "none", md: "block" },
             }}
@@ -218,6 +192,7 @@ export default function Main() {
               [`& .MuiDrawer-paper`]: {
                 width: drawerWidth,
                 boxSizing: "border-box",
+                height: "100vh",
               },
             }}
           >

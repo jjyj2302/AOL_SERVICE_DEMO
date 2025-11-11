@@ -1,55 +1,153 @@
-import React from 'react';
-import { Box, Paper, Typography, Grid } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, TextField, InputAdornment, IconButton, Paper } from '@mui/material';
+import { MdNetworkCheck, MdDomain, MdLink, MdEmail, MdFingerprint, MdBugReport, MdSearch } from 'react-icons/md';
 
-const SUPPORTED_IOC_TYPES_INFO = [
-  { title: "IP Addresses", description: "IPv4 and IPv6 addresses for threat analysis" },
-  { title: "Domains", description: "Domain names and subdomains" },
-  { title: "URLs", description: "Web addresses and endpoints" },
-  { title: "Email Addresses", description: "Known malicious or suspicious email addresses" },
-  { title: "Hashes", description: "MD5, SHA1, and SHA256 file hashes" },
-  { title: "CVEs", description: "Common Vulnerabilities and Exposures identifiers" },
+const IOC_TYPES = [
+  { icon: MdNetworkCheck, label: "IP Address", color: "#4285F4" },
+  { icon: MdDomain, label: "Domain", color: "#EA4335" },
+  { icon: MdLink, label: "URL", color: "#FBBC04" },
+  { icon: MdEmail, label: "Email", color: "#34A853" },
+  { icon: MdFingerprint, label: "Hash", color: "#9C27B0" },
+  { icon: MdBugReport, label: "CVE", color: "#FF6D00" },
 ];
 
-const FeatureCard = ({ title, description }) => (
-  <Grid item xs={12} sm={6} key={title}>
-    <Paper elevation={0} sx={{ p: 1 }}>
-      <Typography color="primary" fontWeight="medium">
-        {title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
-      </Typography>
-    </Paper>
-  </Grid>
+const IocTypeCard = ({ icon: Icon, label, color }) => (
+  <Paper
+    elevation={0}
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: 2.5,
+      borderRadius: 3,
+      border: '1px solid',
+      borderColor: 'divider',
+      transition: 'all 0.2s ease-in-out',
+      cursor: 'default',
+      '&:hover': {
+        borderColor: color,
+        boxShadow: `0 4px 12px ${color}40`,
+        transform: 'translateY(-2px)',
+      },
+    }}
+  >
+    <Icon size={36} style={{ color, marginBottom: 8 }} />
+    <Typography variant="body2" fontWeight="medium" color="text.secondary">
+      {label}
+    </Typography>
+  </Paper>
 );
 
-export default function WelcomeScreen() {
+export default function WelcomeScreen({ onSubmit }) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter" && inputValue.trim()) {
+      onSubmit(inputValue);
+    }
+  };
+
+  const handleSearchClick = () => {
+    if (inputValue.trim()) {
+      onSubmit(inputValue);
+    }
+  };
+
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          Single IOC Lookup
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '70vh',
+        py: 4,
+      }}
+    >
+      {/* Title Section */}
+      <Box sx={{ textAlign: 'center', mb: 2 }}>
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
+            fontWeight: 600,
+            background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 2,
+          }}
+        >
+          AOL Threat Intelligence
         </Typography>
-        <Typography paragraph>
-          Investigate various Indicators of Compromise (IOCs) using multiple threat
-          intelligence sources like VirusTotal, AlienVault, AbuseIPDB, and more,
-          to gain detailed insights into potential security threats.
-        </Typography>
-        <Typography>
-          The tool automatically identifies the IOC type and correlates data
-          from relevant sources, enabling rapid threat assessment and
-          informed security decision-making.
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+          어떤 위협을 분석해볼까요?
         </Typography>
       </Box>
 
-      <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-        Supported IOC Types
-      </Typography>
-      <Grid container spacing={1}>
-        {SUPPORTED_IOC_TYPES_INFO.map(item => (
-          <FeatureCard key={item.title} title={item.title} description={item.description} />
+      {/* IOC Type Icons */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: 2,
+          width: '100%',
+          maxWidth: 800,
+          mb: 4,
+        }}
+      >
+        {IOC_TYPES.map((type) => (
+          <IocTypeCard key={type.label} {...type} />
         ))}
-      </Grid>
-    </Paper>
+      </Box>
+
+      {/* Search Input */}
+      <Box sx={{ width: '100%', maxWidth: 800 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Enter an IOC to analyze (IP, Domain, URL, Email, Hash, CVE)..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 50,
+              backgroundColor: 'background.paper',
+              pr: 1,
+              '&:hover fieldset': {
+                borderColor: 'primary.main',
+              },
+              '&.Mui-focused fieldset': {
+                borderWidth: 2,
+              },
+            },
+          }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={handleSearchClick}
+                  disabled={!inputValue.trim()}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                    '&.Mui-disabled': {
+                      backgroundColor: 'action.disabledBackground',
+                    },
+                  }}
+                >
+                  <MdSearch size={24} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+    </Box>
   );
 }

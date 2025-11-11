@@ -1,20 +1,23 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { useSetRecoilState } from "recoil";
+import { useLocation } from "react-router-dom";
 import { Alert, AlertTitle, Box, Grow } from "@mui/material";
 import ResultTable from "./components/ui/ResultTable";
-import SearchBar from "../../../styled/SearchBar";
 import WelcomeScreen from "./components/ui/WelcomeScreen";
 import { determineIocType } from "../shared/utils/iocDefinitions";
+import { searchHistoryState } from "../../../../state";
 
 const Analyzer = () => {
   const [searchValue, setSearchValue] = useState("");
   const [currentIocType, setCurrentIocType] = useState("");
   const [isInputInvalid, setIsInputInvalid] = useState(false);
   const [shouldShowTable, setShouldShowTable] = useState(false);
-  const inputRef = useRef(null);
+  const setSearchHistory = useSetRecoilState(searchHistoryState);
+  const location = useLocation();
 
   const handleValidation = useCallback((iocInput) => {
     const trimmedIoc = iocInput.trim();
-    
+
     if (!trimmedIoc) {
       setShouldShowTable(false);
       setIsInputInvalid(false);
@@ -30,41 +33,44 @@ const Analyzer = () => {
       setSearchValue(trimmedIoc);
       setCurrentIocType(type);
       setShouldShowTable(true);
+
+      // Add to search history
+      setSearchHistory((prevHistory) => {
+        const newEntry = {
+          id: Date.now(),
+          ioc: trimmedIoc,
+          type: type,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Keep only last 20 searches and avoid duplicates
+        const filtered = prevHistory.filter(item => item.ioc !== trimmedIoc);
+        return [newEntry, ...filtered].slice(0, 20);
+      });
+
       return true;
     } else {
       setShouldShowTable(false);
       setIsInputInvalid(true);
       return false;
     }
-  }, []);
-
-  const handleSubmitSearch = useCallback(() => {
-    const inputValue = inputRef.current?.value || "";
-    handleValidation(inputValue);
-  }, [handleValidation]);
-
-  const handleKeyPress = useCallback((event) => {
-    if (event.key === "Enter") {
-      handleSubmitSearch();
-    }
-  }, [handleSubmitSearch]);
+  }, [setSearchHistory]);
 
   const handleCloseError = useCallback(() => {
     setIsInputInvalid(false);
   }, []);
 
+  // Handle search from history
+  useEffect(() => {
+    if (location.state?.searchIoc) {
+      handleValidation(location.state.searchIoc);
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, handleValidation]);
+
   return (
     <>
-      <SearchBar
-        ref={inputRef}
-        placeholder="Enter an IOC to analyze (IP, Domain, URL, Email, Hash, CVE)..."
-        buttonLabel="Analyze"
-        onKeyDown={handleKeyPress}
-        onSearchClick={handleSubmitSearch}
-        size="medium"
-        fullWidth
-      />
-      
       <Box sx={{ my: 1 }}>
         {isInputInvalid && (
           <Grow in={true}>
@@ -83,14 +89,14 @@ const Analyzer = () => {
           </Grow>
         )}
       </Box>
-      
+
       {shouldShowTable && searchValue && currentIocType ? (
         <ResultTable
           ioc={searchValue}
           iocType={currentIocType}
         />
       ) : (
-        <WelcomeScreen />
+        <WelcomeScreen onSubmit={handleValidation} />
       )}
     </>
   );

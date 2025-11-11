@@ -24,3 +24,8 @@ export const newsfeedState = atom({
   key: "NewsfeedState",
   default: [],
 });
+
+export const searchHistoryState = atom({
+  key: "SearchHistoryState",
+  default: [],
+});
