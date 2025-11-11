@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production build
+build/
+dist/
+.next/
+out/
+
+# Misc
+.DS_Store
+.DS_*
+*.pem
+
+# Debug logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime*
+
+# OS
+Thumbs.db
+
+# Backup files
+**/*.backup.*
+**/*.back.*
+
+# Package manager
+package-lock.json
+yarn.lock
+
+# Bower (legacy)
+bower_components/
+
+# Design files
+psd/
+thumb/
+sketch/
+
+# Cache
+.cache/
+.eslintcache
+.stylelintcache
+
+# Parcel
+.parcel-cache/
+
+# React
+.react-app-env

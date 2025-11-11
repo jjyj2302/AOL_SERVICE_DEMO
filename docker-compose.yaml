@@ -1,0 +1,35 @@
+version: "3.8"
+services:
+  backend:
+    networks:
+      - otk-network
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      # BuildKit 최적화 옵션
+      cache_from:
+        - aol_service_demo_backend:latest
+    image: aol_service_demo_backend:latest
+    container_name: backend
+    volumes:
+      - ./data:/backend/data
+    restart: unless-stopped
+
+  frontend:
+    networks:
+        - otk-network
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # BuildKit 최적화 옵션
+      cache_from:
+        - aol_service_demo_frontend:latest
+    image: aol_service_demo_frontend:latest
+    container_name: frontend
+    ports:
+      - "4000:80"
+    restart: unless-stopped
+
+networks:
+  otk-network:
+    driver: bridge
