@@ -1,6 +1,6 @@
 import { useEffect, useMemo, createContext, useState } from "react";
 import { useSetRecoilState, useRecoilValue } from "recoil";
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import api from "./api";
 
 import { ThemeProvider } from "@mui/material/styles";
@@ -9,6 +9,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import HealthCheck from "./HealthCheck";
 import Main from "./Main";
 import NotFound from "./components/NotFound";
+import Dashboard from "./components/Dashboard";
 import IocTools from "./components/ioc-tools/IocTools";
 import Settings from "./components/settings/Settings";
 
@@ -104,7 +105,7 @@ function App() {
         <HealthCheck>
           <Routes>
             <Route path="/" element={<Main />}>
-              <Route index element={<Navigate to="/ioc-tools/lookup" replace />} />
+              <Route index element={<Dashboard />} />
               <Route path="ioc-tools/*" element={<IocTools />} />
               <Route path="settings/*" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
