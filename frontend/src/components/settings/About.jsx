@@ -23,17 +23,17 @@ export default function About() {
   return (
     <>
       <Card sx={cardStyle}>
-        <h2>About - OSINT Toolkit v0.1 (beta)</h2>
+        <h2>About - AOL v0.1 (beta)</h2>
         <p>
-          OSINT Toolkit is a self-hostable, on-demand analysis platform designed
+          AOL is a self-hostable, on-demand analysis platform designed
           for security specialists. It consolidates various security tools into
           a single, easy-to-use environment, streamlining everyday investigative
-          tasks. Optimized for single-user operation, OSINT Toolkit runs locally
+          tasks. Optimized for single-user operation, AOL runs locally
           in a Docker container and is not intended for long-term data storage
           or management. Instead, it focuses on accelerating daily workflows,
           such as news aggregation and analysis, IOC and email investigations,
           and the creation of threat detection rules. To further enhance
-          efficiency, OSINT Toolkit integrates generative AI capabilities,
+          efficiency, AOL integrates generative AI capabilities,
           providing additional support for analysis and decision-making. Beyond
           its practical applications, the project also serves as a personal
           playground for experimenting with new technologies and automation
@@ -41,7 +41,7 @@ export default function About() {
           commercial cloud platform.
         </p>
         <p>
-          The name OSINT Toolkit is a temporary name. The name may be changed in
+          The name AOL is a temporary name. The name may be changed in
           the future.
         </p>
       </Card>
@@ -63,7 +63,7 @@ export default function About() {
       <Card sx={cardStyle}>
         <h2>Donate to support the development</h2>
         <p>
-          If you want to support the development of OSINT Toolkit, you can
+          If you want to support the development of AOL, you can
           donate using a service of your choice.
         </p>
         <br />

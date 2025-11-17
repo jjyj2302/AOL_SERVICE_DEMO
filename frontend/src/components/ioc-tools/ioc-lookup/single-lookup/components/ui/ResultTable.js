@@ -4,6 +4,7 @@ import useTheme from '@mui/material/styles/useTheme';
 import { useServiceFilter } from '../../../shared/hooks/useServiceFilter';
 import NoApiKeysAlert from './NoApiKeysAlert';
 import ServiceFetcherRow from './ServiceFetcherRow';
+import ThreatHunterReport from './ThreatHunterReport';
 
 function ResultTable({ ioc, iocType, filteredServices: externallyFilteredServices }) {
   const theme = useTheme();
@@ -22,7 +23,7 @@ function ResultTable({ ioc, iocType, filteredServices: externallyFilteredService
             Analysis Results for {iocType}: <strong>{ioc}</strong>
           </Typography>
         </Box>
-        
+
         <TableContainer component={Paper} sx={{ boxShadow: 0, borderRadius: 1 }}>
           <Table aria-label="result_table">
             <TableHead>
@@ -49,6 +50,9 @@ function ResultTable({ ioc, iocType, filteredServices: externallyFilteredService
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Threat Hunter Comprehensive Report */}
+        <ThreatHunterReport ioc={ioc} />
       </Box>
     </Grow>
   );

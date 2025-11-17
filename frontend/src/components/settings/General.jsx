@@ -113,7 +113,7 @@ export default function General() {
             <MenuItem value="Aldrich">Aldrich</MenuItem>
           </Select>
           <FormHelperText>
-            Change the application wide font for OSINT Toolkit
+            Change the application wide font for AOL
           </FormHelperText>
         </FormControl>
       </Card>

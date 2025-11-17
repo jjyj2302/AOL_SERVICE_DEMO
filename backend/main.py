@@ -28,8 +28,10 @@ from app.features.ioc_tools.ioc_defanger.routers import internal_defang_routes
 from app.features.ioc_tools.ioc_lookup.bulk_lookup.routers import bulk_ioc_lookup_routes
 from app.features.ioc_tools.ioc_lookup.single_lookup.routers import single_ioc_lookup_routes
 
-# OSINT Profiler imports
-from app.features.osint_profiler.routers import osint_routes
+# Threat Hunter imports
+from app.features.threat_hunter.routers import threat_hunter_routes as threat_hunter_router
+from app.features.threat_hunter_copy.test_router import router as threat_hunter_test_router
+from app.features.crew_solo.solo_router import router as crew_solo_router
 
 from app.core.settings.general.models.general_settings_models import Settings
 from app.core.settings.modules.models.modules_settings_models import ModuleSettings
@@ -68,11 +70,6 @@ async def lifespan(app: FastAPI):
         from app.core.settings.api_keys.cache import APIKeyCache
         api_cache = APIKeyCache.get_instance()
         api_cache.load_all_keys(db)
-
-        # OSINT Supervisor 초기화
-        from app.features.osint_profiler.supervisor_cache import SupervisorCache
-        supervisor_cache = SupervisorCache.get_instance()
-        supervisor_cache.initialize(llm_model="gpt-4")
 
         logger.info("Application startup completed successfully")
     except Exception as e:
@@ -126,8 +123,10 @@ routers = [
     bulk_ioc_lookup_routes.router,
     single_ioc_lookup_routes.router,
 
-    # OSINT Profiler
-    osint_routes.router,
+    # Threat Hunter
+    threat_hunter_router,
+    threat_hunter_test_router,  # Temporary test endpoint for Pydantic outputs
+    crew_solo_router,  # Individual agent execution endpoints
 ]
 
 for router in routers:

@@ -260,7 +260,7 @@ def emailrep_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     
     response = requests.get(
         url=f'https://emailrep.io/{ioc}',
-        headers={'Key': apikey, 'User-Agent': 'OSINT-Toolkit'}
+        headers={'Key': apikey, 'User-Agent': 'AOL'}
     )
     return handle_request_errors("EmailRep.io", response)
 
@@ -307,7 +307,7 @@ def haveibeenpwnd_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
     
     response = requests.get(
         url=f'https://haveibeenpwned.com/api/v3/breachedaccount/{ioc}',
-        headers={'hibp-api-key': apikey, 'User-Agent': 'OSINT-Toolkit'}
+        headers={'hibp-api-key': apikey, 'User-Agent': 'AOL'}
     )
     if response.status_code == 404:
         return {"message": "Not found in any breaches."}
@@ -521,7 +521,7 @@ def search_reddit(ioc: str, client_id: str, client_secret: str) -> Dict[str, Any
     token_res = requests.post(
         url='https://www.reddit.com/api/v1/access_token',
         data={'grant_type': 'client_credentials'},
-        headers={'User-Agent': 'OSINT-Toolkit/0.1'},
+        headers={'User-Agent': 'AOL/0.1'},
         auth=auth
     )
     token_data = handle_request_errors("Reddit Auth", token_res)
@@ -537,7 +537,7 @@ def search_reddit(ioc: str, client_id: str, client_secret: str) -> Dict[str, Any
     response = requests.get(
         url='https://oauth.reddit.com/search',
         params={'q': f'"{ioc}"', 'limit': 25},
-        headers={'Authorization': f'bearer {access_token}', 'User-Agent': 'OSINT-Toolkit/0.1'}
+        headers={'Authorization': f'bearer {access_token}', 'User-Agent': 'AOL/0.1'}
     )
     return handle_request_errors("Reddit", response)
 
@@ -559,7 +559,7 @@ def safeBrowse_url_check(ioc: str, apikey: str) -> Dict[str, Any]:
     logger.debug(f"Checking URL {ioc} with Google Safe Browsing")
     
     payload = {
-        "client": {"clientId": "osint-toolkit", "clientVersion": "1.0.0"},
+        "client": {"clientId": "aol", "clientVersion": "1.0.0"},
         "threatInfo": {
             "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
             "platformTypes": ["ANY_PLATFORM"],

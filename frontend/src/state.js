@@ -29,3 +29,14 @@ export const searchHistoryState = atom({
   key: "SearchHistoryState",
   default: [],
 });
+
+// IoC Collection State for Agent workflows
+export const iocCollectionState = atom({
+  key: "IocCollectionState",
+  default: {
+    triage: [],
+    malware: [],
+    infrastructure: [],
+    campaign: [],
+  },
+});

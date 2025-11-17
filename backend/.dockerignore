@@ -38,3 +38,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Data directory (mounted as volume)
+data/

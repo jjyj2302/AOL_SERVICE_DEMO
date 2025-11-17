@@ -55,10 +55,6 @@ node_modules/
 *.sw?
 # OS specific
 
-# Task files
-# tasks.json
-# tasks/
-
 # Task Master AI (프로젝트 관리 도구)
 .taskmaster/
 .mcp.json
@@ -89,3 +85,7 @@ backend/data/
 
 # 환경 설정 예제
 .env.example 
+
+# Task files
+# tasks.json
+# tasks/ 

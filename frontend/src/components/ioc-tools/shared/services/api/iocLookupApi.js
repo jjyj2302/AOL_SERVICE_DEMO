@@ -43,5 +43,19 @@ export const iocLookupApi = {
       services
     });
     return response.data;
+  },
+
+  /**
+   * Perform comprehensive threat hunting investigation using AOL
+   * @param {string} ioc - IOC to investigate
+   * @param {string} investigationType - Type of investigation (comprehensive, malware, infrastructure, campaign)
+   * @returns {Promise<Object>} - Comprehensive threat hunting report
+   */
+  async threatHuntInvestigate(ioc, investigationType = 'comprehensive') {
+    const response = await api.post('/api/threat-hunter/investigate', {
+      ioc,
+      investigation_type: investigationType
+    });
+    return response.data;
   }
 };

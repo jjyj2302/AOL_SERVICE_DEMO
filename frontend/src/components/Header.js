@@ -11,7 +11,7 @@ function Header() {
       <img
         src={theme.palette.mode === 'dark' ? ot_logo_dark : ot_logo_light}
         height={60}
-        alt="OSINT Toolkit logo"
+        alt="AOL logo"
       />
     </div>
   )

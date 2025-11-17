@@ -1,10 +1,10 @@
-"""Application configuration settings for the OSINT Toolkit."""
+"""Application configuration settings for the AOL."""
 
 # App metadata
-APP_TITLE = "OSINT Toolkit"
+APP_TITLE = "AOL"
 APP_VERSION = "0.1"
 DESCRIPTION = """
-## OSINT Toolkit interactive API documentation
+## AOL interactive API documentation
 """
 
 # Contact information

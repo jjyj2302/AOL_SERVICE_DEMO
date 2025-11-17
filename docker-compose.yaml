@@ -2,7 +2,7 @@ version: "3.8"
 services:
   backend:
     networks:
-      - otk-network
+      - aol-network
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -17,7 +17,7 @@ services:
 
   frontend:
     networks:
-        - otk-network
+        - aol-network
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -31,5 +31,5 @@ services:
     restart: unless-stopped
 
 networks:
-  otk-network:
+  aol-network:
     driver: bridge

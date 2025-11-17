@@ -22,3 +22,5 @@ tweepy==4.9.0
 uvicorn==0.34.0
 lxml[html_clean]
 html2text
+crewai
+crewai-tools
