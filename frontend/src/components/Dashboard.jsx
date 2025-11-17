@@ -31,6 +31,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { searchHistoryState } from "../state";
 import { formatDistanceToNow, isToday, isThisWeek, format } from "date-fns";
+import { ko } from "date-fns/locale";
 
 const COLORS = {
   IPv4: "#4285F4",
@@ -385,7 +386,7 @@ export default function Dashboard() {
                             />
                           </Box>
                         }
-                        secondary={formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                        secondary={formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ko })}
                       />
                     </ListItem>
                   ))}

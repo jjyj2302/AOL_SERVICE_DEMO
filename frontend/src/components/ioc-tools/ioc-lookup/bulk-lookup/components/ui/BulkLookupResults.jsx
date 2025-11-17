@@ -46,7 +46,7 @@ export default function BulkLookupResults({
       <Box sx={{ width: '100%', mb: 2 }}>
         <LinearProgress variant="determinate" value={progress} />
         <Typography variant="caption" display="block" textAlign="center">
-          {Math.round(progress)}% Complete
+          {Math.round(progress)}% 완료
         </Typography>
       </Box>
     );
@@ -84,7 +84,7 @@ export default function BulkLookupResults({
               <IocCard key={ioc.id} ioc={ioc} />
             ))
           ) : (
-            <Typography>No IOCs of type {typeKey.toUpperCase()} to display in this tab.</Typography>
+            <Typography>이 탭에 표시할 {typeKey.toUpperCase()} 유형의 IOC가 없습니다.</Typography>
           )}
         </TabPanel>
       ))}

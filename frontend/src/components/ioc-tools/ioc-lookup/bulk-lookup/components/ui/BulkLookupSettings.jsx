@@ -39,7 +39,7 @@ export default function BulkLookupSettings({ services, onSettingsChange, service
       })
       .catch(err => {
         console.error(`Failed to update setting for ${serviceName}:`, err);
-        setError(`Failed to update setting for ${serviceName}.`);
+        setError(`${serviceName} 설정 업데이트 실패.`);
       });
   };
 

@@ -39,8 +39,8 @@ def handle_request_errors(service_name: str, response: requests.Response) -> Dic
             
             logger.warning(f"Rate limit hit for {service_name}: {error_detail}")
             return {
-                "error": status_code, 
-                "message": f"{service_name} rate limit exceeded. Please try again later.",
+                "error": status_code,
+                "message": f"{service_name} 요청 한도 초과. 나중에 다시 시도하세요.",
                 "retry_after": retry_after,
                 "rate_limit_reset": reset_time,
                 "rate_limit_remaining": remaining,
@@ -65,14 +65,14 @@ def handle_request_errors(service_name: str, response: requests.Response) -> Dic
             error_detail = http_err.response.text.strip() if http_err.response.text.strip() else f"HTTP {status_code} Error"
 
         logger.warning(f"HTTP error in {service_name}: {error_detail}")
-        return {"error": status_code, "message": f"{service_name} error: {error_detail}"}
+        return {"error": status_code, "message": f"{service_name} 오류: {error_detail}"}
         
     except requests.exceptions.RequestException as req_err:
         logger.error(f"Request error in {service_name}: {req_err}")
-        return {"error": 503, "message": f"Could not connect to {service_name}: {req_err}"}
+        return {"error": 503, "message": f"{service_name}에 연결할 수 없습니다: {req_err}"}
     except json.JSONDecodeError as json_err:
         logger.error(f"JSON decode error in {service_name}: {json_err}")
-        return {"error": 500, "message": f"Failed to parse response from {service_name}."}
+        return {"error": 500, "message": f"{service_name}의 응답을 파싱하지 못했습니다."}
 
 
 def abuseipdb_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
@@ -87,7 +87,7 @@ def abuseipdb_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing lookup results or error information
     """
     if not apikey:
-        return {"error": 401, "message": "AbuseIPDB API key is missing."}
+        return {"error": 401, "message": "AbuseIPDB API 키가 없습니다."}
     
     logger.debug(f"Checking IP {ioc} with AbuseIPDB")
     
@@ -112,7 +112,7 @@ def alienvaultotx(ioc: str, type: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing lookup results or error information
     """
     if not apikey:
-        return {"error": 401, "message": "AlienVault OTX API key is missing."}
+        return {"error": 401, "message": "AlienVault OTX API 키가 없습니다."}
     
     type_map = {'ip': 'IPv4', 'domain': 'domain', 'url': 'url', 'hash': 'file'}
     indicator_type = type_map.get(type, 'IPv4')
@@ -154,7 +154,7 @@ def checkphish_ai(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing scan results or error information
     """
     if not apikey:
-        return {"error": 401, "message": "CheckPhish API key is missing."}
+        return {"error": 401, "message": "CheckPhish API 키가 없습니다."}
 
     logger.debug(f"Checking URL {ioc} with CheckPhish")
     
@@ -177,7 +177,7 @@ def crowdsec(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing reputation data or error information
     """
     if not apikey:
-        return {"error": 401, "message": "CrowdSec API key is missing."}
+        return {"error": 401, "message": "CrowdSec API 키가 없습니다."}
     
     logger.debug(f"Checking IP {ioc} with CrowdSec")
     
@@ -240,7 +240,7 @@ def emailrep_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing email reputation data or error information
     """
     if not apikey:
-        return {"error": 401, "message": "EmailRep.io API key is missing."}
+        return {"error": 401, "message": "EmailRep.io API 키가 없습니다."}
     
     logger.debug(f"Checking email {ioc} with EmailRep.io")
     
@@ -287,7 +287,7 @@ def haveibeenpwnd_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing breach information or error information
     """
     if not apikey:
-        return {"error": 401, "message": "HIBP API key is missing."}
+        return {"error": 401, "message": "HIBP API 키가 없습니다."}
     
     logger.debug(f"Checking email {ioc} with HIBP")
     
@@ -312,7 +312,7 @@ def hunter_email_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing verification results or error information
     """
     if not apikey:
-        return {"error": 401, "message": "Hunter.io API key is missing."}
+        return {"error": 401, "message": "Hunter.io API 키가 없습니다."}
 
     logger.debug(f"Verifying email {ioc} with Hunter.io")
     
@@ -335,7 +335,7 @@ def ipqualityscore_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing quality score data or error information
     """
     if not apikey:
-        return {"error": 401, "message": "IPQualityScore API key is missing."}
+        return {"error": 401, "message": "IPQualityScore API 키가 없습니다."}
     
     logger.debug(f"Checking IP {ioc} with IPQualityScore")
     
@@ -356,7 +356,7 @@ def maltiverse_check(ioc: str, endpoint: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing threat intelligence data or error information
     """
     if not apikey:
-        return {"error": 401, "message": "Maltiverse API key is missing."}
+        return {"error": 401, "message": "Maltiverse API 키가 없습니다."}
     
     logger.debug(f"Checking {endpoint} {ioc} with Maltiverse")
     
@@ -438,7 +438,7 @@ def search_nist_nvd(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing CVE information or error information
     """
     if not apikey:
-        return {"error": 401, "message": "NIST NVD API key is missing."}
+        return {"error": 401, "message": "NIST NVD API 키가 없습니다."}
     
     logger.debug(f"Looking up CVE {ioc} with NIST NVD")
     
@@ -462,7 +462,7 @@ def check_pulsedive(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing threat intelligence data or error information
     """
     if not apikey:
-        return {"error": 401, "message": "Pulsedive API key is missing."}
+        return {"error": 401, "message": "Pulsedive API 키가 없습니다."}
 
     logger.debug(f"Checking IOC {ioc} with Pulsedive")
     
@@ -527,7 +527,7 @@ def safeBrowse_url_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing safety information or error information
     """
     if not apikey:
-        return {"error": 401, "message": "Google Safe Browse API key is missing."}
+        return {"error": 401, "message": "Google Safe Browse API 키가 없습니다."}
     
     logger.debug(f"Checking URL {ioc} with Google Safe Browsing")
     
@@ -560,7 +560,7 @@ def check_shodan(ioc: str, method: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing host information or error information
     """
     if not apikey:
-        return {"error": 401, "message": "Shodan API key is missing."}
+        return {"error": 401, "message": "Shodan API 키가 없습니다."}
     
     endpoint = 'host' if method == 'ip' else 'dns/domain'
     
@@ -585,7 +585,7 @@ def threatfox_ip_check(ioc: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing threat information or error information
     """
     if not apikey:
-        return {"error": 401, "message": "ThreatFox API key is missing."}
+        return {"error": 401, "message": "ThreatFox API 키가 없습니다."}
     
     logger.debug(f"Checking IOC {ioc} with ThreatFox")
     
@@ -672,7 +672,7 @@ def virustotal(ioc: str, type: str, apikey: str) -> Dict[str, Any]:
         Dictionary containing analysis results or error information
     """
     if not apikey:
-        return {"error": 401, "message": "VirusTotal API key is missing."}
+        return {"error": 401, "message": "VirusTotal API 키가 없습니다."}
 
     type_map = {'ip': 'ip_addresses', 'domain': 'domains', 'url': 'urls', 'hash': 'files'}
     indicator_type = type_map.get(type, 'ip_addresses')

@@ -50,7 +50,7 @@ export function useBulkLookupProcessor() {
   const performLookup = useCallback(async (iocsInput, selectedServices) => {
     setProcessorError('');
     if (selectedServices.length === 0) {
-      setProcessorError("Please select at least one service to perform the lookup.");
+      setProcessorError("조회를 수행하려면 최소 하나의 서비스를 선택하세요.");
       return;
     }
     setLoading(true);
@@ -65,7 +65,7 @@ export function useBulkLookupProcessor() {
     const uniqueIocs = Array.from(new Set(lines));
 
     if (uniqueIocs.length === 0) {
-      setProcessorError("Please enter at least one IOC, or check input for valid formatting.");
+      setProcessorError("최소 하나의 IOC를 입력하거나 입력 형식을 확인하세요.");
       setLoading(false);
       return;
     }
@@ -100,7 +100,7 @@ export function useBulkLookupProcessor() {
         });
 
         if (!response.ok || !response.body) {
-            throw new Error(`Server error: ${response.statusText}`);
+            throw new Error(`서버 오류: ${response.statusText}`);
         }
 
         const reader = response.body.getReader();
@@ -155,7 +155,7 @@ export function useBulkLookupProcessor() {
         }
     } catch (err) {
         console.error("SSE connection error:", err);
-        setProcessorError(`Failed to connect or stream results: ${err.message}`);
+        setProcessorError(`연결 또는 결과 스트리밍 실패: ${err.message}`);
     } finally {
         setLoading(false);
         setProgress(100);

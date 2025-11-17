@@ -19,20 +19,20 @@ function ResultTable({ ioc, iocType, filteredServices: externallyFilteredService
       <Box>
         <Box sx={{ mb: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Analysis Results for {iocType}: <strong>{ioc}</strong>
+            {iocType} 분석 결과: <strong>{ioc}</strong>
           </Typography>
         </Box>
-        
+
         <TableContainer component={Paper} sx={{ boxShadow: 0, borderRadius: 1 }}>
           <Table aria-label="result_table">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ bgcolor: theme.palette.background.tablecell, width: '5%' }} />
                 <TableCell sx={{ bgcolor: theme.palette.background.tablecell, fontWeight: "bold", width: '25%' }}>
-                  Service
+                  서비스
                 </TableCell>
                 <TableCell sx={{ bgcolor: theme.palette.background.tablecell, fontWeight: "bold" }}>
-                  Result
+                  결과
                 </TableCell>
                 <TableCell sx={{ bgcolor: theme.palette.background.tablecell, width: '5%' }} />
               </TableRow>
