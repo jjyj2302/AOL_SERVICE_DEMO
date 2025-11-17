@@ -126,7 +126,7 @@ export default function ApiKeys() {
         <Stack spacing={2} alignItems="center">
           <CircularProgress size={48} />
           <Typography variant="h6" color="text.secondary">
-            Loading service configuration...
+            서비스 설정 로딩 중...
           </Typography>
         </Stack>
       </Box>
@@ -137,7 +137,7 @@ export default function ApiKeys() {
     return (
       <Box sx={{ maxWidth: 1200, mx: "auto", p: 3 }}>
         <Alert severity="error" icon={<ErrorIcon />}>
-          <AlertTitle>Configuration Error</AlertTitle>
+          <AlertTitle>설정 오류</AlertTitle>
           {error}
         </Alert>
       </Box>
@@ -182,7 +182,7 @@ export default function ApiKeys() {
                 API Key Management
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {getConfiguredCount()}/{Object.keys(servicesConfig).length} services configured ({getCompletionPercentage()}% complete)
+                {getConfiguredCount()}/{Object.keys(servicesConfig).length}개 서비스 설정됨 ({getCompletionPercentage()}% 완료)
               </Typography>
             </Box>
           </Box>
@@ -191,17 +191,17 @@ export default function ApiKeys() {
         <AccordionDetails sx={{ px: 2, pb: 2, pt: 0 }}>
           <Stack spacing={3}>
             <Typography variant="body1" color="text.secondary">
-              Configure your threat intelligence and security API keys to unlock the full potential of this platform.
+              위협 인텔리전스 및 보안 API 키를 설정하여 이 플랫폼의 모든 기능을 활용하세요.
             </Typography>
 
             {/* Progress Overview */}
             <Box>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Configuration Progress ({getConfiguredCount()}/{Object.keys(servicesConfig).length} services)
+                  설정 진행률 ({getConfiguredCount()}/{Object.keys(servicesConfig).length}개 서비스)
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {getCompletionPercentage()}% Complete
+                  {getCompletionPercentage()}% 완료
                 </Typography>
               </Box>
               <LinearProgress
@@ -219,8 +219,8 @@ export default function ApiKeys() {
             </Box>
 
             <Alert severity="info" icon={<InfoIcon />}>
-              <AlertTitle>Getting Started</AlertTitle>
-              While initial setup requires generating multiple API keys, the enhanced security and intelligence capabilities make it worthwhile. Most services offer free tiers to get you started.
+              <AlertTitle>시작하기</AlertTitle>
+              초기 설정에는 여러 API 키 생성이 필요하지만, 향상된 보안 및 인텔리전스 기능을 고려하면 충분히 가치가 있습니다. 대부분의 서비스는 무료 플랜을 제공하여 시작할 수 있습니다.
             </Alert>
           </Stack>
         </AccordionDetails>
@@ -238,7 +238,7 @@ export default function ApiKeys() {
       >
         <Stack direction="row" spacing={3} alignItems="center">
           <TextField
-            placeholder="Search services..."
+            placeholder="서비스 검색..."
             value={searchFilter}
             onChange={(e) => setSearchFilter(e.target.value)}
             variant="outlined"
@@ -261,7 +261,7 @@ export default function ApiKeys() {
                 sx={{mr: 1}}
               />
             }
-            label="Show only configured"
+            label="설정된 것만 표시"
           />
         </Stack>
       </Paper>
@@ -323,7 +323,7 @@ export default function ApiKeys() {
                     {/* Capabilities */}
                     <Box>
                       <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-                        Supported IoC Types
+                        지원되는 IoC 유형
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                         {service.supported_ioc_types.map((capability) => (
@@ -348,7 +348,7 @@ export default function ApiKeys() {
                     {service.required_keys.length === 0 ? (
                       <Box sx={{ p: 2, backgroundColor: theme.palette.success.main + "08", borderRadius: 1 }}>
                         <Typography variant="body2" color="success.main" sx={{ fontWeight: 500 }}>
-                          ✓ No API key required - Ready to use
+                          ✓ API 키 불필요 - 바로 사용 가능
                         </Typography>
                       </Box>
                     ) : (
@@ -398,10 +398,10 @@ export default function ApiKeys() {
           }}
         >
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            No services found
+            서비스를 찾을 수 없습니다
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Try adjusting your search or filter criteria.
+            검색어나 필터 조건을 조정해보세요.
           </Typography>
         </Paper>
       )}

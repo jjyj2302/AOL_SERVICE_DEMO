@@ -160,11 +160,11 @@ const BulkLookup = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                   <TextFields sx={{ mr: 1, color: 'primary.main' }} />
                   <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                    IOC Input
+                    IOC 입력
                   </Typography>
                 </Box>
                 <TextField
-                  label="Enter IOCs (one per line)"
+                  label="IOC를 입력하세요 (한 줄에 하나씩)"
                   multiline
                   fullWidth
                   variant="outlined"
@@ -194,7 +194,7 @@ const BulkLookup = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                   <UploadFileIcon sx={{ mr: 1, color: 'primary.main' }} />
                   <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                    File Upload
+                    파일 업로드
                   </Typography>
                 </Box>
                 <Box
@@ -224,26 +224,26 @@ const BulkLookup = () => {
                       mb: 1
                     }} 
                   />
-                  <Typography 
-                    variant="body2" 
-                    textAlign="center" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    textAlign="center"
+                    sx={{
                       color: processing ? 'grey.400' : 'text.secondary',
                       px: 1,
                       lineHeight: 1.3
                     }}
                   >
-                    Drop files here
+                    파일을 여기에 드롭하세요
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    textAlign="center" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    textAlign="center"
+                    sx={{
                       color: processing ? 'grey.400' : 'text.secondary',
                       mt: 0.5
                     }}
                   >
-                    (.txt, .csv, .md)
+                    (.txt, .csv, .md 파일)
                   </Typography>
                 </Box>
               </Box>

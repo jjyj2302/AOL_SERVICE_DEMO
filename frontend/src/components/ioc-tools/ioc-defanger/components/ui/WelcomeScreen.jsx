@@ -29,10 +29,10 @@ export default function WelcomeScreen() {
           IOC Defang/Fang Tool
         </Typography>
         <Typography variant="h6" component="h1" gutterBottom>
-          Supported Defanging Techniques
+          지원되는 Defanging 기술
         </Typography>
         <Typography paragraph>
-          Safely defang IOCs for sharing or restore fanged IOCs for analysis. This tool automatically detects IOC types and applies fanging or defanging techniques.
+          공유를 위해 IOC를 안전하게 Defang하거나 분석을 위해 Fanged IOC를 복원합니다. 이 도구는 자동으로 IOC 유형을 감지하고 Fanging 또는 Defanging 기술을 적용합니다.
         </Typography>
       </Box>
       <Grid container spacing={1}>

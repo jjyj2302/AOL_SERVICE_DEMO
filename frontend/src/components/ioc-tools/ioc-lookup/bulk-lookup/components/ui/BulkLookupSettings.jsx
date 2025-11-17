@@ -52,7 +52,7 @@ export default function BulkLookupSettings({ services, onSettingsChange, service
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <SettingsIcon sx={{ mr: 1, color: 'text.secondary' }} />
-          <Typography>Bulk Lookup Service Settings</Typography>
+          <Typography>Bulk Lookup 서비스 설정</Typography>
         </Box>
       </AccordionSummary>
       <AccordionDetails>
@@ -81,7 +81,7 @@ export default function BulkLookupSettings({ services, onSettingsChange, service
           </List>
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-            No services with API keys are configured. Please add keys in the main settings tab to enable them here.
+            API 키가 설정된 서비스가 없습니다. 메인 설정 탭에서 키를 추가하여 여기서 활성화하세요.
           </Typography>
         )}
       </AccordionDetails>

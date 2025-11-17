@@ -80,7 +80,7 @@ export default function SearchHistory() {
       {searchHistory.length === 0 ? (
         <Box sx={{ py: 2, textAlign: "center" }}>
           <Typography variant="caption" color="text.secondary">
-            No search history yet
+            아직 검색 기록이 없습니다
           </Typography>
         </Box>
       ) : (

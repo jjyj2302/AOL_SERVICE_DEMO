@@ -27,14 +27,14 @@ const InputForm = ({
         multiline
         rows={8}
         variant="outlined"
-        label={`Enter IOCs to ${operation} (one per line)`}
-        placeholder={operation === 'defang' 
+        label={`${operation === 'defang' ? 'Defang' : 'Fang'}할 IOC를 입력하세요 (한 줄에 하나씩)`}
+        placeholder={operation === 'defang'
           ? "https://example.com\n192.168.1.1\nuser@domain.com\nmalware.exe"
           : "hxxps[://]example[.]com\n192[.]168[.]1[.]1\nuser[@]domain[.]com"
         }
         value={inputText}
         onChange={(e) => onInputChange(e.target.value)}
-        helperText={`Supports domains, IPs, URLs, emails, hashes. ${inputText.split('\n').filter(line => line.trim()).length} lines entered.`}
+        helperText={`Domain, IP, URL, Email, Hash를 지원합니다. ${inputText.split('\n').filter(line => line.trim()).length}개 입력됨.`}
       />
       
       <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
@@ -44,14 +44,14 @@ const InputForm = ({
           disabled={!inputText.trim()}
           startIcon={operation === 'defang' ? <HealthAndSafetyIcon /> : <GppMaybeIcon />}
         >
-          {operation === 'defang' ? 'Defang IOCs' : 'Fang IOCs'}
+          {operation === 'defang' ? 'IOC Defang' : 'IOC Fang'}
         </Button>
         <Button
           variant="outlined"
           onClick={onClear}
           startIcon={<ClearIcon />}
         >
-          Clear
+          지우기
         </Button>
         {hasResults && (
           <Button
@@ -59,7 +59,7 @@ const InputForm = ({
             onClick={onCopyAllResults}
             startIcon={<CopyIcon />}
           >
-            Copy All Results
+            전체 결과 복사
           </Button>
         )}
       </Stack>
