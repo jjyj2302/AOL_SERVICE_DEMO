@@ -1,3 +1,4 @@
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import SearchIcon from "@mui/icons-material/Search";
 import DocumentScannerIcon from "@mui/icons-material/DocumentScanner";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
@@ -8,6 +9,11 @@ export const mainMenuItems = [
 ];
 
 export const iocToolsTabs = [
+  {
+    label: "Dashboard",
+    path: "/",
+    icon: <DashboardIcon />,
+  },
   {
     label: "Single Lookup",
     path: "/ioc-tools/lookup",

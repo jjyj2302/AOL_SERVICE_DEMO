@@ -21,10 +21,11 @@ const IocTypeCard = ({ icon: Icon, label, color }) => (
       justifyContent: 'center',
       p: 2.5,
       borderRadius: 3,
-      border: '1px solid',
+      border: '1.5px solid',
       borderColor: 'divider',
       transition: 'all 0.2s ease-in-out',
       cursor: 'default',
+      minHeight: 110,
       '&:hover': {
         borderColor: color,
         boxShadow: `0 4px 12px ${color}40`,
@@ -32,8 +33,8 @@ const IocTypeCard = ({ icon: Icon, label, color }) => (
       },
     }}
   >
-    <Icon size={36} style={{ color, marginBottom: 8 }} />
-    <Typography variant="body2" fontWeight="medium" color="text.secondary">
+    <Icon size={38} style={{ color, marginBottom: 8 }} />
+    <Typography variant="body2" fontWeight="medium" color="text.secondary" fontSize="0.9rem">
       {label}
     </Typography>
   </Paper>
@@ -66,7 +67,7 @@ export default function WelcomeScreen({ onSubmit }) {
       }}
     >
       {/* Title Section */}
-      <Box sx={{ textAlign: 'center', mb: 2 }}>
+      <Box sx={{ textAlign: 'center', mb: 2.5 }}>
         <Typography
           variant="h3"
           component="h1"
@@ -77,11 +78,12 @@ export default function WelcomeScreen({ onSubmit }) {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             mb: 2,
+            fontSize: '2.75rem',
           }}
         >
           AOL Threat Intelligence
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4, fontSize: '1.15rem' }}>
           어떤 위협을 분석해볼까요?
         </Typography>
       </Box>
@@ -90,10 +92,10 @@ export default function WelcomeScreen({ onSubmit }) {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(125px, 1fr))',
           gap: 2,
           width: '100%',
-          maxWidth: 800,
+          maxWidth: 900,
           mb: 4,
         }}
       >
@@ -103,7 +105,7 @@ export default function WelcomeScreen({ onSubmit }) {
       </Box>
 
       {/* Search Input */}
-      <Box sx={{ width: '100%', maxWidth: 800 }}>
+      <Box sx={{ width: '100%', maxWidth: 900 }}>
         <TextField
           fullWidth
           variant="outlined"
@@ -116,12 +118,17 @@ export default function WelcomeScreen({ onSubmit }) {
               borderRadius: 50,
               backgroundColor: 'background.paper',
               pr: 1,
+              fontSize: '1.05rem',
               '&:hover fieldset': {
                 borderColor: 'primary.main',
               },
               '&.Mui-focused fieldset': {
                 borderWidth: 2,
               },
+            },
+            '& .MuiOutlinedInput-input': {
+              padding: '16px 20px',
+              fontSize: '1.05rem',
             },
           }}
           InputProps={{
@@ -131,6 +138,8 @@ export default function WelcomeScreen({ onSubmit }) {
                   onClick={handleSearchClick}
                   disabled={!inputValue.trim()}
                   sx={{
+                    width: 45,
+                    height: 45,
                     backgroundColor: 'primary.main',
                     color: 'white',
                     '&:hover': {
@@ -141,7 +150,7 @@ export default function WelcomeScreen({ onSubmit }) {
                     },
                   }}
                 >
-                  <MdSearch size={24} />
+                  <MdSearch size={26} />
                 </IconButton>
               </InputAdornment>
             ),
