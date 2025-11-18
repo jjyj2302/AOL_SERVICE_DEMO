@@ -49,7 +49,7 @@ export const iocLookupApi = {
    * Perform comprehensive threat hunting investigation using AOL
    * @param {string} ioc - IOC to investigate
    * @param {string} investigationType - Type of investigation (comprehensive, malware, infrastructure, campaign)
-   * @returns {Promise<Object>} - Comprehensive threat hunting report
+   * @returns {Promise<Object>} - Comprehensive threat hunting report with Pydantic JSON structure
    */
   async threatHuntInvestigate(ioc, investigationType = 'comprehensive') {
     const response = await api.post('/api/threat-hunter/investigate', {

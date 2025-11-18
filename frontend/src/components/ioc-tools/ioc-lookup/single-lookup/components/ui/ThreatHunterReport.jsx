@@ -40,7 +40,26 @@ const ThreatHunterReport = ({ ioc }) => {
         console.log('[ThreatHunterReport] Calling API endpoint...');
         const response = await iocLookupApi.threatHuntInvestigate(ioc);
         console.log('[ThreatHunterReport] API Response:', response);
-        setReportData(response);
+
+        // Parse JSON strings from backend (like AI Agents pattern)
+        const parsedResponse = { ...response };
+        const reportFields = ['triage_report', 'malware_report', 'infrastructure_report',
+                             'orchestrator_report', 'campaign_report', 'final_report'];
+
+        reportFields.forEach(field => {
+          if (parsedResponse[field] && typeof parsedResponse[field] === 'string') {
+            try {
+              parsedResponse[field] = JSON.parse(parsedResponse[field]);
+              console.log(`[ThreatHunterReport] Successfully parsed ${field}`);
+            } catch (parseError) {
+              console.warn(`[ThreatHunterReport] Failed to parse ${field}, keeping as string:`, parseError);
+              // Keep as string if parsing fails (might be plain text/markdown)
+            }
+          }
+        });
+
+        console.log('[ThreatHunterReport] Parsed Response:', parsedResponse);
+        setReportData(parsedResponse);
       } catch (err) {
         console.error('[ThreatHunterReport] Investigation failed:', err);
         setError(err.message || 'Failed to generate threat hunting report');
@@ -182,71 +201,123 @@ const ThreatHunterReport = ({ ioc }) => {
                 </Box>
               </AccordionSummary>
               <AccordionDetails sx={{ p: 3 }}>
-                <Box
-                  sx={{
-                    fontFamily: "'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
-                    '& h1': {
-                      fontSize: '1.75rem',
-                      fontWeight: 700,
-                      mt: 3,
-                      mb: 2,
-                      color: theme.palette.primary.main
-                    },
-                    '& h2': {
-                      fontSize: '1.5rem',
-                      fontWeight: 700,
-                      mt: 3,
-                      mb: 2,
-                      color: theme.palette.primary.main,
-                      borderBottom: `2px solid ${theme.palette.primary.light}`,
-                      pb: 1
-                    },
-                    '& h3': {
-                      fontSize: '1.25rem',
-                      fontWeight: 600,
-                      mt: 2.5,
-                      mb: 1.5,
-                      color: theme.palette.text.primary
-                    },
-                    '& p': {
-                      mb: 2,
-                      lineHeight: 2,
-                      fontSize: '1rem',
-                      color: theme.palette.text.primary
-                    },
-                    '& ul, & ol': {
-                      pl: 4,
-                      mb: 2,
-                      lineHeight: 1.8
-                    },
-                    '& li': {
-                      mb: 1,
-                      fontSize: '0.95rem',
-                      lineHeight: 1.8
-                    },
-                    '& strong': {
-                      fontWeight: 700,
-                      color: theme.palette.primary.main
-                    },
-                    '& code': {
-                      bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                      p: 0.5,
-                      borderRadius: 1,
-                      fontSize: '0.9em',
-                      fontFamily: "'Monaco', 'Consolas', 'Courier New', monospace"
-                    },
-                    '& pre': {
-                      bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                      p: 2,
-                      borderRadius: 1,
-                      overflow: 'auto',
-                      fontSize: '0.9rem',
-                      lineHeight: 1.6
-                    }
-                  }}
-                >
-                  <ReactMarkdown>{section.content}</ReactMarkdown>
-                </Box>
+                {typeof section.content === 'string' ? (
+                  <Box
+                    sx={{
+                      fontFamily: "'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
+                      '& h1': {
+                        fontSize: '1.75rem',
+                        fontWeight: 700,
+                        mt: 3,
+                        mb: 2,
+                        color: theme.palette.primary.main
+                      },
+                      '& h2': {
+                        fontSize: '1.5rem',
+                        fontWeight: 700,
+                        mt: 3,
+                        mb: 2,
+                        color: theme.palette.primary.main,
+                        borderBottom: `2px solid ${theme.palette.primary.light}`,
+                        pb: 1
+                      },
+                      '& h3': {
+                        fontSize: '1.25rem',
+                        fontWeight: 600,
+                        mt: 2.5,
+                        mb: 1.5,
+                        color: theme.palette.text.primary
+                      },
+                      '& p': {
+                        mb: 2,
+                        lineHeight: 2,
+                        fontSize: '1rem',
+                        color: theme.palette.text.primary
+                      },
+                      '& ul, & ol': {
+                        pl: 4,
+                        mb: 2,
+                        lineHeight: 1.8
+                      },
+                      '& li': {
+                        mb: 1,
+                        fontSize: '0.95rem',
+                        lineHeight: 1.8
+                      },
+                      '& strong': {
+                        fontWeight: 700,
+                        color: theme.palette.primary.main
+                      },
+                      '& code': {
+                        bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                        p: 0.5,
+                        borderRadius: 1,
+                        fontSize: '0.9em',
+                        fontFamily: "'Monaco', 'Consolas', 'Courier New', monospace"
+                      },
+                      '& pre': {
+                        bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                        p: 2,
+                        borderRadius: 1,
+                        overflow: 'auto',
+                        fontSize: '0.9rem',
+                        lineHeight: 1.6
+                      }
+                    }}
+                  >
+                    <ReactMarkdown>{section.content}</ReactMarkdown>
+                  </Box>
+                ) : section.content ? (
+                  // Render JSON object in a structured, readable format
+                  <Box sx={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+                    {Object.entries(section.content).map(([key, value]) => (
+                      <Box key={key} sx={{ mb: 2 }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 600,
+                            color: theme.palette.primary.main,
+                            mb: 1,
+                            textTransform: 'capitalize'
+                          }}
+                        >
+                          {key.replace(/_/g, ' ')}
+                        </Typography>
+                        {Array.isArray(value) ? (
+                          <Box component="ul" sx={{ pl: 3, m: 0 }}>
+                            {value.map((item, idx) => (
+                              <Typography component="li" key={idx} sx={{ mb: 0.5, lineHeight: 1.8 }}>
+                                {typeof item === 'object' && item !== null
+                                  ? JSON.stringify(item, null, 2)
+                                  : String(item)}
+                              </Typography>
+                            ))}
+                          </Box>
+                        ) : typeof value === 'object' && value !== null ? (
+                          <Box sx={{
+                            bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                            p: 2,
+                            borderRadius: 1,
+                            fontFamily: 'monospace',
+                            fontSize: '0.9rem'
+                          }}>
+                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                              {JSON.stringify(value, null, 2)}
+                            </pre>
+                          </Box>
+                        ) : value !== null && value !== undefined ? (
+                          <Typography sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                            {String(value)}
+                          </Typography>
+                        ) : (
+                          <Typography color="text.secondary">No data</Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography color="text.secondary">No data available</Typography>
+                )}
               </AccordionDetails>
             </Accordion>
           )
@@ -257,9 +328,25 @@ const ThreatHunterReport = ({ ioc }) => {
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
               Final Summary
             </Typography>
-            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-              {reportData.final_report}
-            </Typography>
+            {typeof reportData.final_report === 'string' ? (
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                {reportData.final_report}
+              </Typography>
+            ) : typeof reportData.final_report === 'object' && reportData.final_report !== null ? (
+              <Box sx={{
+                bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                p: 2,
+                borderRadius: 1,
+                fontFamily: 'monospace',
+                fontSize: '0.9rem'
+              }}>
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                  {JSON.stringify(reportData.final_report, null, 2)}
+                </pre>
+              </Box>
+            ) : (
+              <Typography color="text.secondary">No final report available</Typography>
+            )}
           </Box>
         )}
       </Paper>

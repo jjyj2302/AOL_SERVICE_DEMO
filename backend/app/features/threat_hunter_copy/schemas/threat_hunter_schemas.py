@@ -1,5 +1,5 @@
 """Pydantic schemas for AOL Threat Hunter API."""
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -16,13 +16,14 @@ class ThreatHuntResponse(BaseModel):
     """Response schema for threat hunting investigation."""
     status: str = Field(..., description="Investigation status: success, failed, running")
     ioc: str = Field(..., description="Investigated IOC")
+    investigation_type: Optional[str] = Field(None, description="Investigation type")
     investigation_id: Optional[str] = Field(None, description="Investigation ID for tracking")
-    triage_report: Optional[str] = Field(None, description="Triage assessment report")
-    malware_report: Optional[str] = Field(None, description="Malware analysis report")
-    infrastructure_report: Optional[str] = Field(None, description="Infrastructure correlation report")
-    orchestrator_report: Optional[str] = Field(None, description="Intelligence orchestration report")
-    campaign_report: Optional[str] = Field(None, description="Campaign intelligence report with hunt hypotheses")
-    final_report: Optional[str] = Field(None, description="Combined final report")
+    triage_report: Optional[str] = Field(None, description="Triage assessment report (JSON string)")
+    malware_report: Optional[str] = Field(None, description="Malware analysis report (JSON string)")
+    infrastructure_report: Optional[str] = Field(None, description="Infrastructure correlation report (JSON string)")
+    orchestrator_report: Optional[str] = Field(None, description="Intelligence orchestration report (JSON string)")
+    campaign_report: Optional[str] = Field(None, description="Campaign intelligence report with hunt hypotheses (JSON string)")
+    final_report: Optional[str] = Field(None, description="Combined final report (JSON string)")
     error_message: Optional[str] = Field(None, description="Error message if investigation failed")
 
 

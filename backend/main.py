@@ -29,7 +29,7 @@ from app.features.ioc_tools.ioc_lookup.bulk_lookup.routers import bulk_ioc_looku
 from app.features.ioc_tools.ioc_lookup.single_lookup.routers import single_ioc_lookup_routes
 
 # Threat Hunter imports
-from app.features.threat_hunter.routers import threat_hunter_routes as threat_hunter_router
+from app.features.threat_hunter_copy.routers.threat_hunter_routes import threat_hunter_routes as threat_hunter_router
 from app.features.threat_hunter_copy.test_router import router as threat_hunter_test_router
 from app.features.crew_solo.solo_router import router as crew_solo_router
 

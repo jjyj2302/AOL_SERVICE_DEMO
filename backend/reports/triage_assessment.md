@@ -1,104 +1,107 @@
 {
-  "IOC reputation and detection summary": {
-    "IOC": "0.0.0.0 (IP)",
-    "Detection Summary": {
-      "Malicious": 0,
-      "Suspicious": 0,
-      "Clean": 60,
-      "Undetected": 35,
-      "Total Engines": 95
-    }
-  },
-  "Discovered relationships": {
-    "Passive DNS": [
-      "log4shell-generic-gacvybuw5fu3ryxidkpc.r.nessus.org",
-      "log4shell-generic-9bvhhrvkkrh3akemvzfm.r.nessus.org",
-      "bbbhccdc.ktkidmfjcjddkmtkc.com",
-      "bbbhcc.kkfdjkjmrmkkkrmd.com",
-      "bbbhcc.snldjjjdrcn.com",
-      "bbbhcc.hkijfnjuvjrfyjn.com",
-      "bbbhcc.dlkfhlkjoirfgn.com",
-      "bbbhccbe.flknhslkljgkskrdrj.com",
-      "bbbhcc.jxffrvmfjdsjvjurfr.com",
-      "bbbhcc.skjhgisdjgbjksdv.com",
-      "bbbhccai.flknhslkljgkskrdrj.com",
-      "bbbhcc.hrlkflkwhigwds.com",
-      "log4shell-msrpc-on71uephlqspqb7ultjrten.r.nessus.org",
-      "bbbhcc.samhbvcmjddnjdnxz.com",
-      "bbbhcc.slghslkgsgt.com"
+  "IOC 평가 보고서": {
+    "IOC 이름": "pornhub.com",
+    "검사 일자": "2025-11-18",
+    "탐지 요약": {
+      "악성": 0,
+      "의심스러운": 0,
+      "청정": 67,
+      "탐지되지 않음": 28,
+      "총 엔진 수": 95
+    },
+    "도메인 세부 정보": {
+      "레지스트라": "EuroDNS S.A.",
+      "생성 일자": "2000-10-31"
+    },
+    "DNS 해결": [
+      "69.63.184.14",
+      "199.59.148.246",
+      "108.160.169.37",
+      "202.83.24.75",
+      "88.191.249.182",
+      "128.121.243.77",
+      "75.126.33.156",
+      "162.125.80.5",
+      "199.59.150.44",
+      "45.77.186.255",
+      "108.160.167.159",
+      "98.159.108.71",
+      "173.231.12.107",
+      "103.73.161.52",
+      "103.252.115.59"
     ],
-    "Communicating Files": [
+    "서브도메인": [
+      "agewall.pornhub.com",
+      "testfiltering.pornhub.com",
+      "kids.pornhub.com",
+      "pl-stage73.pornhub.com",
+      "ams-v61.pornhub.com",
+      "www-stage78.pornhub.com",
+      "nyc-vorigin002.pornhub.com",
+      "cms-stage20.pornhub.com",
+      "cms-stage6.pornhub.com",
+      "fr-stage9.pornhub.com",
+      "cms-stage41.pornhub.com",
+      "en.pornhub.com",
+      "view.pornhub.com",
+      "video.pornhub.com",
+      "support.pornhub.com"
+    ],
+    "통신 파일": [
       {
-        "File": "wanmgr.exe",
-        "Detections": "63/76"
+        "파일 해시": "0003ea3c6ce2bacbc5dd121592b7a3079d2cf3faadaa4f7a10d973b700ebf708",
+        "파일 이름": "iSeven.exe",
+        "탐지": "65/76"
       },
       {
-        "File": "PIC00771.com",
-        "Detections": "53/77"
+        "파일 해시": "000656e9031e2e3a1a32cb68f1fcbc076ec5505543b85d453d0135af0292ecec",
+        "파일 이름": "f17c8679ff0ccf34b8ae0c34eff5d8a4.virus",
+        "탐지": "4/76"
+      }
+      // ... 추가 파일 생략
+    ],
+    "참조 파일": [
+      {
+        "파일 해시": "0514814c4107c84ee1534a6e47a06bd0d709e0e44f14b5fe22b53dd8ab20f10e",
+        "파일 이름": "ZxXnLTU (1).py",
+        "탐지": "23/76"
       },
       {
-        "File": "vt-upload-3tdYT",
-        "Detections": "62/76"
-      },
+        "파일 해시": "a442c8dddcd4ff7a24a131b8944624472aaad31907875a2cff53aba79821d1be",
+        "파일 이름": "main.dll",
+        "탐지": "7/76"
+      }
+      // ... 추가 파일 생략
+    ],
+    "도메인에 있는 URL": "없음",
+    "평가 결론 및 우선 분석 항목": {
+      "우선 순위 목록": [
+        {
+          "항목": "iSeven.exe",
+          "중요도": "높음",
+          "전문가 추천": "악성코드 분석 전문가"
+        },
+        {
+          "항목": "ZxXnLTU (1).py",
+          "중요도": "높음",
+          "전문가 추천": "악성코드 분석 전문가"
+        }
+        // ... 추가 항목 생략
+      ]
+    },
+    "분석 논리": {
+      "신뢰 수준": "높음",
+      "설명": "pornhub.com의 도메인은 청정 상태입니다. 하지만 여러 통신 파일들이 탐지되었고, 그 중 일부는 고위험으로 평가됩니다. 따라서 이 파일들에 대한 전문가의 추가 분석이 필요합니다."
+    },
+    "전문가 분석 추천": [
       {
-        "File": "000016EFD71A1B8B37E61AA643E5875869B72429184535FE01E1E90318FD6F4A.apk",
-        "Detections": "0/76"
-      },
-      {
-        "File": "vsMflbop.exe",
-        "Detections": "67/76"
-      },
-      {
-        "File": "Unknown",
-        "Detections": "69/76"
-      },
-      {
-        "File": "Unknown",
-        "Detections": "67/76"
-      },
-      {
-        "File": "DBSever0.EXE",
-        "Detections": "61/76"
-      },
-      {
-        "File": "7wr4ox.exe",
-        "Detections": "69/76"
-      },
-      {
-        "File": "ICReinstall_software.exe",
-        "Detections": "55/78"
+        "전문가": "악성코드 분석 전문가",
+        "목표": "iSeven.exe 및 기타 통신 파일"
       }
     ],
-    "Downloaded Files": "None found",
-    "Hosted URLs": "None found"
-  },
-  "Priority-ranked high-significance discoveries": [
-    {
-      "Discovery": "wanmgr.exe",
-      "Reason": "High detection rate indicates potential malware or unwanted program.",
-      "Confidence Level": "High"
-    },
-    {
-      "Discovery": "vt-upload-3tdYT",
-      "Reason": "Another executable with a significant detection ratio.",
-      "Confidence Level": "High"
-    },
-    {
-      "Discovery": "vsMflbop.exe",
-      "Reason": "High detection rate suggests malicious behavior.",
-      "Confidence Level": "High"
-    },
-    {
-      "Discovery": "PIC00771.com",
-      "Reason": "Moderately detected, needs further investigation.",
-      "Confidence Level": "Medium"
+    "후속 전문 분석을 위한 조사 기반 맥락": {
+      "이 도메인은 청정 상태이나, 통신 파일들이 높은 탐지 비율을 보이며, 따라서 추가 분석이 필요한 상황입니다.",
+      "추가 분석 후, 전반적인 양상 및 연결된 파일들에 대한 더 깊은 이해가 필요합니다."
     }
-  ],
-  "Recommendations for specialist analysis": {
-    "wanmgr.exe": "malware_analysis_specialist",
-    "vt-upload-3tdYT": "malware_analysis_specialist",
-    "vsMflbop.exe": "malware_analysis_specialist",
-    "PIC00771.com": "triage_specialist"
-  },
-  "Investigation foundation context": "The analysis of IOC 0.0.0.0 has revealed a comparatively clean reputation with several communication files showing high detection rates, indicating respective attention and analysis. The identified IOCs represent a critical next step for deep inspection to understand potential threats and attack vectors."
+  }
 }

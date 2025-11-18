@@ -27,6 +27,7 @@ import {
   ManageSearch,
   DocumentScanner,
   HealthAndSafety,
+  SmartToy,
 } from "@mui/icons-material";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { searchHistoryState } from "../state";
@@ -45,10 +46,11 @@ const COLORS = {
 };
 
 const QUICK_ACTIONS = [
-  { label: "Single Lookup", path: "/ioc-tools/lookup", icon: FindInPage, color: "#4285F4" },
+  { label: "Deep Analysis", path: "/ioc-tools/lookup", icon: FindInPage, color: "#4285F4" },
   { label: "Bulk Lookup", path: "/ioc-tools/bulk", icon: ManageSearch, color: "#EA4335" },
   { label: "IOC Extractor", path: "/ioc-tools/extractor", icon: DocumentScanner, color: "#34A853" },
   { label: "Defang/Fang", path: "/ioc-tools/defanger", icon: HealthAndSafety, color: "#FBBC04" },
+  { label: "AI Agents", path: "/agents", icon: SmartToy, color: "#9C27B0" },
 ];
 
 export default function Dashboard() {
@@ -250,7 +252,7 @@ export default function Dashboard() {
           </Typography>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {QUICK_ACTIONS.map((action) => (
-              <Grid item xs={12} sm={6} md={3} key={action.path}>
+              <Grid item xs={12} sm={6} md={2.4} key={action.path}>
                 <Paper
                   onClick={() => navigate(action.path)}
                   sx={{

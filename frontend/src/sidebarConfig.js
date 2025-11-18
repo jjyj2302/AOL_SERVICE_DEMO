@@ -3,6 +3,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import DocumentScannerIcon from "@mui/icons-material/DocumentScanner";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
 
 export const mainMenuItems = [
   // IOC Tools moved to sidebar - no top menu items
@@ -15,7 +16,7 @@ export const iocToolsTabs = [
     icon: <DashboardIcon />,
   },
   {
-    label: "Single Lookup",
+    label: "Deep Analysis",
     path: "/ioc-tools/lookup",
     icon: <SearchIcon />,
   },
@@ -33,5 +34,10 @@ export const iocToolsTabs = [
     label: "Defang/Fang",
     path: "/ioc-tools/defanger",
     icon: <HealthAndSafetyIcon />,
+  },
+  {
+    label: "AI Agents",
+    path: "/agents",
+    icon: <SmartToyIcon />,
   },
 ];

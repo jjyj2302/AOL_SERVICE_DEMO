@@ -12,6 +12,7 @@ import NotFound from "./components/NotFound";
 import Dashboard from "./components/Dashboard";
 import IocTools from "./components/ioc-tools/IocTools";
 import Settings from "./components/settings/Settings";
+import Agents from "./components/agents/Agents";
 
 import {
   apiKeysState,
@@ -107,6 +108,7 @@ function App() {
             <Route path="/" element={<Main />}>
               <Route index element={<Dashboard />} />
               <Route path="ioc-tools/*" element={<IocTools />} />
+              <Route path="agents" element={<Agents />} />
               <Route path="settings/*" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Route>

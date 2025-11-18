@@ -27,7 +27,7 @@ initial_ioc_assessment:
     about what deserves immediate specialist attention.
   expected_output: >
     **CRITICAL: Output MUST be valid JSON matching the TriageOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **All text content should be in Korean (한국어) for better user understanding.**
 
     Required JSON structure:
     {
@@ -68,7 +68,7 @@ initial_ioc_assessment:
           "parent_ioc": "{ioc}"
         }
       ],
-      "analytical_summary": "Executive summary of triage findings"
+      "analytical_summary": "발견된 IOC들을 기반으로 어떤 추가 분석을 수행하면 좋을지 구체적인 분석 방향과 우선순위를 제안. 예: '발견된 IP 142.251.190.113을 URLScan으로 조회하여 동일 인프라를 사용하는 다른 위협 탐지', '검출된 해시 파일들의 행동 패턴 상세 분석 권장' 등"
     }
 
     **CRITICAL: Extract ALL discovered IOCs (contacted IPs, domains, referring files, passive DNS entries) into discovered_iocs array with WHY and WHERE they were found!**
@@ -104,7 +104,7 @@ deep_malware_behavioral_analysis:
     malware deployment and operation.
   expected_output: >
     **CRITICAL: Output MUST be valid JSON matching the MalwareAnalysisOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **All text content should be in Korean (한국어) for better user understanding.**
 
     Required JSON structure:
     {
@@ -124,7 +124,7 @@ deep_malware_behavioral_analysis:
         }
       ],
       "parent_child_relationships": ["Parent-child file relationships"],
-      "contextual_analysis": "How malware analysis relates to original IOC investigation",
+      "contextual_analysis": "발견된 악성코드 IOC들(C2 IP, 드롭된 파일, 부모 파일 등)을 기반으로 어떤 추가 분석을 수행하면 좋을지 구체적인 분석 방향 제안. 예: '발견된 C2 IP를 URLScan으로 조회하여 동일 인프라 사용하는 다른 악성코드 탐지', '부모 파일의 배포 경로 추적 권장' 등",
       "correlation_recommendations": ["Infrastructure correlation recommendations with behavioral context"],
       "discovered_iocs": [
         {
@@ -181,7 +181,7 @@ infrastructure_campaign_correlation:
     patterns. Focus on infrastructure relationship mapping rather than generic scanning.
   expected_output: >
     **CRITICAL: Output MUST be valid JSON matching the InfrastructureCorrelationOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **All text content should be in Korean (한국어) for better user understanding.**
 
     Required JSON structure:
     {
@@ -208,7 +208,7 @@ infrastructure_campaign_correlation:
       ],
       "asn_hosting_patterns": "ASN and hosting pattern analysis with clustering significance",
       "temporal_correlation": "Deployment timing and coordination patterns analysis",
-      "campaign_scale_assessment": "Campaign-scale infrastructure assessment with scope and distribution",
+      "campaign_scale_assessment": "발견된 인프라 IOC들(관련 도메인, IP, URL 등)을 기반으로 어떤 추가 분석을 수행하면 좋을지 구체적인 분석 방향 제안. 예: '동일 ASN 내 다른 의심 IP 탐색', '시간대별 인프라 활동 패턴 추가 모니터링', '발견된 도메인의 WHOIS 정보 조회' 등",
       "discovered_iocs": [
         {
           "ioc": "Discovered IOC value",
@@ -267,7 +267,7 @@ strategic_campaign_intelligence_synthesis:
     "Based on what I learned about how this threat operates, what specific behaviors should I hunt for?"
   expected_output: >
     **CRITICAL: Output MUST be valid JSON matching the CampaignIntelligenceOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **All text content should be in Korean (한국어) for better user understanding.**
 
     Required JSON structure:
     {
@@ -329,7 +329,7 @@ strategic_campaign_intelligence_synthesis:
           "parent_ioc": "{ioc}"
         }
       ],
-      "organizational_impact": "Assessment of organizational impact and risk"
+      "organizational_impact": "발견된 모든 IOC들과 캠페인 분석 결과를 기반으로 어떤 추가 분석 및 대응을 수행하면 좋을지 구체적인 전략 제안. 예: 'Hunt Hypothesis를 실제 SIEM에서 실행하여 내부 감염 여부 확인', '발견된 위협 행위자의 과거 캠페인 조사', 'MITRE ATT&CK 기법별 탐지 룰 강화' 등"
     }
 
     **MANDATORY REQUIREMENTS:**

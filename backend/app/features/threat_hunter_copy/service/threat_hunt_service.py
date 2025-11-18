@@ -1,32 +1,39 @@
-"""Service layer for AOL Threat Hunter."""
-import os
+"""Service layer for threat hunting investigations using CrewAI."""
 import logging
+import json
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from pathlib import Path
+from functools import lru_cache
 
 from ..crew import ThreatHuntingCrew
 
 logger = logging.getLogger(__name__)
 
 
+@lru_cache()
+def get_threat_hunt_service() -> 'ThreatHuntService':
+    """
+    Get singleton instance of ThreatHuntService.
+
+    Returns:
+        ThreatHuntService: Singleton service instance
+    """
+    return ThreatHuntService()
+
+
 class ThreatHuntService:
-    """Service for running threat hunting investigations."""
+    """
+    Service for running threat hunting investigations.
+
+    This service uses the ThreatHuntingCrew to perform comprehensive
+    IOC investigations and returns structured Pydantic JSON outputs.
+    """
 
     def __init__(self):
-        """Initialize threat hunting service."""
-        self.crew = None
-        self._initialize_crew()
-
-    def _initialize_crew(self):
-        """Initialize the ThreatHuntingCrew."""
-        try:
-            logger.info("Initializing AOL Threat Hunting Crew...")
-            self.crew = ThreatHuntingCrew()
-            logger.info("Threat Hunting Crew initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Threat Hunting Crew: {e}")
-            raise
+        """Initialize the threat hunt service with a crew instance."""
+        self.crew = ThreatHuntingCrew()
+        logger.info("ThreatHuntService initialized with Pydantic-enabled crew")
 
     def investigate_ioc(
         self,
@@ -41,52 +48,54 @@ class ThreatHuntService:
             investigation_type: Type of investigation (comprehensive, malware, infrastructure, campaign)
 
         Returns:
-            Dictionary containing investigation results and reports
+            Dictionary containing investigation results with Pydantic JSON outputs
         """
         try:
             logger.info(f"Starting threat hunting investigation for IOC: {ioc}")
 
-            # Prepare inputs
-            inputs = {
-                'ioc': ioc,
-                'investigation_timestamp': datetime.now().isoformat(),
-                'investigation_type': investigation_type
-            }
+            # Run the crew investigation
+            crew_result = self.crew.investigate_ioc(ioc)
 
-            # Run the crew
-            result = self.crew.crew().kickoff(inputs=inputs)
-
-            # Read generated reports
-            reports_dir = Path("reports")
+            # Extract Pydantic outputs from tasks_output
             reports = {}
 
-            if reports_dir.exists():
-                report_files = {
-                    'triage_report': 'triage_assessment.md',
-                    'malware_report': 'malware_analysis.md',
-                    'infrastructure_report': 'infrastructure_analysis.md',
-                    'orchestrator_report': 'final_intelligence_report.md',
-                    'campaign_report': 'campaign_intelligence.md'
+            if 'result' in crew_result and hasattr(crew_result['result'], 'tasks_output'):
+                tasks_output = crew_result['result'].tasks_output
+
+                # Map task names to report keys
+                task_mapping = {
+                    'initial_assessment': 'triage_report',
+                    'malware_analysis': 'malware_report',
+                    'infrastructure_correlation': 'infrastructure_report',
+                    'campaign_synthesis': 'campaign_report'
                 }
 
-                for key, filename in report_files.items():
-                    report_path = reports_dir / filename
-                    if report_path.exists():
-                        try:
-                            with open(report_path, 'r', encoding='utf-8') as f:
-                                reports[key] = f.read()
-                        except Exception as e:
-                            logger.warning(f"Failed to read {filename}: {e}")
-                            reports[key] = None
-                    else:
-                        reports[key] = None
+                for task in tasks_output:
+                    task_name = task.name if hasattr(task, 'name') else None
+                    if task_name in task_mapping:
+                        report_key = task_mapping[task_name]
+                        # Store raw string directly (like AI Agents pattern)
+                        if hasattr(task, 'raw') and task.raw:
+                            reports[report_key] = task.raw
+                            logger.info(f"Stored raw output for {task_name}")
+                        else:
+                            reports[report_key] = None
+                            logger.warning(f"No raw output found for {task_name}")
+
+            # Extract final report (campaign synthesis) - store as raw string
+            final_report = None
+            if 'result' in crew_result and hasattr(crew_result['result'], 'raw'):
+                final_report = crew_result['result'].raw
+                logger.info("Stored final report as raw string")
+
+            logger.info(f"Investigation completed for IOC: {ioc}")
 
             return {
                 'status': 'success',
                 'ioc': ioc,
-                'investigation_id': str(datetime.now().timestamp()),
-                'final_report': str(result),
-                **reports
+                'investigation_type': investigation_type,
+                **reports,
+                'final_report': final_report
             }
 
         except Exception as e:
@@ -143,21 +152,12 @@ class ThreatHuntService:
                 })
                 failed += 1
 
+        logger.info(f"Batch investigation completed. Success: {successful}, Failed: {failed}")
+
         return {
+            'status': 'completed',
             'total': len(iocs),
             'successful': successful,
             'failed': failed,
             'results': results
         }
-
-
-# Singleton instance
-_threat_hunt_service: Optional[ThreatHuntService] = None
-
-
-def get_threat_hunt_service() -> ThreatHuntService:
-    """Get or create the ThreatHuntService singleton."""
-    global _threat_hunt_service
-    if _threat_hunt_service is None:
-        _threat_hunt_service = ThreatHuntService()
-    return _threat_hunt_service
