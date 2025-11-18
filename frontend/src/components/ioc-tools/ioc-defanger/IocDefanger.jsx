@@ -90,20 +90,20 @@ const IocDefanger = () => {
           <WelcomeScreen />
           <Divider sx={{ my: 3 }} />
           <Typography variant="h6" sx={{ mb: 2, mt: 3 }}>
-            How to Use
+            사용 방법
           </Typography>
-          
+
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <Card variant="outlined">
                 <CardHeader
                   avatar={<HealthAndSafetyIcon color="success" />}
-                  title="Defanging IOCs"
-                  subheader="Make IOCs safe for sharing"
+                  title="Defanging IOC"
+                  subheader="공유를 위해 IOC를 안전하게 만들기"
                 />
                 <CardContent>
                   <Typography variant="body2" paragraph>
-                    Defanging replaces dangerous characters in IOCs to prevent accidental execution:
+                    Defanging은 IOC의 위험한 문자를 교체하여 실수로 실행되는 것을 방지합니다:
                   </Typography>
                   <Box sx={{ fontFamily: 'monospace', fontSize: '0.875rem', p: 1, borderRadius: 1 }}>
                     https://example.com → hxxps[://]example[.]com<br />
@@ -113,17 +113,17 @@ const IocDefanger = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card variant="outlined">
                 <CardHeader
                   avatar={<GppMaybeIcon color="warning" />}
-                  title="Fanging IOCs"
-                  subheader="Restore original IOCs for analysis"
+                  title="Fanging IOC"
+                  subheader="분석을 위해 원본 IOC 복원하기"
                 />
                 <CardContent>
                   <Typography variant="body2" paragraph>
-                    Fanging restores defanged IOCs to their original form for analysis:
+                    Fanging은 Defang된 IOC를 분석을 위해 원래 형태로 복원합니다:
                   </Typography>
                   <Box sx={{ fontFamily: 'monospace', fontSize: '0.875rem', p: 1, borderRadius: 1 }}>
                     hxxps[://]example[.]com → https://example.com<br />

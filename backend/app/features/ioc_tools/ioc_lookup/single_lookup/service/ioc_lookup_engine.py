@@ -30,20 +30,20 @@ def lookup_ioc(service_name: str, ioc: str, ioc_type: str, db: Session, **kwargs
     service_config = service_registry.get_service(service_name)
     if not service_config:
         logger.warning(f"Service not found: {service_name}")
-        return {"error": 404, "message": f"Service '{service_name}' not found."}
+        return {"error": 404, "message": f"서비스 '{service_name}'을(를) 찾을 수 없습니다."}
 
     if ioc_type not in service_config.get('supported_ioc_types', []):
         logger.warning(f"Unsupported IOC type {ioc_type} for service {service_name}")
         return {
             "error": 400,
-            "message": f"Service '{service_name}' does not support IOC type '{ioc_type}'.",
+            "message": f"서비스 '{service_name}'은(는) IOC 유형 '{ioc_type}'을(를) 지원하지 않습니다.",
             "supported_types": service_config.get('supported_ioc_types', [])
         }
 
     api_keys = _get_api_keys(service_config, db)
     if api_keys is None and _requires_api_key(service_config):
         logger.error(f"Missing API keys for service: {service_name}")
-        return {"error": 401, "message": f"Required API key(s) for '{service_name}' are missing or inactive."}
+        return {"error": 401, "message": f"'{service_name}'에 필요한 API 키가 없거나 비활성화되어 있습니다."}
 
     func_args = _prepare_function_args(service_config, ioc, ioc_type, api_keys, **kwargs)
 
@@ -54,7 +54,7 @@ def lookup_ioc(service_name: str, ioc: str, ioc_type: str, db: Session, **kwargs
         return result
     except Exception as e:
         logger.error(f"Critical error in {service_name} lookup: {str(e)}", exc_info=True)
-        return {"error": 500, "message": f"An unexpected error occurred in service '{service_name}'."}
+        return {"error": 500, "message": f"서비스 '{service_name}'에서 예기치 않은 오류가 발생했습니다."}
 
 
 def _get_api_keys(service_config: Dict[str, Any], db: Session) -> Optional[Dict[str, str]]:

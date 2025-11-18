@@ -17,28 +17,28 @@ const OperationControls = ({ operation, onSwapOperation }) => {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, mb: 2 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
         gap: 1,
         opacity: operation === 'defang' ? 1 : 0.5,
         transition: 'opacity 0.3s'
       }}>
         <HealthAndSafetyIcon color={operation === 'defang' ? 'success' : 'disabled'} />
-        <Typography 
-          variant="body1" 
+        <Typography
+          variant="body1"
           fontWeight={operation === 'defang' ? 'bold' : 'normal'}
           color={operation === 'defang' ? theme.palette.success.main : 'text.secondary'}
         >
-          Defang IOCs (Make Safe)
+          Defang IOC (안전하게 변환)
         </Typography>
       </Box>
-      
-      <Tooltip title="Swap between defang and fang mode">
-        <IconButton 
-          onClick={onSwapOperation} 
+
+      <Tooltip title="Defang와 Fang 모드 전환">
+        <IconButton
+          onClick={onSwapOperation}
           size="large"
-          sx={{ 
+          sx={{
             border: '2px solid',
             borderColor: 'primary.main',
             '&:hover': { backgroundColor: 'primary.light', color: 'white' }
@@ -47,21 +47,21 @@ const OperationControls = ({ operation, onSwapOperation }) => {
           <SwapIcon />
         </IconButton>
       </Tooltip>
-      
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
         gap: 1,
         opacity: operation === 'fang' ? 1 : 0.5,
         transition: 'opacity 0.3s'
       }}>
         <GppMaybeIcon color={operation === 'fang' ? 'warning' : 'disabled'} />
-        <Typography 
-          variant="body1" 
+        <Typography
+          variant="body1"
           fontWeight={operation === 'fang' ? 'bold' : 'normal'}
           color={operation === 'fang' ? theme.palette.warning.main : 'disabled'}
         >
-          Fang IOCs (Restore Original)
+          Fang IOC (원본 복원)
         </Typography>
       </Box>
     </Box>

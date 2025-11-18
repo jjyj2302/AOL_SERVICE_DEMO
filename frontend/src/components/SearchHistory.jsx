@@ -14,6 +14,7 @@ import {
 import { MdHistory, MdDelete, MdNetworkCheck, MdDomain, MdLink, MdEmail, MdFingerprint, MdBugReport } from "react-icons/md";
 import { searchHistoryState } from "../state";
 import { formatDistanceToNow } from "date-fns";
+import { ko } from "date-fns/locale";
 
 const IOC_TYPE_ICONS = {
   IPv4: MdNetworkCheck,
@@ -80,7 +81,7 @@ export default function SearchHistory() {
       {searchHistory.length === 0 ? (
         <Box sx={{ py: 2, textAlign: "center" }}>
           <Typography variant="caption" color="text.secondary">
-            No search history yet
+            아직 검색 기록이 없습니다
           </Typography>
         </Box>
       ) : (
@@ -130,7 +131,7 @@ export default function SearchHistory() {
                         }}
                       />
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
-                        {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ko })}
                       </Typography>
                     </Box>
                   }

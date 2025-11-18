@@ -109,7 +109,7 @@ export default function WelcomeScreen({ onSubmit }) {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Enter an IOC to analyze (IP, Domain, URL, Email, Hash, CVE)..."
+          placeholder="분석할 IOC를 입력하세요 (IP, Domain, URL, Email, Hash, CVE)..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}

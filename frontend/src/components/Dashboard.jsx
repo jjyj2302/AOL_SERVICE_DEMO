@@ -32,6 +32,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { searchHistoryState } from "../state";
 import { formatDistanceToNow, isToday, isThisWeek, format } from "date-fns";
+import { ko } from "date-fns/locale";
 
 const COLORS = {
   IPv4: "#4285F4",
@@ -168,15 +169,15 @@ export default function Dashboard() {
         }}
       >
         <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Welcome to AOL Platform
+          AOL 플랫폼에 오신 것을 환영합니다
         </Typography>
         <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-          Advanced Open-source intelligence & threat analysis toolkit
+          고급 오픈소스 인텔리전스 및 위협 분석 도구
         </Typography>
         <form onSubmit={handleQuickSearch}>
           <TextField
             fullWidth
-            placeholder="Quick IOC Search - Enter IP, Domain, Hash, URL..."
+            placeholder="빠른 IOC 검색 - IP, Domain, Hash, URL 입력..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             sx={{
@@ -209,36 +210,36 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={ShowChartIcon}
-            title="Total Searches"
+            title="전체 검색"
             value={stats.total}
-            subtitle="All time searches"
+            subtitle="전체 검색 수"
             color="#4285F4"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={TrendingUpIcon}
-            title="Today"
+            title="오늘"
             value={stats.today}
-            subtitle="Searches today"
+            subtitle="오늘 검색 수"
             color="#34A853"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={DateRangeIcon}
-            title="This Week"
+            title="이번 주"
             value={stats.thisWeek}
-            subtitle="Searches this week"
+            subtitle="이번 주 검색 수"
             color="#FBBC04"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={CategoryIcon}
-            title="Top IOC Type"
-            value={stats.mostSearchedType ? stats.mostSearchedType[0] : "N/A"}
-            subtitle={stats.mostSearchedType ? `${stats.mostSearchedType[1]} searches` : "No data yet"}
+            title="상위 IOC 유형"
+            value={stats.mostSearchedType ? stats.mostSearchedType[0] : "없음"}
+            subtitle={stats.mostSearchedType ? `${stats.mostSearchedType[1]}회 검색` : "데이터 없음"}
             color="#EA4335"
           />
         </Grid>
@@ -248,7 +249,7 @@ export default function Dashboard() {
       <Card sx={{ mb: 3, boxShadow: 2 }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Quick Actions
+            빠른 실행
           </Typography>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {QUICK_ACTIONS.map((action) => (
@@ -288,7 +289,7 @@ export default function Dashboard() {
             <Card sx={{ boxShadow: 2, height: "100%" }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  IOC Type Distribution
+                  IOC 유형 분포
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
@@ -320,7 +321,7 @@ export default function Dashboard() {
             <Card sx={{ boxShadow: 2, height: "100%" }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  7-Day Search Trend
+                  최근 7일 검색 추이
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={stats.trendData}>
@@ -342,7 +343,7 @@ export default function Dashboard() {
             <Card sx={{ boxShadow: 2 }}>
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Recent Searches
+                  최근 검색
                 </Typography>
                 <List>
                   {searchHistory.slice(0, 5).map((item, index) => (
@@ -387,7 +388,7 @@ export default function Dashboard() {
                             />
                           </Box>
                         }
-                        secondary={formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                        secondary={formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ko })}
                       />
                     </ListItem>
                   ))}
@@ -405,10 +406,10 @@ export default function Dashboard() {
                 <Box sx={{ textAlign: "center", py: 6 }}>
                   <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    No search history yet
+                    아직 검색 기록이 없습니다
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    Start analyzing IOCs to see statistics and trends
+                    IOC 분석을 시작하여 통계 및 추세를 확인하세요
                   </Typography>
                   <IconButton
                     onClick={() => navigate("/ioc-tools/lookup")}

@@ -35,8 +35,8 @@ export default function NoData() {
           </Grid>
           <Divider orientation="vertical" flexItem></Divider>
           <Grid xs item={true} sx={{ p: 2 }}>
-            <h2>No IOCs found</h2>
-            <p>There are no items for this IOC type.</p>
+            <h2>IOC를 찾을 수 없습니다</h2>
+            <p>이 IOC 유형에 대한 항목이 없습니다.</p>
           </Grid>
         </Grid>
       </Card>

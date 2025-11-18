@@ -38,7 +38,7 @@ export default function Details(props) {
         </Grid>
         <Grid item>
           <Typography variant="h5" component="h2" gutterBottom>
-            Details
+            상세 정보
           </Typography>
         </Grid>
       </Grid>
@@ -50,7 +50,7 @@ export default function Details(props) {
             />
           </ListItemIcon>
           <ListItemText
-            primary={`Detected as malicious by ${props.malCount} engine(s)`}
+            primary={`${props.malCount}개 엔진에서 악성으로 탐지됨`}
           />
         </ListItem>
         {props.result["data"]["attributes"]["regional_internet_registry"] && (
@@ -59,7 +59,7 @@ export default function Details(props) {
               <RouterOutlinedIcon color="primary" />
             </ListItemIcon>
             <ListItemText
-              primary="Internet registry"
+              primary="인터넷 레지스트리"
               secondary={
                 props.result["data"]["attributes"]["regional_internet_registry"]
               }
@@ -72,7 +72,7 @@ export default function Details(props) {
               <LanIcon color="primary" />
             </ListItemIcon>
             <ListItemText
-              primary="Network"
+              primary="네트워크"
               secondary={props.result["data"]["attributes"]["network"]}
             />
           </ListItem>
@@ -83,7 +83,7 @@ export default function Details(props) {
               <LanguageOutlinedIcon color="primary" />
             </ListItemIcon>
             <ListItemText
-              primary="Country"
+              primary="국가"
               secondary={props.result["data"]["attributes"]["country"]}
             />
           </ListItem>
@@ -94,7 +94,7 @@ export default function Details(props) {
               <BusinessIcon color="primary" />
             </ListItemIcon>
             <ListItemText
-              primary="AS owner"
+              primary="AS 소유자"
               secondary={props.result["data"]["attributes"]["as_owner"]}
             />
           </ListItem>

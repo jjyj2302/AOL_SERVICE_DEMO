@@ -46,7 +46,7 @@ export default function FileUploadZone({
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
         <UploadFileIcon sx={{ mr: 1, color: 'primary.main' }} />
         <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-          File Upload
+          파일 업로드
         </Typography>
       </Box>
       
@@ -78,26 +78,26 @@ export default function FileUploadZone({
             mb: 1
           }} 
         />
-        <Typography 
-          variant="body2" 
-          textAlign="center" 
-          sx={{ 
+        <Typography
+          variant="body2"
+          textAlign="center"
+          sx={{
             color: isLoading ? 'grey.400' : 'text.secondary',
             px: 1,
             lineHeight: 1.3
           }}
         >
-          Drag 'n' drop a file here, or click to select a file
+          파일을 여기에 드래그하거나 클릭하여 파일 선택
         </Typography>
-        <Typography 
-          variant="caption" 
-          textAlign="center" 
-          sx={{ 
+        <Typography
+          variant="caption"
+          textAlign="center"
+          sx={{
             color: isLoading ? 'grey.400' : 'text.secondary',
             mt: 0.5
           }}
         >
-          (Only .txt and .csv files will be accepted)
+          (.txt 및 .csv 파일만 허용됩니다)
         </Typography>
       </Box>
       
@@ -126,7 +126,7 @@ export default function FileUploadZone({
           size="medium"
           sx={{ minWidth: 140 }}
         >
-          {isLoading ? <CircularProgress size={24} /> : "Extract"}
+          {isLoading ? <CircularProgress size={24} /> : "추출하기"}
         </Button>
       </Box>
     </Paper>

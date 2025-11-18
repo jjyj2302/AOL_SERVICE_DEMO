@@ -65,7 +65,7 @@ const BulkLookup = () => {
       setServiceSettings(settingsList);
     } catch (error) {
       console.error("Failed to fetch bulk lookup service settings:", error);
-      setFormError("Could not load settings for bulk lookup services.");
+      setFormError("Bulk Lookup 서비스 설정을 불러올 수 없습니다.");
     } finally {
       setLoadingSettings(false);
     }
@@ -103,13 +103,13 @@ const BulkLookup = () => {
     const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
 
     if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      setFormError(`Invalid file type. Please drop a CSV, MD, or TXT file.`);
+      setFormError(`잘못된 파일 형식입니다. CSV, MD 또는 TXT 파일을 업로드하세요.`);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => setIocsInput(e.target.result);
-    reader.onerror = () => setFormError(`Error reading file: ${file.name}`);
+    reader.onerror = () => setFormError(`파일 읽기 오류: ${file.name}`);
     reader.readAsText(file);
   }, [processing]);
 
@@ -160,11 +160,11 @@ const BulkLookup = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                   <TextFields sx={{ mr: 1, color: 'primary.main' }} />
                   <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                    IOC Input
+                    IOC 입력
                   </Typography>
                 </Box>
                 <TextField
-                  label="Enter IOCs (one per line)"
+                  label="IOC를 입력하세요 (한 줄에 하나씩)"
                   multiline
                   fullWidth
                   variant="outlined"
@@ -194,7 +194,7 @@ const BulkLookup = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                   <UploadFileIcon sx={{ mr: 1, color: 'primary.main' }} />
                   <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 500 }}>
-                    File Upload
+                    파일 업로드
                   </Typography>
                 </Box>
                 <Box
@@ -224,26 +224,26 @@ const BulkLookup = () => {
                       mb: 1
                     }} 
                   />
-                  <Typography 
-                    variant="body2" 
-                    textAlign="center" 
-                    sx={{ 
+                  <Typography
+                    variant="body2"
+                    textAlign="center"
+                    sx={{
                       color: processing ? 'grey.400' : 'text.secondary',
                       px: 1,
                       lineHeight: 1.3
                     }}
                   >
-                    Drop files here
+                    파일을 여기에 드롭하세요
                   </Typography>
-                  <Typography 
-                    variant="caption" 
-                    textAlign="center" 
-                    sx={{ 
+                  <Typography
+                    variant="caption"
+                    textAlign="center"
+                    sx={{
                       color: processing ? 'grey.400' : 'text.secondary',
                       mt: 0.5
                     }}
                   >
-                    (.txt, .csv, .md)
+                    (.txt, .csv, .md 파일)
                   </Typography>
                 </Box>
               </Box>
@@ -260,12 +260,12 @@ const BulkLookup = () => {
                   size="medium"
                   sx={{ minWidth: 140 }}
                 >
-                  {processing ? 'Looking up...' : 'Analyze IOCs'}
+                  {processing ? '조회 중...' : 'IOC 분석'}
                 </Button>
-                
+
                 {!hasEnabledServices && (
                   <Typography variant="body2" color="warning.main" sx={{ fontStyle: 'italic', textAlign: 'center' }}>
-                    Enable at least one service in settings above
+                    위 설정에서 최소 하나의 서비스를 활성화하세요
                   </Typography>
                 )}
               </Box>
