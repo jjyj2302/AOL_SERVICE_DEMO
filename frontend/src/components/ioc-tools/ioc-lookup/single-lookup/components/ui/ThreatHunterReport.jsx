@@ -20,6 +20,7 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import { iocLookupApi } from '../../../../shared/services/api/iocLookupApi';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from '@mui/material/styles';
+import CampaignIntelligenceSection from './report-sections/CampaignIntelligenceSection';
 
 const ThreatHunterReport = ({ ioc }) => {
   const theme = useTheme();
@@ -170,8 +171,47 @@ const ThreatHunterReport = ({ ioc }) => {
 
         <Divider sx={{ my: 2 }} />
 
-        {reportSections.map((section) => (
-          section.content && (
+        {reportSections.map((section) => {
+          // Use dedicated component for Campaign Intelligence
+          if (section.key === 'campaign' && section.content) {
+            return (
+              <Accordion
+                key={section.key}
+                expanded={expanded === section.key}
+                onChange={handleAccordionChange(section.key)}
+                sx={{
+                  mb: 1,
+                  '&:before': { display: 'none' },
+                  borderRadius: 1,
+                  boxShadow: 1
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    bgcolor: expanded === section.key ? `${section.color}15` : 'transparent',
+                    borderLeft: `4px solid ${section.color}`,
+                    '&:hover': { bgcolor: `${section.color}10` }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ color: section.color, display: 'flex', mr: 1 }}>
+                      {section.icon}
+                    </Box>
+                    <Typography variant="h6" fontWeight="medium">
+                      {section.title}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 3 }}>
+                  <CampaignIntelligenceSection data={section.content} />
+                </AccordionDetails>
+              </Accordion>
+            );
+          }
+
+          // Default rendering for other sections
+          return section.content && (
             <Accordion
               key={section.key}
               expanded={expanded === section.key}
@@ -320,8 +360,8 @@ const ThreatHunterReport = ({ ioc }) => {
                 )}
               </AccordionDetails>
             </Accordion>
-          )
-        ))}
+          );
+        })}
 
         {reportData.final_report && (
           <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
