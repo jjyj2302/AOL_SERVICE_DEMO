@@ -63,12 +63,17 @@ class VirusTotalTool(BaseTool):
             vt_key_data = cache.get_key('virustotal')
             self.api_key = vt_key_data.get('key') if vt_key_data and vt_key_data.get('key') else os.getenv('VIRUSTOTAL_API_KEY')
 
+        # Don't raise error if no API key - let it fail gracefully when used
         if not self.api_key:
-            raise ValueError("VirusTotal API key not found. Please configure in Settings or set VIRUSTOTAL_API_KEY environment variable.")
+            print("⚠️  VirusTotal API key not configured. Tool will return error messages when called.")
 
     def _run(self, ioc: str, ioc_type: str) -> Union[VirusTotalHashOutput, VirusTotalDomainOutput, VirusTotalIPOutput, str]:
         """Execute focused VirusTotal analysis - returns structured Pydantic objects."""
         try:
+            # Check if API key is configured
+            if not self.api_key:
+                return "⚠️ VirusTotal API key not configured. Please add your VirusTotal API key in Settings to enable Deep Analysis features."
+
             # Fix: LLM sometimes wraps args as {"description": "value", "type": "str"} instead of just "value"
             # This happens when GPT-4 misinterprets Pydantic Field metadata as actual data structure
             if isinstance(ioc, dict):

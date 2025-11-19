@@ -17,10 +17,16 @@ import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 import { iocLookupApi } from '../../../../shared/services/api/iocLookupApi';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from '@mui/material/styles';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import CampaignIntelligenceSection from './report-sections/CampaignIntelligenceSection';
+import FinalSummarySection from './report-sections/FinalSummarySection';
+import TriageResult from '../../../../../agents/results/TriageResult';
+import MalwareResult from '../../../../../agents/results/MalwareResult';
+import InfrastructureResult from '../../../../../agents/results/InfrastructureResult';
 
 const ThreatHunterReport = ({ ioc }) => {
   const theme = useTheme();
@@ -172,8 +178,21 @@ const ThreatHunterReport = ({ ioc }) => {
         <Divider sx={{ my: 2 }} />
 
         {reportSections.map((section) => {
-          // Use dedicated component for Campaign Intelligence
-          if (section.key === 'campaign' && section.content) {
+          // Determine which component to use for each section
+          let SectionComponent = null;
+
+          if (section.key === 'triage' && typeof section.content === 'object') {
+            SectionComponent = () => <TriageResult data={section.content} />;
+          } else if (section.key === 'malware' && typeof section.content === 'object') {
+            SectionComponent = () => <MalwareResult data={section.content} />;
+          } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
+            SectionComponent = () => <InfrastructureResult data={section.content} />;
+          } else if (section.key === 'campaign' && section.content) {
+            SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
+          }
+
+          // Use dedicated component if available
+          if (SectionComponent && section.content) {
             return (
               <Accordion
                 key={section.key}
@@ -204,13 +223,13 @@ const ThreatHunterReport = ({ ioc }) => {
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails sx={{ p: 3 }}>
-                  <CampaignIntelligenceSection data={section.content} />
+                  <SectionComponent />
                 </AccordionDetails>
               </Accordion>
             );
           }
 
-          // Default rendering for other sections
+          // Default rendering for sections without dedicated components (like orchestrator)
           return section.content && (
             <Accordion
               key={section.key}
@@ -363,32 +382,7 @@ const ThreatHunterReport = ({ ioc }) => {
           );
         })}
 
-        {reportData.final_report && (
-          <Box sx={{ mt: 3, p: 2, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
-            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-              Final Summary
-            </Typography>
-            {typeof reportData.final_report === 'string' ? (
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {reportData.final_report}
-              </Typography>
-            ) : typeof reportData.final_report === 'object' && reportData.final_report !== null ? (
-              <Box sx={{
-                bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                p: 2,
-                borderRadius: 1,
-                fontFamily: 'monospace',
-                fontSize: '0.9rem'
-              }}>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                  {JSON.stringify(reportData.final_report, null, 2)}
-                </pre>
-              </Box>
-            ) : (
-              <Typography color="text.secondary">No final report available</Typography>
-            )}
-          </Box>
-        )}
+        {reportData.final_report && <FinalSummarySection data={reportData.final_report} />}
       </Paper>
     </Box>
   );

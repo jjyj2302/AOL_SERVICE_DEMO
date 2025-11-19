@@ -193,11 +193,24 @@ class ThreatHuntingCrew():
 
         print(f"✅ [TRIAGE ONLY] Independent triage completed")
 
+        # Convert Pydantic model to dictionary for JSON serialization
+        result_dict = None
+        if hasattr(result, 'pydantic') and result.pydantic:
+            result_dict = result.pydantic.model_dump() if hasattr(result.pydantic, 'model_dump') else result.pydantic.dict()
+        elif hasattr(result, 'json_dict'):
+            result_dict = result.json_dict
+        elif hasattr(result, 'model_dump'):
+            result_dict = result.model_dump()
+        elif hasattr(result, 'dict'):
+            result_dict = result.dict()
+        else:
+            result_dict = result
+
         return {
             'status': 'completed',
             'agent': 'triage_specialist',
             'ioc': ioc,
-            'result': result
+            'result': result_dict
         }
 
     def run_malware_only(self, ioc: str) -> dict:
@@ -233,11 +246,24 @@ class ThreatHuntingCrew():
 
         print(f"✅ [MALWARE ONLY] Independent malware analysis completed")
 
+        # Convert Pydantic model to dictionary for JSON serialization
+        result_dict = None
+        if hasattr(result, 'pydantic') and result.pydantic:
+            result_dict = result.pydantic.model_dump() if hasattr(result.pydantic, 'model_dump') else result.pydantic.dict()
+        elif hasattr(result, 'json_dict'):
+            result_dict = result.json_dict
+        elif hasattr(result, 'model_dump'):
+            result_dict = result.model_dump()
+        elif hasattr(result, 'dict'):
+            result_dict = result.dict()
+        else:
+            result_dict = result
+
         return {
             'status': 'completed',
             'agent': 'malware_specialist',
             'ioc': ioc,
-            'result': result
+            'result': result_dict
         }
 
     def run_infrastructure_only(self, ioc: str) -> dict:
@@ -273,11 +299,24 @@ class ThreatHuntingCrew():
 
         print(f"✅ [INFRASTRUCTURE ONLY] Independent infrastructure analysis completed")
 
+        # Convert Pydantic model to dictionary for JSON serialization
+        result_dict = None
+        if hasattr(result, 'pydantic') and result.pydantic:
+            result_dict = result.pydantic.model_dump() if hasattr(result.pydantic, 'model_dump') else result.pydantic.dict()
+        elif hasattr(result, 'json_dict'):
+            result_dict = result.json_dict
+        elif hasattr(result, 'model_dump'):
+            result_dict = result.model_dump()
+        elif hasattr(result, 'dict'):
+            result_dict = result.dict()
+        else:
+            result_dict = result
+
         return {
             'status': 'completed',
             'agent': 'infrastructure_hunter',
             'ioc': ioc,
-            'result': result
+            'result': result_dict
         }
 
     def run_campaign_only(self, ioc: str) -> dict:
@@ -313,11 +352,24 @@ class ThreatHuntingCrew():
 
         print(f"✅ [CAMPAIGN ONLY] Independent campaign analysis completed")
 
+        # Convert Pydantic model to dictionary for JSON serialization
+        result_dict = None
+        if hasattr(result, 'pydantic') and result.pydantic:
+            result_dict = result.pydantic.model_dump() if hasattr(result.pydantic, 'model_dump') else result.pydantic.dict()
+        elif hasattr(result, 'json_dict'):
+            result_dict = result.json_dict
+        elif hasattr(result, 'model_dump'):
+            result_dict = result.model_dump()
+        elif hasattr(result, 'dict'):
+            result_dict = result.dict()
+        else:
+            result_dict = result
+
         return {
             'status': 'completed',
             'agent': 'campaign_analyst',
             'ioc': ioc,
-            'result': result
+            'result': result_dict
         }
 
 

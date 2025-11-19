@@ -20,6 +20,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import HubIcon from '@mui/icons-material/Hub';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import SecurityIcon from '@mui/icons-material/Security';
 import { determineIocType } from '../ioc-tools/ioc-lookup/shared/utils/iocDefinitions';
 import DiscoveredIOCs from './DiscoveredIOCs';
 import TriageResult from './results/TriageResult';
@@ -132,14 +133,21 @@ export default function Agents() {
 
       const data = await response.json();
 
+      console.log('[DEBUG] Raw API response:', data);
+      console.log('[DEBUG] data.result type:', typeof data.result);
+      console.log('[DEBUG] data.result:', data.result);
+
       // Parse the raw JSON string if it exists
       if (data.result && data.result.raw) {
         try {
+          console.log('[DEBUG] Parsing data.result.raw');
           data.result = JSON.parse(data.result.raw);
         } catch (parseError) {
           console.error('Failed to parse result.raw:', parseError);
         }
       }
+
+      console.log('[DEBUG] Final data.result:', data.result);
 
       // Store result for this specific agent
       const agentId = agent.id;
@@ -203,22 +211,52 @@ export default function Agents() {
 
   return (
     <Box>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 600 }}>
-        Threat Hunting Agents
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        각 AI Agent를 선택하여 독립적인 IOC 분석을 수행하세요
-      </Typography>
+      {/* Hero Section */}
+      <Paper
+        sx={{
+          p: 4,
+          mb: 3,
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          borderRadius: 2,
+          boxShadow: 4,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <SecurityIcon sx={{ fontSize: 48 }} />
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
+              Threat Hunting Agents
+            </Typography>
+            <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit', mt: 1 }}>
+              각 AI Agent를 선택하여 독립적인 IOC 분석을 수행하세요
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* Agent Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ mb: 3, borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
         <Tabs
           value={selectedAgent}
           onChange={handleTabChange}
           variant="fullWidth"
           sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            '& .MuiTab-root': {
+              transition: 'all 0.3s',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+              },
+            },
+            '& .Mui-selected': {
+              background: selectedAgent === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' :
+                          selectedAgent === 1 ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' :
+                          selectedAgent === 2 ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' :
+                          'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+              color: 'white !important',
+              fontWeight: 700,
+            },
           }}
         >
           {AGENTS.map((agent, index) => (
@@ -238,28 +276,75 @@ export default function Agents() {
       </Paper>
 
       {/* Agent Info */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper
+        sx={{
+          p: 3,
+          mb: 3,
+          background: selectedAgent === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' :
+                      selectedAgent === 1 ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' :
+                      selectedAgent === 2 ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' :
+                      'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+          color: 'white',
+          borderRadius: 2,
+          boxShadow: 3,
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Box sx={{ fontSize: 48 }}>
+          <Box
+            sx={{
+              fontSize: 48,
+              p: 2,
+              bgcolor: 'rgba(255,255,255,0.2)',
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             {currentAgent.icon}
           </Box>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 500 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
               {currentAgent.name}
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit', mt: 0.5 }}>
               {currentAgent.description}
             </Typography>
           </Box>
         </Box>
-        <Chip label={`🛠️ Tools: ${currentAgent.tools}`} size="medium" />
+        <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+        <Chip
+          label={`🛠️ Tools: ${currentAgent.tools}`}
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.25)',
+            color: 'white',
+            fontSize: '1rem',
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            px: 1,
+          }}
+        />
       </Paper>
 
       {/* IOC Input */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          IOC 입력
-        </Typography>
+      <Paper
+        sx={{
+          p: 3,
+          mb: 3,
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+          border: '2px solid',
+          borderColor: 'info.light',
+          borderRadius: 2,
+          boxShadow: 3,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+          <SearchIcon sx={{ fontSize: 32, color: 'info.main' }} />
+          <Typography variant="h5" sx={{ fontWeight: 600, color: 'info.dark' }}>
+            IOC 입력
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 2, bgcolor: 'info.light' }} />
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
           <TextField
             fullWidth
@@ -270,13 +355,28 @@ export default function Agents() {
             disabled={loading}
             helperText={iocType ? `감지된 타입: ${iocType}` : ''}
             FormHelperTextProps={{
-              sx: { color: 'success.main', fontFamily: 'inherit', fontSize: '1rem' }
+              sx: { color: 'success.main', fontFamily: 'inherit', fontSize: '1rem', fontWeight: 600 }
             }}
             sx={{
+              '& .MuiInputBase-root': {
+                bgcolor: 'white',
+                borderRadius: 1,
+              },
               '& .MuiInputBase-input': {
                 fontFamily: 'inherit',
-                fontSize: '1.1rem'
-              }
+                fontSize: '1.1rem',
+                p: 2,
+              },
+              '& .MuiOutlinedInput-root': {
+                '&:hover fieldset': {
+                  borderColor: 'info.main',
+                  borderWidth: 2,
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'info.dark',
+                  borderWidth: 2,
+                },
+              },
             }}
           />
           <Button
@@ -288,6 +388,13 @@ export default function Agents() {
               width: 56,
               height: 56,
               position: 'relative',
+              background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
+              boxShadow: 3,
+              '&:hover': {
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                transform: 'scale(1.05)',
+                transition: 'all 0.2s',
+              },
             }}
           >
             <SearchIcon sx={{ fontSize: 32 }} />
@@ -327,18 +434,36 @@ export default function Agents() {
 
       {/* Discovered IOCs Section - Always show if any IOCs collected */}
       {allDiscoveredIocs.length > 0 && (
-        <Box sx={{ mt: 4 }} ref={discoveredIocsRef}>
-          <Typography variant="h2" sx={{ my: 4, fontWeight: 700, fontFamily: 'inherit' }}>
-            모든 Agent에서 발견된 IOCs (총 {allDiscoveredIocs.length}개)
-          </Typography>
-          <DiscoveredIOCs
-            discoveredIocs={allDiscoveredIocs}
-            onIocClick={(ioc) => {
-              setIocInput(ioc);
-              // Optionally auto-analyze
-            }}
-          />
-        </Box>
+        <Paper
+          ref={discoveredIocsRef}
+          sx={{
+            mt: 4,
+            p: 4,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            borderRadius: 2,
+            boxShadow: 4,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+            <SecurityIcon sx={{ fontSize: 40 }} />
+            <Typography variant="h4" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
+              모든 Agent에서 발견된 IOCs (총 {allDiscoveredIocs.length}개)
+            </Typography>
+          </Box>
+
+          <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+
+          <Box sx={{ mt: 3 }}>
+            <DiscoveredIOCs
+              discoveredIocs={allDiscoveredIocs}
+              onIocClick={(ioc) => {
+                setIocInput(ioc);
+                // Optionally auto-analyze
+              }}
+            />
+          </Box>
+        </Paper>
       )}
 
       {/* Floating Action Button for Discovered IOCs */}

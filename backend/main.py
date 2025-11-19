@@ -30,7 +30,7 @@ from app.features.ioc_tools.ioc_lookup.single_lookup.routers import single_ioc_l
 
 # Threat Hunter imports
 from app.features.threat_hunter_copy.routers.threat_hunter_routes import threat_hunter_routes as threat_hunter_router
-from app.features.threat_hunter_copy.test_router import router as threat_hunter_test_router
+# from app.features.threat_hunter_copy.test_router import router as threat_hunter_test_router
 from app.features.crew_solo.solo_router import router as crew_solo_router
 
 from app.core.settings.general.models.general_settings_models import Settings
@@ -125,7 +125,7 @@ routers = [
 
     # Threat Hunter
     threat_hunter_router,
-    threat_hunter_test_router,  # Temporary test endpoint for Pydantic outputs
+    # threat_hunter_test_router,  # Temporary test endpoint for Pydantic outputs
     crew_solo_router,  # Individual agent execution endpoints
 ]
 

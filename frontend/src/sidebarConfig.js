@@ -21,6 +21,11 @@ export const iocToolsTabs = [
     icon: <SearchIcon />,
   },
   {
+    label: "AI Agents",
+    path: "/agents",
+    icon: <SmartToyIcon />,
+  },
+  {
     label: "Bulk Lookup",
     path: "/ioc-tools/bulk",
     icon: <ManageSearchIcon />,
@@ -34,10 +39,5 @@ export const iocToolsTabs = [
     label: "Defang/Fang",
     path: "/ioc-tools/defanger",
     icon: <HealthAndSafetyIcon />,
-  },
-  {
-    label: "AI Agents",
-    path: "/agents",
-    icon: <SmartToyIcon />,
   },
 ];
