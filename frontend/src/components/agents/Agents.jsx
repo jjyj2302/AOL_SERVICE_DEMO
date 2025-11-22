@@ -1,8 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   Box,
-  Tabs,
-  Tab,
   Typography,
   TextField,
   Button,
@@ -235,50 +233,138 @@ export default function Agents() {
         </Box>
       </Paper>
 
-      {/* Simple Tab Navigation */}
-      <Paper
-        elevation={0}
-        sx={{
-          mb: 4,
-          borderRadius: "16px",
-          overflow: "hidden",
-          background: (theme) => alpha(theme.palette.background.paper, 0.6),
-          backdropFilter: "blur(12px)",
-          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-        }}
-      >
-        <Box sx={{ display: 'flex', gap: 0.5, p: 1 }}>
+      {/* Agent Selection Grid */}
+      <Box sx={{ mb: 5 }}>
+        <Typography variant="h5" fontWeight={700} gutterBottom sx={{ mb: 3, px: 1 }}>
+          에이전트 선택
+        </Typography>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' },
+          gap: 2.5
+        }}>
           {AGENTS.map((agent, index) => {
             const isSelected = selectedAgent === index;
+            const agentColors = {
+              triage: '#5E81AC',
+              malware: '#BF616A',
+              infrastructure: '#A3BE8C',
+              campaign: '#B48EAD'
+            };
+            const agentColor = agentColors[agent.id] || '#757575';
+
             return (
-              <Button
+              <Paper
                 key={agent.id}
+                elevation={0}
                 onClick={(e) => handleTabChange(e, index)}
-                startIcon={React.cloneElement(agent.icon, { fontSize: "small" })}
                 sx={{
-                  flex: 1,
-                  py: 1.5,
-                  borderRadius: "12px",
-                  textTransform: "none",
-                  fontWeight: isSelected ? 700 : 500,
-                  fontSize: "0.95rem",
-                  color: isSelected ? "primary.contrastText" : "text.primary",
-                  bgcolor: isSelected ? "primary.main" : "transparent",
-                  "&:hover": {
-                    bgcolor: isSelected ? "primary.dark" : "action.hover"
+                  p: 3,
+                  cursor: 'pointer',
+                  borderRadius: '20px',
+                  background: (theme) => isSelected
+                    ? `linear-gradient(135deg, ${alpha(agentColor, 0.15)} 0%, ${alpha(agentColor, 0.05)} 100%)`
+                    : alpha(theme.palette.background.paper, 0.6),
+                  backdropFilter: 'blur(12px)',
+                  border: (theme) => `2px solid ${isSelected ? alpha(agentColor, 0.5) : alpha(theme.palette.divider, 0.1)}`,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: `0 12px 24px -10px ${alpha(agentColor, 0.3)}`,
+                    borderColor: alpha(agentColor, 0.5),
+                    '& .agent-icon-box': {
+                      bgcolor: agentColor,
+                      color: 'white',
+                      transform: 'scale(1.1) rotate(5deg)'
+                    }
                   },
-                  transition: "all 0.2s ease"
                 }}
               >
-                {agent.name}
-              </Button>
+                {/* Selected Indicator */}
+                {isSelected && (
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    bgcolor: agentColor,
+                    boxShadow: `0 0 12px ${alpha(agentColor, 0.6)}`
+                  }} />
+                )}
+
+                {/* Icon */}
+                <Box
+                  className="agent-icon-box"
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '16px',
+                    bgcolor: alpha(agentColor, 0.1),
+                    color: agentColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 2,
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {React.cloneElement(agent.icon, { sx: { fontSize: 32 } })}
+                </Box>
+
+                {/* Content */}
+                <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 1 }}>
+                  {agent.name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mb: 2,
+                    minHeight: 40,
+                    lineHeight: 1.4
+                  }}
+                >
+                  {agent.description}
+                </Typography>
+
+                {/* Tool Badge */}
+                <Chip
+                  label={`🛠️ ${agent.tools}`}
+                  size="small"
+                  sx={{
+                    fontWeight: 600,
+                    bgcolor: alpha(agentColor, 0.1),
+                    color: agentColor,
+                    borderRadius: '8px',
+                    '& .MuiChip-label': {
+                      px: 1.5
+                    }
+                  }}
+                />
+
+                {/* Decorative gradient overlay */}
+                <Box sx={{
+                  position: 'absolute',
+                  top: -50,
+                  right: -50,
+                  width: 150,
+                  height: 150,
+                  borderRadius: '50%',
+                  background: `radial-gradient(circle, ${alpha(agentColor, 0.05)} 0%, transparent 70%)`,
+                  pointerEvents: 'none'
+                }} />
+              </Paper>
             );
           })}
         </Box>
-      </Paper>
+      </Box>
 
-      {/* Main Input Section - Centered */}
-      <Box sx={{ maxWidth: 800, mx: "auto", mb: 6 }}>
+      {/* Main Input Section - Full Width */}
+      <Box sx={{ mb: 6 }}>
         <Paper
           elevation={0}
           sx={{

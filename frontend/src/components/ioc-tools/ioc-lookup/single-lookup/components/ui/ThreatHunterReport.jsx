@@ -11,7 +11,6 @@ import {
   Chip,
   Divider,
   Button,
-  IconButton
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
@@ -23,9 +22,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import { iocLookupApi } from '../../../../shared/services/api/iocLookupApi';
-import ReactMarkdown from 'react-markdown';
 import { useTheme } from '@mui/material/styles';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import CampaignIntelligenceSection from './report-sections/CampaignIntelligenceSection';
 import FinalSummarySection from './report-sections/FinalSummarySection';
 import TriageResult from '../../../../../agents/results/TriageResult';
@@ -157,7 +154,7 @@ const ThreatHunterReport = ({ ioc }) => {
 
   return (
     <Box sx={{ mt: 3 }}>
-      {/* Header with Title and Action Buttons */}
+      {/* Header with Title */}
       <Paper
         elevation={0}
         sx={{
@@ -169,167 +166,106 @@ const ThreatHunterReport = ({ ioc }) => {
             : 'rgba(241, 245, 249, 0.8)',
           backdropFilter: 'blur(12px)',
           border: (theme) => `1px solid ${theme.palette.divider}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
         }}
       >
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <SecurityIcon sx={{ mr: 1, fontSize: 32, color: theme.palette.primary.main }} />
-            <Typography variant="h5" fontWeight={700}>
-              Threat Intelligence Report
-            </Typography>
-            <Chip
-              label={reportData.status === 'success' ? 'Complete' : 'Failed'}
-              color={reportData.status === 'success' ? 'success' : 'error'}
-              size="small"
-              sx={{ ml: 2 }}
-            />
-          </Box>
-          <Typography variant="body2" color="text.secondary">
-            IOC: <strong>{reportData.ioc}</strong> • Investigation ID: {reportData.investigation_id}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <SecurityIcon sx={{ mr: 1, fontSize: 32, color: theme.palette.primary.main }} />
+          <Typography variant="h5" fontWeight={700}>
+            Threat Intelligence Report
           </Typography>
+          <Chip
+            label={reportData.status === 'success' ? 'Complete' : 'Failed'}
+            color={reportData.status === 'success' ? 'success' : 'error'}
+            size="small"
+            sx={{ ml: 2 }}
+          />
         </Box>
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<PictureAsPdfIcon />}
-            onClick={handlePdfExport}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 600
-            }}
-          >
-            PDF 저장
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<PrintIcon />}
-            onClick={handlePrint}
-            sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 600
-            }}
-          >
-            인쇄
-          </Button>
-        </Box>
+        <Typography variant="body2" color="text.secondary">
+          IOC: <strong>{reportData.ioc}</strong> • Investigation ID: {reportData.investigation_id}
+        </Typography>
       </Paper>
 
-      {/* 2-Column Layout */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 400px' }, gap: 2 }}>
-        {/* Left Column - Agent Results */}
-        <Box>
-          {reportSections.map((section) => {
-            // Determine which component to use for each section
-            let SectionComponent = null;
+      {/* Agent Results */}
+      <Box sx={{ mb: 4 }}>
+        {reportSections.map((section) => {
+          // Determine which component to use for each section
+          let SectionComponent = null;
 
-            if (section.key === 'triage' && typeof section.content === 'object') {
-              SectionComponent = () => <TriageResult data={section.content} />;
-            } else if (section.key === 'malware' && typeof section.content === 'object') {
-              SectionComponent = () => <MalwareResult data={section.content} />;
-            } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
-              SectionComponent = () => <InfrastructureResult data={section.content} />;
-            } else if (section.key === 'campaign' && section.content) {
-              SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
-            }
+          if (section.key === 'triage' && typeof section.content === 'object') {
+            SectionComponent = () => <TriageResult data={section.content} />;
+          } else if (section.key === 'malware' && typeof section.content === 'object') {
+            SectionComponent = () => <MalwareResult data={section.content} />;
+          } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
+            SectionComponent = () => <InfrastructureResult data={section.content} />;
+          } else if (section.key === 'campaign' && section.content) {
+            SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
+          }
 
-            // Use dedicated component if available
-            if (SectionComponent && section.content) {
-              return (
-                <Accordion
-                  key={section.key}
-                  expanded={expanded === section.key}
-                  onChange={handleAccordionChange(section.key)}
-                  elevation={0}
+          // Use dedicated component if available
+          if (SectionComponent && section.content) {
+            return (
+              <Accordion
+                key={section.key}
+                expanded={expanded === section.key}
+                onChange={handleAccordionChange(section.key)}
+                elevation={0}
+                sx={{
+                  mb: 2,
+                  '&:before': { display: 'none' },
+                  borderRadius: "16px !important",
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  overflow: 'hidden'
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
                   sx={{
-                    mb: 2,
-                    '&:before': { display: 'none' },
-                    borderRadius: "16px !important",
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    overflow: 'hidden'
+                    bgcolor: (theme) => expanded === section.key
+                      ? theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                      : 'transparent',
+                    '&:hover': {
+                      bgcolor: (theme) => theme.palette.mode === 'dark'
+                        ? 'rgba(255, 255,255, 0.02)'
+                        : 'rgba(0, 0, 0, 0.01)'
+                    },
+                    minHeight: 64,
+                    '& .MuiAccordionSummary-content': { my: 2 }
                   }}
                 >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    sx={{
-                      bgcolor: (theme) => expanded === section.key
-                        ? theme.palette.mode === 'dark' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)'
-                        : 'transparent',
-                      '&:hover': {
-                        bgcolor: (theme) => theme.palette.mode === 'dark'
-                          ? 'rgba(79, 70, 229, 0.05)'
-                          : 'rgba(79, 70, 229, 0.03)'
-                      },
-                      minHeight: 64,
-                      '& .MuiAccordionSummary-content': { my: 2 }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{
-                        color: 'primary.main',
-                        display: 'flex',
-                        mr: 2,
-                        width: 40,
-                        height: 40,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(79, 70, 229, 0.2)' : 'rgba(79, 70, 229, 0.1)',
-                        borderRadius: "10px"
-                      }}>
-                        {section.icon}
-                      </Box>
-                      <Typography variant="h6" fontWeight={600}>
-                        {section.title}
-                      </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{
+                      color: 'primary.main',
+                      display: 'flex',
+                      mr: 2,
+                      width: 40,
+                      height: 40,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                      borderRadius: "10px"
+                    }}>
+                      {section.icon}
                     </Box>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)' }}>
-                    <SectionComponent />
-                  </AccordionDetails>
-                </Accordion>
-              );
-            }
+                    <Typography variant="h6" fontWeight={600}>
+                      {section.title}
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)' }}>
+                  <SectionComponent />
+                </AccordionDetails>
+              </Accordion>
+            );
+          }
 
-            return null;
-          })}
-        </Box>
-
-        {/* Right Column - Final Summary */}
-        <Box>
-          {reportData.final_report && (
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                borderRadius: "16px",
-                bgcolor: (theme) => theme.palette.mode === 'dark'
-                  ? 'rgba(30, 41, 59, 0.4)'
-                  : 'rgba(241, 245, 249, 0.8)',
-                backdropFilter: 'blur(12px)',
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                position: 'sticky',
-                top: 16,
-                maxHeight: 'calc(100vh - 100px)',
-                overflow: 'auto'
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <SummarizeIcon sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Final Summary
-                </Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              <FinalSummarySection data={reportData.final_report} />
-            </Paper>
-          )}
-        </Box>
+          return null;
+        })}
       </Box>
+
+      {/* Final Summary - Now Full Width Below */}
+      {reportData.final_report && (
+        <FinalSummarySection data={reportData.final_report} />
+      )}
     </Box>
   );
 };

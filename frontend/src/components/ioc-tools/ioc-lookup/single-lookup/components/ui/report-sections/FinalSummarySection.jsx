@@ -15,8 +15,9 @@ import {
   TableHead,
   TableRow,
   Alert,
+  Button,
 } from '@mui/material';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -27,6 +28,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import PrintIcon from '@mui/icons-material/Print';
 
 const COLORS = {
   HIGH: '#f44336',
@@ -71,25 +74,69 @@ export default function FinalSummarySection({ data }) {
     count: count
   }));
 
+  const handlePdfExport = () => {
+    // TODO: Implement PDF export functionality
+    console.log('PDF Export clicked from Final Summary');
+    alert('PDF 내보내기 기능은 곧 추가됩니다!');
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Paper
+      elevation={0}
       sx={{
         mt: 3,
         p: 4,
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        borderRadius: 2,
-        boxShadow: 4,
+        background: (theme) => theme.palette.mode === 'dark'
+          ? 'rgba(30, 30,30, 0.6)'
+          : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(20px)',
+        border: (theme) => `1px solid ${theme.palette.divider}`,
+        borderRadius: '24px',
+        boxShadow: (theme) => theme.palette.mode === 'dark'
+          ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+          : '0 8px 32px rgba(0, 0, 0, 0.04)',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <SummarizeIcon sx={{ fontSize: 40 }} />
-        <Typography variant="h4" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
-          Final Summary
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <SummarizeIcon sx={{ fontSize: 40, color: 'text.primary' }} />
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Final Summary
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={handlePdfExport}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600
+            }}
+          >
+            PDF 저장
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600
+            }}
+          >
+            인쇄
+          </Button>
+        </Box>
       </Box>
 
-      <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+      <Divider sx={{ my: 2 }} />
 
       {/* Threat Level & Campaign Name */}
       {(campaignData.threat_level || campaignData.campaign_name) && (
@@ -97,15 +144,15 @@ export default function FinalSummarySection({ data }) {
           <Grid container spacing={2}>
             {campaignData.threat_level && (
               <Grid item xs={12} md={6}>
-                <Card sx={{ bgcolor: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN, color: 'white', height: '100%' }}>
+                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <WarningIcon sx={{ fontSize: 32 }} />
+                      <WarningIcon sx={{ fontSize: 32, color: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         위협 수준
                       </Typography>
                     </Box>
-                    <Typography variant="h3" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, color: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN }}>
                       {campaignData.threat_level}
                     </Typography>
                   </CardContent>
@@ -114,10 +161,10 @@ export default function FinalSummarySection({ data }) {
             )}
             {campaignData.campaign_name && (
               <Grid item xs={12} md={6}>
-                <Card sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', height: '100%' }}>
+                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <CampaignIcon sx={{ fontSize: 32 }} />
+                      <CampaignIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
                       <Typography variant="h6" sx={{ fontWeight: 600 }}>
                         캠페인 이름
                       </Typography>
@@ -128,7 +175,7 @@ export default function FinalSummarySection({ data }) {
                     {campaignData.campaign_confidence && (
                       <Chip
                         label={`Confidence: ${campaignData.campaign_confidence}`}
-                        sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.3)', color: 'white', fontWeight: 600 }}
+                        sx={{ mt: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)', borderRadius: '12px', fontWeight: 600 }}
                       />
                     )}
                   </CardContent>
@@ -144,14 +191,14 @@ export default function FinalSummarySection({ data }) {
         <Box
           sx={{
             p: 3,
-            bgcolor: 'rgba(255,255,255,0.15)',
-            borderRadius: 2,
-            border: '1px solid rgba(255,255,255,0.3)',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+            borderRadius: '16px',
+            border: (theme) => `1px solid ${theme.palette.divider}`,
             mb: 3,
           }}
         >
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon /> Executive Summary
+            <InfoIcon sx={{ color: 'text.secondary' }} /> Executive Summary
           </Typography>
           <Typography
             variant="body1"
@@ -171,11 +218,11 @@ export default function FinalSummarySection({ data }) {
       {campaignData.campaign_evidence && campaignData.campaign_evidence.length > 0 && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GpsFixedIcon /> 캠페인 증거
+            <GpsFixedIcon sx={{ color: 'text.secondary' }} /> 캠페인 증거
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {campaignData.campaign_evidence.map((evidence, index) => (
-              <Card key={index} sx={{ bgcolor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <Card key={index} elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
                 <CardContent sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                     <Box
@@ -183,8 +230,8 @@ export default function FinalSummarySection({ data }) {
                         minWidth: 32,
                         height: 32,
                         borderRadius: '50%',
-                        bgcolor: 'rgba(255,255,255,0.3)',
-                        color: 'white',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                        color: 'text.primary',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -193,7 +240,7 @@ export default function FinalSummarySection({ data }) {
                     >
                       {index + 1}
                     </Box>
-                    <Typography variant="body1" sx={{ flex: 1, lineHeight: 1.8, color: 'white' }}>
+                    <Typography variant="body1" sx={{ flex: 1, lineHeight: 1.8, color: 'text.primary' }}>
                       {evidence}
                     </Typography>
                   </Box>
@@ -222,11 +269,11 @@ export default function FinalSummarySection({ data }) {
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(244, 67, 54, 0.3)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: '#ffcdd2' }}>
+              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
                   {data.statistics.high_confidence_iocs}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                <Typography variant="body2" sx={{ opacity: 0.7 }}>
                   고신뢰도 IOC
                 </Typography>
               </Box>
@@ -272,21 +319,21 @@ export default function FinalSummarySection({ data }) {
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255, 152, 0, 0.3)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: '#ffecb3' }}>
+              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
                   {data.statistics.medium_confidence_iocs}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                <Typography variant="body2" sx={{ opacity: 0.7 }}>
                   중신뢰도 IOC
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(76, 175, 80, 0.3)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: '#c8e6c9' }}>
+              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
                   {data.statistics.low_confidence_iocs}
                 </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                <Typography variant="body2" sx={{ opacity: 0.7 }}>
                   저신뢰도 IOC
                 </Typography>
               </Box>
@@ -299,19 +346,19 @@ export default function FinalSummarySection({ data }) {
       {campaignData.mitre_tactics && campaignData.mitre_tactics.length > 0 && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityIcon /> MITRE ATT&CK Tactics
+            <SecurityIcon sx={{ color: 'text.secondary' }} /> MITRE ATT&CK Tactics
           </Typography>
           <Grid container spacing={2}>
             {campaignData.mitre_tactics.map((tactic, index) => (
               <Grid item xs={12} md={6} key={index}>
-                <Card sx={{ bgcolor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', height: '100%' }}>
+                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', height: '100%' }}>
                   <CardContent>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, mb: 1 }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 1 }}>
                       {tactic.tactic}
                     </Typography>
                     {tactic.techniques && tactic.techniques.length > 0 && (
                       <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 1 }}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
                           Techniques:
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -320,15 +367,15 @@ export default function FinalSummarySection({ data }) {
                               key={idx}
                               label={tech}
                               size="small"
-                              sx={{ bgcolor: 'rgba(156, 39, 176, 0.5)', color: 'white', fontWeight: 600 }}
+                              sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)', fontWeight: 600, borderRadius: '8px' }}
                             />
                           ))}
                         </Box>
                       </Box>
                     )}
                     {tactic.evidence && (
-                      <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 1, mt: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
+                      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderRadius: '8px', mt: 1 }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
                           <strong>Evidence:</strong> {tactic.evidence}
                         </Typography>
                       </Box>
@@ -345,14 +392,14 @@ export default function FinalSummarySection({ data }) {
       {campaignData.attack_chain_ttps && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUpIcon /> Attack Chain TTPs
+            <TrendingUpIcon sx={{ color: 'text.secondary' }} /> Attack Chain TTPs
           </Typography>
           <Box
             sx={{
               p: 3,
-              bgcolor: 'rgba(255,255,255,0.15)',
-              borderRadius: 2,
-              border: '1px solid rgba(255,255,255,0.3)',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+              borderRadius: '16px',
+              border: (theme) => `1px solid ${theme.palette.divider}`,
             }}
           >
             <Typography variant="body1" sx={{ lineHeight: 2, whiteSpace: 'pre-wrap' }}>
@@ -366,24 +413,24 @@ export default function FinalSummarySection({ data }) {
       {campaignData.threat_actor_attribution && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BugReportIcon /> Threat Actor Attribution
+            <BugReportIcon sx={{ color: 'text.secondary' }} /> Threat Actor Attribution
           </Typography>
-          <Card sx={{ bgcolor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
             <CardContent>
               <Grid container spacing={2}>
                 {campaignData.threat_actor_attribution.attributed_actor && (
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 0.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 0.5 }}>
                       Attributed Actor:
                     </Typography>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
                       {campaignData.threat_actor_attribution.attributed_actor}
                     </Typography>
                   </Grid>
                 )}
                 {campaignData.threat_actor_attribution.confidence && (
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 0.5 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 0.5 }}>
                       Confidence:
                     </Typography>
                     <Chip
@@ -398,13 +445,13 @@ export default function FinalSummarySection({ data }) {
                 )}
                 {campaignData.threat_actor_attribution.overlap_indicators && campaignData.threat_actor_attribution.overlap_indicators.length > 0 && (
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
                       Overlap Indicators:
                     </Typography>
                     <Box component="ul" sx={{ m: 0, pl: 3 }}>
                       {campaignData.threat_actor_attribution.overlap_indicators.map((indicator, idx) => (
                         <li key={idx}>
-                          <Typography variant="body2" sx={{ color: 'white', lineHeight: 1.8 }}>
+                          <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.8 }}>
                             {indicator}
                           </Typography>
                         </li>
@@ -414,11 +461,11 @@ export default function FinalSummarySection({ data }) {
                 )}
                 {campaignData.threat_actor_attribution.attribution_rationale && (
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
                       Attribution Rationale:
                     </Typography>
-                    <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: 1 }}>
-                      <Typography variant="body2" sx={{ color: 'white', lineHeight: 1.8 }}>
+                    <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderRadius: '8px' }}>
+                      <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.8 }}>
                         {campaignData.threat_actor_attribution.attribution_rationale}
                       </Typography>
                     </Box>
@@ -536,8 +583,8 @@ export default function FinalSummarySection({ data }) {
                         size="small"
                         sx={{
                           bgcolor: ioc.confidence?.includes('HIGH') ? COLORS.HIGH :
-                                   ioc.confidence?.includes('MEDIUM') ? COLORS.MEDIUM :
-                                   ioc.confidence?.includes('LOW') ? COLORS.LOW : COLORS.UNKNOWN,
+                            ioc.confidence?.includes('MEDIUM') ? COLORS.MEDIUM :
+                              ioc.confidence?.includes('LOW') ? COLORS.LOW : COLORS.UNKNOWN,
                           color: 'white',
                           fontWeight: 600
                         }}
@@ -555,7 +602,7 @@ export default function FinalSummarySection({ data }) {
                         size="small"
                         sx={{
                           bgcolor: ioc.recommended_action === 'block' ? '#d32f2f' :
-                                   ioc.recommended_action === 'investigate' ? '#ff9800' : 'rgba(255,255,255,0.2)',
+                            ioc.recommended_action === 'investigate' ? '#ff9800' : 'rgba(255,255,255,0.2)',
                           color: 'white',
                           fontWeight: 600
                         }}
@@ -688,14 +735,14 @@ export default function FinalSummarySection({ data }) {
       {(campaignData.recommended_actions || data.recommendations) && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon /> 주요 권장사항
+            <InfoIcon sx={{ color: 'text.secondary' }} /> 주요 권장사항
           </Typography>
           <Box
             sx={{
               p: 3,
-              bgcolor: 'rgba(255,255,255,0.15)',
-              borderRadius: 2,
-              border: '1px solid rgba(255,255,255,0.3)',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+              borderRadius: '16px',
+              border: (theme) => `1px solid ${theme.palette.divider}`,
             }}
           >
             <Box component="ul" sx={{ m: 0, pl: 3 }}>

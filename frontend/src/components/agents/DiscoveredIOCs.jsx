@@ -137,7 +137,7 @@ export default function DiscoveredIOCs({ discoveredIocs = [], onIocClick }) {
               </Box>
             </AccordionSummary>
             <AccordionDetails>
-              <TableContainer>
+              <TableContainer sx={{ overflowX: 'auto', maxWidth: '100%' }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -182,20 +182,17 @@ export default function DiscoveredIOCs({ discoveredIocs = [], onIocClick }) {
                             {ioc.detections || 'N/A'}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          <Tooltip title={ioc.discovery_reason}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                maxWidth: 200,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {ioc.discovery_reason}
-                            </Typography>
-                          </Tooltip>
+                        <TableCell sx={{ minWidth: 250 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {ioc.discovery_reason}
+                          </Typography>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
