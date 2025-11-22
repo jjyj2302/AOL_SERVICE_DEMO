@@ -9,13 +9,18 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Divider,
+  Button,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import PrintIcon from '@mui/icons-material/Print';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 import { iocLookupApi } from '../../../../shared/services/api/iocLookupApi';
 import { useTheme } from '@mui/material/styles';
 import CampaignIntelligenceSection from './report-sections/CampaignIntelligenceSection';
@@ -136,6 +141,16 @@ const ThreatHunterReport = ({ ioc }) => {
       content: reportData.campaign_report
     }
   ];
+
+  const handlePdfExport = () => {
+    // TODO: Implement PDF export functionality
+    console.log('PDF Export clicked');
+    alert('PDF 내보내기 기능은 곧 추가됩니다!');
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <Box sx={{ mt: 3 }}>

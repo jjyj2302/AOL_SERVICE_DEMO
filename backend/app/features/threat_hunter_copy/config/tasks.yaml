@@ -25,8 +25,28 @@ initial_ioc_assessment:
     referencing your target IOC likely represents your primary intelligence source. Trust your analytical instincts 
     about what deserves immediate specialist attention.
   expected_output: >
-    **CRITICAL: Output MUST be valid JSON matching the TriageOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **CRITICAL: YOU MUST WRITE ALL ANALYSIS TEXT IN KOREAN (한국어). This is MANDATORY.**
+
+    **CRITICAL OUTPUT FORMAT RULES - READ CAREFULLY:**
+
+    1. Format: PURE JSON object (NO Markdown, NO code blocks, NO ```json wrapper)
+    2. Structure: Must match TriageOutput Pydantic schema exactly
+    3. Field names: ENGLISH (ioc, threat_level, discovered_relationships, etc.)
+    4. Enum values: ENGLISH ONLY (threat_level: "CRITICAL"|"HIGH"|"MEDIUM"|"LOW", confidence: "HIGH"|"MEDIUM"|"LOW")
+    5. Text content: KOREAN (한국어) - detection_summary, analytical_summary, context, significance 등 모든 분석 텍스트는 반드시 한국어로 작성
+
+    ✓ CORRECT Example:
+    {
+      "ioc": "rtmp.blog",
+      "threat_level": "HIGH",
+      "detection_summary": "VirusTotal에서 21/93 보안 벤더가 이 도메인을 악성으로 탐지했습니다."
+    }
+
+    ✗ WRONG - Markdown wrapper:
+    ```json{ "threat_level": "HIGH" }```
+
+    ✗ WRONG - Korean enum:
+    { "threat_level": "높음" }
 
     Required JSON structure:
     {
@@ -60,13 +80,13 @@ initial_ioc_assessment:
 deep_malware_behavioral_analysis:
   description: >
     Conduct comprehensive behavioral analysis of high-priority malware samples identified during triage assessment.
-    
+
     Reasoning Approach:
     - What does this malware actually do and how does it operate?
     - How does it use the infrastructure discovered in the initial assessment?
     - What are the attack chain components and payload delivery mechanisms?
     - How does this malware's behavior provide context for broader infrastructure analysis?
-    
+
     Investigation Focus:
     - Analyze malware family identification, behavioral patterns, and operational characteristics
     - Understand communication patterns, C2 infrastructure usage, and payload mechanisms
@@ -74,20 +94,31 @@ deep_malware_behavioral_analysis:
     - Identify parent-child relationships, execution chains, and campaign indicators
     - **CRITICAL: When analyzing hashes from VirusTotal, use the COMPLETE hash (64 characters for SHA256)**
     - **Example: Use "0252d07f0de031b83f9d10a49f14f0b228eda1ba1fe0e6bec53cf76932942351" NOT "0252d07f"**
-    
+
     Analytical Reasoning:
-    Think like an expert malware analyst who needs to understand the complete attack mechanism. When you analyze 
-    a malware sample, you're not just checking detections - you're understanding how it fits into an attack 
-    campaign and how it uses infrastructure. Your analysis directly informs infrastructure hunting by providing 
+    Think like an expert malware analyst who needs to understand the complete attack mechanism. When you analyze
+    a malware sample, you're not just checking detections - you're understanding how it fits into an attack
+    campaign and how it uses infrastructure. Your analysis directly informs infrastructure hunting by providing
     behavioral context about how discovered resources are actually used.
-    
+
     Intelligence Context:
-    Use all context from the triage assessment to focus your analysis. If infrastructure was discovered, understand 
-    how the malware uses that infrastructure. If timing patterns were identified, consider how they relate to 
+    Use all context from the triage assessment to focus your analysis. If infrastructure was discovered, understand
+    how the malware uses that infrastructure. If timing patterns were identified, consider how they relate to
     malware deployment and operation.
   expected_output: >
-    **CRITICAL: Output MUST be valid JSON matching the MalwareAnalysisOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **CRITICAL: YOU MUST WRITE ALL ANALYSIS TEXT IN KOREAN (한국어). This is MANDATORY.**
+
+    **CRITICAL OUTPUT FORMAT RULES - READ CAREFULLY:**
+
+    1. Format: PURE JSON object (NO Markdown, NO ```json wrapper)
+    2. Structure: Must match MalwareAnalysisOutput Pydantic schema
+    3. Field names: ENGLISH
+    4. Enum values: ENGLISH (priority: "HIGH"|"MEDIUM"|"LOW")
+    5. Text content: KOREAN (한국어) - behavioral_profile, attack_chain_analysis, contextual_analysis 등 모든 분석 텍스트는 반드시 한국어로 작성
+
+    ✓ CORRECT: {"priority": "HIGH", "behavioral_profile": "이 악성코드는 뱅킹 트로이목마로 동작합니다"}
+    ✗ WRONG: ```json...```
+    ✗ WRONG: {"priority": "높음"}
 
     Required JSON structure:
     {
@@ -143,12 +174,23 @@ infrastructure_campaign_correlation:
     - For large ASNs, add date filters to focus on recent suspicious activity
     
     Intelligence Application:
-    Apply the behavioral intelligence from malware analysis to make your infrastructure queries more targeted and 
-    effective. If you know how malware uses specific infrastructure, search for other activities using the same 
+    Apply the behavioral intelligence from malware analysis to make your infrastructure queries more targeted and
+    effective. If you know how malware uses specific infrastructure, search for other activities using the same
     patterns. Focus on infrastructure relationship mapping rather than generic scanning.
   expected_output: >
-    **CRITICAL: Output MUST be valid JSON matching the InfrastructureCorrelationOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **CRITICAL: YOU MUST WRITE ALL ANALYSIS TEXT IN KOREAN (한국어). This is MANDATORY.**
+
+    **CRITICAL OUTPUT FORMAT RULES - READ CAREFULLY:**
+
+    1. Format: PURE JSON object (NO Markdown, NO ```json wrapper)
+    2. Structure: InfrastructureCorrelationOutput Pydantic schema
+    3. Field names: ENGLISH
+    4. Enum values: ENGLISH (confidence: "HIGH"|"MEDIUM"|"LOW")
+    5. Text content: KOREAN (한국어) - infrastructure_relationship_map, clustering_evidence, relationship_context 등 모든 분석 텍스트는 반드시 한국어로 작성
+
+    ✓ CORRECT: {"confidence": "MEDIUM", "clustering_evidence": "동일 인프라에서 악성 도메인 호스팅됨"}
+    ✗ WRONG: Markdown wrapper
+    ✗ WRONG: {"confidence": "중간"}
 
     Required JSON structure:
     {
@@ -213,12 +255,23 @@ strategic_campaign_intelligence_synthesis:
     systematic hunting efforts. Focus on converting investigation discoveries into hunting opportunities.
     
     Strategic Intelligence Context:
-    Consider broader implications while developing concrete, testable hypotheses about threat actor operations. 
-    Transform technical findings into both defensive recommendations AND offensive hunting strategies. Think: 
+    Consider broader implications while developing concrete, testable hypotheses about threat actor operations.
+    Transform technical findings into both defensive recommendations AND offensive hunting strategies. Think:
     "Based on what I learned about how this threat operates, what specific behaviors should I hunt for?"
   expected_output: >
-    **CRITICAL: Output MUST be valid JSON matching the CampaignIntelligenceOutput Pydantic schema.**
-    **All text content should be in English for data consistency.**
+    **CRITICAL: YOU MUST WRITE ALL ANALYSIS TEXT IN KOREAN (한국어). This is MANDATORY.**
+
+    **CRITICAL OUTPUT FORMAT RULES - READ CAREFULLY:**
+
+    1. Format: PURE JSON object (NO Markdown, NO ```json wrapper)
+    2. Structure: CampaignIntelligenceOutput Pydantic schema
+    3. Field names: ENGLISH
+    4. Enum values: ENGLISH (threat_level: "CRITICAL"|"HIGH"|"MEDIUM"|"LOW", detection_platform: "SIEM"|"YARA"|"EDR"|"Network"|"Endpoint")
+    5. Text content: KOREAN (한국어) - executive_summary, attack_chain_ttps, attribution_rationale, hypothesis_description 등 모든 분석 텍스트는 반드시 한국어로 작성
+
+    ✓ CORRECT: {"threat_level": "CRITICAL", "executive_summary": "심각한 APT 캠페인이 탐지되었습니다"}
+    ✗ WRONG: ```json wrapper
+    ✗ WRONG: {"threat_level": "심각"}
 
     Required JSON structure:
     {
