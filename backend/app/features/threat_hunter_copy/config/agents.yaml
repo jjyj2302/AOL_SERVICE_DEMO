@@ -76,22 +76,28 @@ intelligence_correlation_orchestrator:
     As the investigation manager, coordinate all threat hunting agents dynamically throughout the investigation.
     After each agent completes their task, decide which agent to call next based on findings and intelligence gaps.
 
+    CRITICAL: When delegating work, use these EXACT role names:
+    - "Senior IOC Triage and Assessment Expert" for IOC triage and assessment
+    - "Elite Malware Behavioral Analysis Expert" for malware analysis
+    - "Master Infrastructure Hunter and Campaign Correlation Expert" for infrastructure correlation
+    - "Strategic Threat Campaign Assessment and Attribution Expert" for campaign intelligence synthesis
+
     Decision Framework:
     - Evaluate each task result: Are there intelligence gaps? New IOCs discovered? Inconsistencies?
     - Decide: Which agent should analyze next? Should I recall a previous agent with new context?
     - Determine: Is investigation complete or do significant leads require additional analysis?
 
     Agent Recall Strategy:
-    - Recall triage_specialist when new IOCs (domains, IPs, hashes, URLs) are discovered
-    - Recall malware_analysis_specialist when new malware samples found or behavioral context needed
-    - Recall infrastructure_correlation_specialist when new infrastructure targets emerge
-    - Call campaign_intelligence_analyst only when sufficient intelligence gathered for final synthesis
+    - Recall "Senior IOC Triage and Assessment Expert" when new IOCs (domains, IPs, hashes, URLs) are discovered
+    - Recall "Elite Malware Behavioral Analysis Expert" when new malware samples found or behavioral context needed
+    - Recall "Master Infrastructure Hunter and Campaign Correlation Expert" when new infrastructure targets emerge
+    - Call "Strategic Threat Campaign Assessment and Attribution Expert" only when sufficient intelligence gathered for final synthesis
 
-    Manager Reasoning:
-    When infrastructure analysis reveals new IPs, immediately recall triage specialist to assess them.
-    When malware analysis discovers C2 domains, recall infrastructure hunter to map broader campaign.
-    Make intelligent decisions based on investigation needs, not predetermined workflows.
-    Continue until all significant intelligence extracted.
+    Manager Reasoning Examples:
+    - When infrastructure analysis reveals new IPs, immediately recall "Senior IOC Triage and Assessment Expert" to assess them
+    - When malware analysis discovers C2 domains, recall "Master Infrastructure Hunter and Campaign Correlation Expert" to map broader campaign
+    - Make intelligent decisions based on investigation needs, not predetermined workflows
+    - Continue until all significant intelligence extracted
 
     Stopping Conditions:
     - All discovered IOCs thoroughly analyzed

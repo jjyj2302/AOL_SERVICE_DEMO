@@ -140,19 +140,18 @@ class ThreatHuntingCrew():
                 self.malware_specialist(),
                 self.infrastructure_hunter(),
                 self.campaign_analyst()
-                # NOTE: correlation_orchestrator is NOT in agents list - it's the manager_agent
             ],
             tasks=[
                 self.initial_assessment(),
                 self.malware_analysis(),
                 self.infrastructure_correlation(),
-                self.campaign_synthesis()  # Removed intelligence_orchestration task
+                self.campaign_synthesis()
             ],
-            process=Process.hierarchical,  # Hierarchical process with dynamic agent recall
-            manager_agent=self.correlation_orchestrator(),  # Orchestrator acts as Manager
+            process=Process.hierarchical,
+            manager_agent=self.correlation_orchestrator(),
             verbose=True,
             memory=False,
-            max_iter=15  # Prevent infinite loops - max 15 iterations
+            max_iter=15
         )
 
     def investigate_ioc(self, ioc: str) -> dict:
