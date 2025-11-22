@@ -3,42 +3,42 @@ import { alpha } from "@mui/material/styles";
 
 const colors = {
   primary: {
-    50: '#E8F4FD',
-    100: '#C6E2F9',
-    200: '#94CBF5',
-    300: '#62B4F1',
-    400: '#3B9DEE',
-    500: '#1486EB',
-    600: '#1275D4',
-    700: '#0F60B8',
-    800: '#0C4B9C',
-    900: '#082E74',
+    50: '#F4F4F5',
+    100: '#E4E4E7',
+    200: '#D4D4D8',
+    300: '#A1A1AA',
+    400: '#71717A',
+    500: '#52525B',
+    600: '#3F3F46',
+    700: '#27272A',
+    800: '#18181B',
+    900: '#09090B',
   },
 
   secondary: {
-    50: '#EDFDF7',
-    100: '#D1FAE5',
-    200: '#A7F3D0',
-    300: '#6EE7B7',
-    400: '#34D399',
-    500: '#10B981',
-    600: '#059669',
-    700: '#047857',
-    800: '#065F46',
-    900: '#064E3B',
+    50: '#F8FAFC',
+    100: '#F1F5F9',
+    200: '#E2E8F0',
+    300: '#CBD5E1',
+    400: '#94A3B8',
+    500: '#64748B',
+    600: '#475569',
+    700: '#334155',
+    800: '#1E293B',
+    900: '#0F172A',
   },
 
   accent: {
-    50: '#FAF5FF',
-    100: '#F3E8FF',
-    200: '#E9D5FF',
-    300: '#D8B4FE',
-    400: '#C084FC',
-    500: '#A855F7',
-    600: '#9333EA',
-    700: '#7C3AED',
-    800: '#6B21A8',
-    900: '#581C87',
+    50: '#F5F3FF',
+    100: '#EDE9FE',
+    200: '#DDD6FE',
+    300: '#C4B5FD',
+    400: '#A78BFA',
+    500: '#8B5CF6',
+    600: '#7C3AED',
+    700: '#6D28D9',
+    800: '#5B21B6',
+    900: '#4C1D95',
   },
 
   error: {
@@ -99,9 +99,9 @@ export const lightTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: colors.primary[500],
-      light: colors.primary[300],
-      dark: colors.primary[700],
+      main: colors.primary[900], // Deep Zinc for primary actions
+      light: colors.primary[700],
+      dark: "#000000",
       contrastText: "#ffffff",
     },
     secondary: {
@@ -121,9 +121,9 @@ export const lightTheme = createTheme({
       dark: colors.warning[700],
     },
     info: {
-      main: colors.primary[400],
-      light: colors.primary[200],
-      dark: colors.primary[600],
+      main: colors.secondary[400],
+      light: colors.secondary[200],
+      dark: colors.secondary[600],
     },
     success: {
       main: colors.success[500],
@@ -131,20 +131,20 @@ export const lightTheme = createTheme({
       dark: colors.success[700],
     },
     background: {
-      default: colors.neutral[100],
+      default: "#FFFFFF",
       paper: colors.neutral[50],
       textfieldlarge: colors.neutral[100],
     },
     text: {
       primary: colors.neutral[900],
-      secondary: colors.neutral[600],
+      secondary: colors.neutral[500],
       disabled: colors.neutral[400],
     },
-    divider: alpha(colors.neutral[900], 0.08),
+    divider: alpha(colors.neutral[900], 0.06),
     action: {
       active: colors.neutral[600],
       hover: alpha(colors.neutral[900], 0.04),
-      selected: alpha(colors.primary[500], 0.08),
+      selected: alpha(colors.primary[900], 0.08),
       disabled: colors.neutral[300],
       disabledBackground: colors.neutral[100],
     },
@@ -232,25 +232,25 @@ export const lightTheme = createTheme({
           },
         },
         containedPrimary: {
-          background: `linear-gradient(135deg, ${colors.primary[500]} 0%, ${colors.primary[600]} 100%)`,
-          boxShadow: `0 4px 14px 0 ${alpha(colors.primary[500], 0.25)}`,
+          // background: `linear-gradient(135deg, ${colors.primary[500]} 0%, ${colors.primary[600]} 100%)`,
+          boxShadow: "none",
           "&:hover": {
-            background: `linear-gradient(135deg, ${colors.primary[600]} 0%, ${colors.primary[700]} 100%)`,
-            boxShadow: `0 6px 20px 0 ${alpha(colors.primary[500], 0.35)}`,
+            // background: `linear-gradient(135deg, ${colors.primary[600]} 0%, ${colors.primary[700]} 100%)`,
+            boxShadow: `0 4px 12px 0 ${alpha(colors.primary[500], 0.2)}`,
           },
         },
         containedSecondary: {
-          background: `linear-gradient(135deg, ${colors.secondary[500]} 0%, ${colors.secondary[600]} 100%)`,
-          boxShadow: `0 4px 14px 0 ${alpha(colors.secondary[500], 0.25)}`,
+          // background: `linear-gradient(135deg, ${colors.secondary[500]} 0%, ${colors.secondary[600]} 100%)`,
+          boxShadow: "none",
           "&:hover": {
-            background: `linear-gradient(135deg, ${colors.secondary[600]} 0%, ${colors.secondary[700]} 100%)`,
-            boxShadow: `0 6px 20px 0 ${alpha(colors.secondary[500], 0.35)}`,
+            // background: `linear-gradient(135deg, ${colors.secondary[600]} 0%, ${colors.secondary[700]} 100%)`,
+            boxShadow: `0 4px 12px 0 ${alpha(colors.secondary[500], 0.2)}`,
           },
         },
         outlined: {
-          borderWidth: 2,
+          borderWidth: 1,
           "&:hover": {
-            borderWidth: 2,
+            borderWidth: 1,
             backgroundColor: alpha(colors.primary[500], 0.04),
           },
         },
@@ -333,11 +333,11 @@ export const lightTheme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: 'rgba(0, 110, 255, 0.7)',
-          color: "#ffffffff",
-          backdropFilter: "blur(5px)",
-          borderBottom: `1px solid rgba(255, 255, 255, 0.2)`,
-          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1), 0px 1px 2px rgba(0, 0, 0, 0.05)",
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          color: colors.neutral[900],
+          backdropFilter: "blur(12px)",
+          borderBottom: `1px solid ${colors.neutral[200]}`,
+          boxShadow: "none",
         },
       },
     },
@@ -436,10 +436,10 @@ export const darkTheme = createTheme({
   palette: {
     mode: "dark",
     primary: {
-      main: colors.primary[400],
-      light: colors.primary[300],
-      dark: colors.primary[600],
-      contrastText: colors.neutral[900],
+      main: "#FFFFFF", // White for primary actions in dark mode
+      light: colors.neutral[200],
+      dark: colors.neutral[400],
+      contrastText: "#000000",
     },
     secondary: {
       main: colors.secondary[400],
@@ -458,9 +458,9 @@ export const darkTheme = createTheme({
       dark: colors.warning[600],
     },
     info: {
-      main: colors.primary[400],
-      light: colors.primary[300],
-      dark: colors.primary[500],
+      main: colors.secondary[400],
+      light: colors.secondary[300],
+      dark: colors.secondary[500],
     },
     success: {
       main: colors.success[400],
@@ -468,20 +468,20 @@ export const darkTheme = createTheme({
       dark: colors.success[600],
     },
     background: {
-      default: colors.neutral[950],
-      paper: colors.neutral[900],
-      textfieldlarge: colors.neutral[800],
+      default: "#09090B", // Zinc 950
+      paper: "#18181B",    // Zinc 800
+      textfieldlarge: "#27272A",
     },
     text: {
-      primary: colors.neutral[50],
+      primary: "#FAFAFA",
       secondary: colors.neutral[400],
       disabled: colors.neutral[600],
     },
-    divider: alpha(colors.neutral[50], 0.12),
+    divider: alpha(colors.neutral[50], 0.08),
     action: {
       active: colors.neutral[300],
       hover: alpha(colors.neutral[50], 0.04),
-      selected: alpha(colors.primary[400], 0.12),
+      selected: alpha("#FFFFFF", 0.1),
       disabled: colors.neutral[700],
       disabledBackground: colors.neutral[800],
     },

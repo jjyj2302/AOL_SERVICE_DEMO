@@ -9,9 +9,13 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  Divider
+  Divider,
+  Button,
+  IconButton
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import PrintIcon from '@mui/icons-material/Print';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
@@ -51,7 +55,7 @@ const ThreatHunterReport = ({ ioc }) => {
         // Parse JSON strings from backend (like AI Agents pattern)
         const parsedResponse = { ...response };
         const reportFields = ['triage_report', 'malware_report', 'infrastructure_report',
-                             'orchestrator_report', 'campaign_report', 'final_report'];
+          'orchestrator_report', 'campaign_report', 'final_report'];
 
         reportFields.forEach(field => {
           if (parsedResponse[field] && typeof parsedResponse[field] === 'string') {
@@ -119,271 +123,213 @@ const ThreatHunterReport = ({ ioc }) => {
       key: 'triage',
       title: 'Triage Assessment',
       icon: <AssessmentIcon />,
-      content: reportData.triage_report,
-      color: '#2196f3'
+      content: reportData.triage_report
     },
     {
       key: 'malware',
       title: 'Malware Analysis',
       icon: <BugReportIcon />,
-      content: reportData.malware_report,
-      color: '#f44336'
+      content: reportData.malware_report
     },
     {
       key: 'infrastructure',
       title: 'Infrastructure Correlation',
       icon: <PublicIcon />,
-      content: reportData.infrastructure_report,
-      color: '#ff9800'
-    },
-    {
-      key: 'orchestrator',
-      title: 'Intelligence Orchestration',
-      icon: <SecurityIcon />,
-      content: reportData.orchestrator_report,
-      color: '#9c27b0'
+      content: reportData.infrastructure_report
     },
     {
       key: 'campaign',
       title: 'Campaign Intelligence',
       icon: <CampaignIcon />,
-      content: reportData.campaign_report,
-      color: '#4caf50'
+      content: reportData.campaign_report
     }
   ];
 
+  const handlePdfExport = () => {
+    // TODO: Implement PDF export functionality
+    console.log('PDF Export clicked');
+    alert('PDF 내보내기 기능은 곧 추가됩니다!');
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Box sx={{ mt: 3 }}>
-      <Paper sx={{ p: 3, borderRadius: 2, bgcolor: theme.palette.background.paper }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <SecurityIcon sx={{ mr: 1, fontSize: 32, color: theme.palette.primary.main }} />
-          <Typography variant="h5" fontWeight="bold">
-            Threat Intelligence Report
+      {/* Header with Title and Action Buttons */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 2,
+          borderRadius: "16px",
+          bgcolor: (theme) => theme.palette.mode === 'dark'
+            ? 'rgba(30, 41, 59, 0.4)'
+            : 'rgba(241, 245, 249, 0.8)',
+          backdropFilter: 'blur(12px)',
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}
+      >
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <SecurityIcon sx={{ mr: 1, fontSize: 32, color: theme.palette.primary.main }} />
+            <Typography variant="h5" fontWeight={700}>
+              Threat Intelligence Report
+            </Typography>
+            <Chip
+              label={reportData.status === 'success' ? 'Complete' : 'Failed'}
+              color={reportData.status === 'success' ? 'success' : 'error'}
+              size="small"
+              sx={{ ml: 2 }}
+            />
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            IOC: <strong>{reportData.ioc}</strong> • Investigation ID: {reportData.investigation_id}
           </Typography>
-          <Chip
-            label={reportData.status === 'success' ? 'Complete' : 'Failed'}
-            color={reportData.status === 'success' ? 'success' : 'error'}
-            size="small"
-            sx={{ ml: 2 }}
-          />
         </Box>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          IOC: <strong>{reportData.ioc}</strong>
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Investigation ID: {reportData.investigation_id}
-        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={handlePdfExport}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600
+            }}
+          >
+            PDF 저장
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            sx={{
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600
+            }}
+          >
+            인쇄
+          </Button>
+        </Box>
+      </Paper>
 
-        <Divider sx={{ my: 2 }} />
+      {/* 2-Column Layout */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 400px' }, gap: 2 }}>
+        {/* Left Column - Agent Results */}
+        <Box>
+          {reportSections.map((section) => {
+            // Determine which component to use for each section
+            let SectionComponent = null;
 
-        {reportSections.map((section) => {
-          // Determine which component to use for each section
-          let SectionComponent = null;
+            if (section.key === 'triage' && typeof section.content === 'object') {
+              SectionComponent = () => <TriageResult data={section.content} />;
+            } else if (section.key === 'malware' && typeof section.content === 'object') {
+              SectionComponent = () => <MalwareResult data={section.content} />;
+            } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
+              SectionComponent = () => <InfrastructureResult data={section.content} />;
+            } else if (section.key === 'campaign' && section.content) {
+              SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
+            }
 
-          if (section.key === 'triage' && typeof section.content === 'object') {
-            SectionComponent = () => <TriageResult data={section.content} />;
-          } else if (section.key === 'malware' && typeof section.content === 'object') {
-            SectionComponent = () => <MalwareResult data={section.content} />;
-          } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
-            SectionComponent = () => <InfrastructureResult data={section.content} />;
-          } else if (section.key === 'campaign' && section.content) {
-            SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
-          }
-
-          // Use dedicated component if available
-          if (SectionComponent && section.content) {
-            return (
-              <Accordion
-                key={section.key}
-                expanded={expanded === section.key}
-                onChange={handleAccordionChange(section.key)}
-                sx={{
-                  mb: 1,
-                  '&:before': { display: 'none' },
-                  borderRadius: 1,
-                  boxShadow: 1
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
+            // Use dedicated component if available
+            if (SectionComponent && section.content) {
+              return (
+                <Accordion
+                  key={section.key}
+                  expanded={expanded === section.key}
+                  onChange={handleAccordionChange(section.key)}
+                  elevation={0}
                   sx={{
-                    bgcolor: expanded === section.key ? `${section.color}15` : 'transparent',
-                    borderLeft: `4px solid ${section.color}`,
-                    '&:hover': { bgcolor: `${section.color}10` }
+                    mb: 2,
+                    '&:before': { display: 'none' },
+                    borderRadius: "16px !important",
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    overflow: 'hidden'
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{ color: section.color, display: 'flex', mr: 1 }}>
-                      {section.icon}
-                    </Box>
-                    <Typography variant="h6" fontWeight="medium">
-                      {section.title}
-                    </Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 3 }}>
-                  <SectionComponent />
-                </AccordionDetails>
-              </Accordion>
-            );
-          }
-
-          // Default rendering for sections without dedicated components (like orchestrator)
-          return section.content && (
-            <Accordion
-              key={section.key}
-              expanded={expanded === section.key}
-              onChange={handleAccordionChange(section.key)}
-              sx={{
-                mb: 1,
-                '&:before': { display: 'none' },
-                borderRadius: 1,
-                boxShadow: 1
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                sx={{
-                  bgcolor: expanded === section.key ? `${section.color}15` : 'transparent',
-                  borderLeft: `4px solid ${section.color}`,
-                  '&:hover': { bgcolor: `${section.color}10` }
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box sx={{ color: section.color, display: 'flex', mr: 1 }}>
-                    {section.icon}
-                  </Box>
-                  <Typography variant="h6" fontWeight="medium">
-                    {section.title}
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 3 }}>
-                {typeof section.content === 'string' ? (
-                  <Box
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
                     sx={{
-                      fontFamily: "'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
-                      '& h1': {
-                        fontSize: '1.75rem',
-                        fontWeight: 700,
-                        mt: 3,
-                        mb: 2,
-                        color: theme.palette.primary.main
+                      bgcolor: (theme) => expanded === section.key
+                        ? theme.palette.mode === 'dark' ? 'rgba(79, 70, 229, 0.1)' : 'rgba(79, 70, 229, 0.05)'
+                        : 'transparent',
+                      '&:hover': {
+                        bgcolor: (theme) => theme.palette.mode === 'dark'
+                          ? 'rgba(79, 70, 229, 0.05)'
+                          : 'rgba(79, 70, 229, 0.03)'
                       },
-                      '& h2': {
-                        fontSize: '1.5rem',
-                        fontWeight: 700,
-                        mt: 3,
-                        mb: 2,
-                        color: theme.palette.primary.main,
-                        borderBottom: `2px solid ${theme.palette.primary.light}`,
-                        pb: 1
-                      },
-                      '& h3': {
-                        fontSize: '1.25rem',
-                        fontWeight: 600,
-                        mt: 2.5,
-                        mb: 1.5,
-                        color: theme.palette.text.primary
-                      },
-                      '& p': {
-                        mb: 2,
-                        lineHeight: 2,
-                        fontSize: '1rem',
-                        color: theme.palette.text.primary
-                      },
-                      '& ul, & ol': {
-                        pl: 4,
-                        mb: 2,
-                        lineHeight: 1.8
-                      },
-                      '& li': {
-                        mb: 1,
-                        fontSize: '0.95rem',
-                        lineHeight: 1.8
-                      },
-                      '& strong': {
-                        fontWeight: 700,
-                        color: theme.palette.primary.main
-                      },
-                      '& code': {
-                        bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                        p: 0.5,
-                        borderRadius: 1,
-                        fontSize: '0.9em',
-                        fontFamily: "'Monaco', 'Consolas', 'Courier New', monospace"
-                      },
-                      '& pre': {
-                        bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                        p: 2,
-                        borderRadius: 1,
-                        overflow: 'auto',
-                        fontSize: '0.9rem',
-                        lineHeight: 1.6
-                      }
+                      minHeight: 64,
+                      '& .MuiAccordionSummary-content': { my: 2 }
                     }}
                   >
-                    <ReactMarkdown>{section.content}</ReactMarkdown>
-                  </Box>
-                ) : section.content ? (
-                  // Render JSON object in a structured, readable format
-                  <Box sx={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
-                    {Object.entries(section.content).map(([key, value]) => (
-                      <Box key={key} sx={{ mb: 2 }}>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{
-                            fontWeight: 600,
-                            color: theme.palette.primary.main,
-                            mb: 1,
-                            textTransform: 'capitalize'
-                          }}
-                        >
-                          {key.replace(/_/g, ' ')}
-                        </Typography>
-                        {Array.isArray(value) ? (
-                          <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                            {value.map((item, idx) => (
-                              <Typography component="li" key={idx} sx={{ mb: 0.5, lineHeight: 1.8 }}>
-                                {typeof item === 'object' && item !== null
-                                  ? JSON.stringify(item, null, 2)
-                                  : String(item)}
-                              </Typography>
-                            ))}
-                          </Box>
-                        ) : typeof value === 'object' && value !== null ? (
-                          <Box sx={{
-                            bgcolor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                            p: 2,
-                            borderRadius: 1,
-                            fontFamily: 'monospace',
-                            fontSize: '0.9rem'
-                          }}>
-                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                              {JSON.stringify(value, null, 2)}
-                            </pre>
-                          </Box>
-                        ) : value !== null && value !== undefined ? (
-                          <Typography sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                            {String(value)}
-                          </Typography>
-                        ) : (
-                          <Typography color="text.secondary">No data</Typography>
-                        )}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{
+                        color: 'primary.main',
+                        display: 'flex',
+                        mr: 2,
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(79, 70, 229, 0.2)' : 'rgba(79, 70, 229, 0.1)',
+                        borderRadius: "10px"
+                      }}>
+                        {section.icon}
                       </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography color="text.secondary">No data available</Typography>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
+                      <Typography variant="h6" fontWeight={600}>
+                        {section.title}
+                      </Typography>
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)' }}>
+                    <SectionComponent />
+                  </AccordionDetails>
+                </Accordion>
+              );
+            }
 
-        {reportData.final_report && <FinalSummarySection data={reportData.final_report} />}
-      </Paper>
+            return null;
+          })}
+        </Box>
+
+        {/* Right Column - Final Summary */}
+        <Box>
+          {reportData.final_report && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: "16px",
+                bgcolor: (theme) => theme.palette.mode === 'dark'
+                  ? 'rgba(30, 41, 59, 0.4)'
+                  : 'rgba(241, 245, 249, 0.8)',
+                backdropFilter: 'blur(12px)',
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                position: 'sticky',
+                top: 16,
+                maxHeight: 'calc(100vh - 100px)',
+                overflow: 'auto'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <SummarizeIcon sx={{ mr: 1, color: 'primary.main' }} />
+                <Typography variant="h6" fontWeight={700}>
+                  Final Summary
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              <FinalSummarySection data={reportData.final_report} />
+            </Paper>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { useRecoilValue } from "recoil";
 import { useNavigate } from "react-router-dom";
+import { useTheme, alpha } from "@mui/material/styles";
 import {
   Box,
   Grid,
@@ -16,6 +17,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Button,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -28,6 +30,7 @@ import {
   DocumentScanner,
   HealthAndSafety,
   SmartToy,
+  ArrowForward,
 } from "@mui/icons-material";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { searchHistoryState } from "../state";
@@ -35,28 +38,29 @@ import { formatDistanceToNow, isToday, isThisWeek, format } from "date-fns";
 import { ko } from "date-fns/locale";
 
 const COLORS = {
-  IPv4: "#4285F4",
-  IPv6: "#4285F4",
-  Domain: "#EA4335",
-  URL: "#FBBC04",
-  Email: "#34A853",
-  MD5: "#9C27B0",
-  SHA1: "#9C27B0",
-  SHA256: "#9C27B0",
-  CVE: "#FF6D00",
+  IPv4: "#5E81AC", // Muted Blue
+  IPv6: "#5E81AC",
+  Domain: "#BF616A", // Muted Red
+  URL: "#EBCB8B", // Muted Yellow
+  Email: "#A3BE8C", // Muted Green
+  MD5: "#B48EAD", // Muted Purple
+  SHA1: "#B48EAD",
+  SHA256: "#B48EAD",
+  CVE: "#D08770", // Muted Orange
 };
 
 const QUICK_ACTIONS = [
-  { label: "Deep Analysis", path: "/ioc-tools/lookup", icon: FindInPage, color: "#4285F4" },
-  { label: "Bulk Lookup", path: "/ioc-tools/bulk", icon: ManageSearch, color: "#EA4335" },
-  { label: "IOC Extractor", path: "/ioc-tools/extractor", icon: DocumentScanner, color: "#34A853" },
-  { label: "Defang/Fang", path: "/ioc-tools/defanger", icon: HealthAndSafety, color: "#FBBC04" },
-  { label: "AI Agents", path: "/agents", icon: SmartToy, color: "#9C27B0" },
+  { label: "Deep Analysis", path: "/ioc-tools/lookup", icon: FindInPage, color: "#5E81AC", desc: "심층 위협 분석" },
+  { label: "Bulk Lookup", path: "/ioc-tools/bulk", icon: ManageSearch, color: "#BF616A", desc: "대량 IOC 조회" },
+  { label: "IOC Extractor", path: "/ioc-tools/extractor", icon: DocumentScanner, color: "#A3BE8C", desc: "IOC 추출 도구" },
+  { label: "Defang/Fang", path: "/ioc-tools/defanger", icon: HealthAndSafety, color: "#EBCB8B", desc: "안전한 변환" },
+  { label: "AI Agents", path: "/agents", icon: SmartToy, color: "#B48EAD", desc: "AI 기반 분석" },
 ];
 
 export default function Dashboard() {
   const searchHistory = useRecoilValue(searchHistoryState);
   const navigate = useNavigate();
+  const theme = useTheme();
   const [searchInput, setSearchInput] = React.useState("");
 
   const handleQuickSearch = (e) => {
@@ -122,33 +126,53 @@ export default function Dashboard() {
   }, [searchHistory]);
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
-    <Card sx={{ height: "100%", boxShadow: 2, transition: "transform 0.2s", "&:hover": { transform: "translateY(-4px)" } }}>
+    <Card sx={{
+      height: "100%",
+      background: alpha(theme.palette.background.paper, 0.6),
+      backdropFilter: "blur(12px)",
+      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+      boxShadow: "0 4px 24px rgba(0,0,0,0.02)",
+      transition: "all 0.3s ease",
+      "&:hover": {
+        transform: "translateY(-4px)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+        borderColor: alpha(color, 0.3)
+      }
+    }}>
       <CardContent>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", mb: 2 }}>
           <Box
             sx={{
-              p: 1,
-              borderRadius: 2,
-              bgcolor: `${color}15`,
+              p: 1.5,
+              borderRadius: "16px",
+              bgcolor: alpha(color, 0.1),
+              color: color,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               mr: 2,
             }}
           >
-            <Icon sx={{ color, fontSize: 32 }} />
+            <Icon sx={{ fontSize: 28 }} />
           </Box>
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography variant="body2" color="text.secondary" fontWeight={500} gutterBottom>
               {title}
             </Typography>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" fontWeight={700} sx={{ color: theme.palette.text.primary }}>
               {value}
             </Typography>
           </Box>
         </Box>
         {subtitle && (
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{
+            color: alpha(theme.palette.text.secondary, 0.8),
+            bgcolor: alpha(theme.palette.background.default, 0.5),
+            px: 1,
+            py: 0.5,
+            borderRadius: "12px",
+            display: "inline-block"
+          }}>
             {subtitle}
           </Typography>
         )}
@@ -157,159 +181,237 @@ export default function Dashboard() {
   );
 
   return (
-    <Box>
-      {/* Hero Section with Quick Search */}
+    <Box sx={{ maxWidth: "1600px", mx: "auto" }}>
+      {/* Hero Section */}
       <Paper
+        elevation={0}
         sx={{
-          p: 4,
-          mb: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
-          borderRadius: 2,
+          p: { xs: 3, md: 5 },
+          mb: 4,
+          background: (theme) => theme.palette.mode === 'dark'
+            ? "linear-gradient(135deg, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0.4) 100%)"
+            : "linear-gradient(135deg, rgba(241,245,249,0.8) 0%, rgba(226,232,240,0.8) 100%)",
+          backdropFilter: "blur(20px)",
+          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          color: "text.primary",
+          borderRadius: "24px",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? "0 8px 32px rgba(0, 0, 0, 0.2)"
+            : "0 8px 32px rgba(255, 255, 255, 0.4)"
         }}
       >
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          AOL 플랫폼에 오신 것을 환영합니다
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-          고급 오픈소스 인텔리전스 및 위협 분석 도구
-        </Typography>
-        <form onSubmit={handleQuickSearch}>
-          <TextField
-            fullWidth
-            placeholder="빠른 IOC 검색 - IP, Domain, Hash, URL 입력..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+        <Box sx={{ position: "relative", zIndex: 1, maxWidth: "800px" }}>
+          <Typography variant="h3" fontWeight={800} gutterBottom sx={{ mb: 1 }}>
+            AOL Threat Intelligence
+          </Typography>
+          <Typography variant="h6" sx={{ mb: 4, opacity: 0.9, fontWeight: 400 }}>
+            오픈소스 인텔리전스 및 위협 분석 플랫폼
+          </Typography>
+
+          <Paper
+            component="form"
+            onSubmit={handleQuickSearch}
             sx={{
-              bgcolor: "white",
-              borderRadius: 2,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": { border: "none" },
-              },
+              p: "2px 4px",
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              maxWidth: 600,
+              borderRadius: "16px",
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: "blur(10px)",
+              border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              "&:hover, &:focus-within": {
+                bgcolor: "background.paper",
+                transform: "translateY(-1px)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.08)"
+              }
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton type="submit" color="primary">
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </form>
+          >
+            <Box sx={{ pl: 2 }} />
+            <TextField
+              fullWidth
+              placeholder="빠른 IOC 검색 - IP, Domain, Hash, URL 입력..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              variant="standard"
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  color: "text.primary",
+                  fontSize: "1.1rem",
+                  "&::placeholder": { color: "text.disabled", opacity: 1 }
+                }
+              }}
+            />
+            <IconButton type="submit" sx={{ p: "10px", color: "text.primary" }}>
+              <SearchIcon />
+            </IconButton>
+          </Paper>
+        </Box>
+
+        {/* Decorative Background Elements */}
+        <Box sx={{
+          position: "absolute",
+          top: -100,
+          right: -100,
+          width: 400,
+          height: 400,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)",
+          zIndex: 0
+        }} />
       </Paper>
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={ShowChartIcon}
             title="전체 검색"
-            value={stats.total}
-            subtitle="전체 검색 수"
+            value={stats.total.toLocaleString()}
+            subtitle="Total Searches"
             color="#4285F4"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={TrendingUpIcon}
-            title="오늘"
-            value={stats.today}
-            subtitle="오늘 검색 수"
+            title="오늘의 활동"
+            value={stats.today.toLocaleString()}
+            subtitle="Today's Activity"
             color="#34A853"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={DateRangeIcon}
-            title="이번 주"
-            value={stats.thisWeek}
-            subtitle="이번 주 검색 수"
+            title="이번 주 활동"
+            value={stats.thisWeek.toLocaleString()}
+            subtitle="Weekly Activity"
             color="#FBBC04"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             icon={CategoryIcon}
-            title="상위 IOC 유형"
-            value={stats.mostSearchedType ? stats.mostSearchedType[0] : "없음"}
-            subtitle={stats.mostSearchedType ? `${stats.mostSearchedType[1]}회 검색` : "데이터 없음"}
+            title="주요 위협 유형"
+            value={stats.mostSearchedType ? stats.mostSearchedType[0] : "-"}
+            subtitle={stats.mostSearchedType ? `${stats.mostSearchedType[1]}회 탐지` : "No Data"}
             color="#EA4335"
           />
         </Grid>
       </Grid>
 
       {/* Quick Actions */}
-      <Card sx={{ mb: 3, boxShadow: 2 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            빠른 실행
-          </Typography>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {QUICK_ACTIONS.map((action) => (
-              <Grid item xs={12} sm={6} md={2.4} key={action.path}>
-                <Paper
-                  onClick={() => navigate(action.path)}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" fontWeight={700} gutterBottom sx={{ mb: 2, px: 1 }}>
+          빠른 실행
+        </Typography>
+        <Grid container spacing={2}>
+          {QUICK_ACTIONS.map((action) => (
+            <Grid item xs={12} sm={6} md={2.4} key={action.path}>
+              <Paper
+                elevation={0}
+                onClick={() => navigate(action.path)}
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  cursor: "pointer",
+                  borderRadius: "20px",
+                  background: alpha(theme.palette.background.paper, 0.6),
+                  backdropFilter: "blur(12px)",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 2,
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: `0 12px 24px -10px ${alpha(action.color, 0.3)}`,
+                    borderColor: alpha(action.color, 0.5),
+                    "& .icon-box": {
+                      bgcolor: action.color,
+                      color: "white",
+                      transform: "scale(1.1)"
+                    }
+                  },
+                }}
+              >
+                <Box
+                  className="icon-box"
                   sx={{
-                    p: 2,
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    border: `2px solid ${action.color}20`,
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: 4,
-                      borderColor: action.color,
-                    },
+                    p: 1.5,
+                    borderRadius: "14px",
+                    bgcolor: alpha(action.color, 0.1),
+                    color: action.color,
+                    transition: "all 0.3s ease",
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <action.icon sx={{ color: action.color, fontSize: 32 }} />
-                    <Typography variant="body1" fontWeight="medium">
-                      {action.label}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </CardContent>
-      </Card>
+                  <action.icon sx={{ fontSize: 28 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    {action.label}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {action.desc}
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
 
       {/* Charts and Recent Activity */}
       <Grid container spacing={3}>
         {/* IOC Type Distribution */}
         {stats.pieData.length > 0 && (
           <Grid item xs={12} md={6}>
-            <Card sx={{ boxShadow: 2, height: "100%" }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Card sx={{
+              height: "100%",
+              borderRadius: "24px",
+              background: alpha(theme.palette.background.paper, 0.6),
+              backdropFilter: "blur(12px)",
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              boxShadow: "none"
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
                   IOC 유형 분포
                 </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={stats.pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {stats.pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Box sx={{ height: 300, mt: 2 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {stats.pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -318,20 +420,51 @@ export default function Dashboard() {
         {/* 7-Day Trend */}
         {stats.trendData.length > 0 && (
           <Grid item xs={12} md={6}>
-            <Card sx={{ boxShadow: 2, height: "100%" }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  최근 7일 검색 추이
+            <Card sx={{
+              height: "100%",
+              borderRadius: "24px",
+              background: alpha(theme.palette.background.paper, 0.6),
+              backdropFilter: "blur(12px)",
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              boxShadow: "none"
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  주간 검색 추이
                 </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.trendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#667eea" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Box sx={{ height: 300, mt: 2 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.trendData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={alpha(theme.palette.divider, 0.5)} />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: alpha(theme.palette.primary.main, 0.05) }}
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                        }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill={theme.palette.primary.main}
+                        radius={[4, 4, 0, 0]}
+                        barSize={32}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -340,92 +473,79 @@ export default function Dashboard() {
         {/* Recent Searches */}
         {searchHistory.length > 0 && (
           <Grid item xs={12}>
-            <Card sx={{ boxShadow: 2 }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  최근 검색
+            <Card sx={{
+              borderRadius: "24px",
+              background: alpha(theme.palette.background.paper, 0.6),
+              backdropFilter: "blur(12px)",
+              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              boxShadow: "none",
+              mt: 2
+            }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  최근 분석 기록
                 </Typography>
-                <List>
+                <List sx={{ mt: 1 }}>
                   {searchHistory.slice(0, 5).map((item, index) => (
                     <ListItem
                       key={item.id}
                       onClick={() => navigate("/ioc-tools/lookup", { state: { searchIoc: item.ioc } })}
                       sx={{
                         cursor: "pointer",
-                        borderRadius: 1,
-                        "&:hover": { bgcolor: "action.hover" },
+                        borderRadius: "16px",
+                        mb: 1,
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                          transform: "translateX(4px)"
+                        },
                       }}
                     >
                       <ListItemIcon>
                         <Box
                           sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 2,
-                            bgcolor: `${COLORS[item.type]}15`,
+                            width: 48,
+                            height: 48,
+                            borderRadius: "14px",
+                            bgcolor: alpha(COLORS[item.type] || theme.palette.grey[500], 0.1),
+                            color: COLORS[item.type] || theme.palette.grey[500],
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <SearchIcon sx={{ color: COLORS[item.type] }} />
+                          <SearchIcon />
                         </Box>
                       </ListItemIcon>
                       <ListItemText
                         primary={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography variant="body1" fontWeight="medium">
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Typography variant="body1" fontWeight={600}>
                               {item.ioc}
                             </Typography>
                             <Chip
                               label={item.type}
                               size="small"
                               sx={{
-                                bgcolor: `${COLORS[item.type]}15`,
-                                color: COLORS[item.type],
-                                fontWeight: "bold",
+                                bgcolor: alpha(COLORS[item.type] || theme.palette.grey[500], 0.1),
+                                color: COLORS[item.type] || theme.palette.grey[500],
+                                fontWeight: 700,
+                                borderRadius: "8px",
+                                height: "24px"
                               }}
                             />
                           </Box>
                         }
-                        secondary={formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ko })}
+                        secondary={
+                          <Typography variant="caption" color="text.secondary">
+                            {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true, locale: ko })}
+                          </Typography>
+                        }
                       />
+                      <ArrowForward sx={{ color: theme.palette.text.disabled, fontSize: 20 }} />
                     </ListItem>
                   ))}
                 </List>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
-
-        {/* Empty State */}
-        {searchHistory.length === 0 && (
-          <Grid item xs={12}>
-            <Card sx={{ boxShadow: 2 }}>
-              <CardContent>
-                <Box sx={{ textAlign: "center", py: 6 }}>
-                  <SearchIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    아직 검색 기록이 없습니다
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    IOC 분석을 시작하여 통계 및 추세를 확인하세요
-                  </Typography>
-                  <IconButton
-                    onClick={() => navigate("/ioc-tools/lookup")}
-                    sx={{
-                      bgcolor: "primary.main",
-                      color: "white",
-                      "&:hover": { bgcolor: "primary.dark" },
-                      px: 4,
-                      py: 1,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <SearchIcon sx={{ mr: 1 }} />
-                    Start Searching
-                  </IconButton>
-                </Box>
               </CardContent>
             </Card>
           </Grid>

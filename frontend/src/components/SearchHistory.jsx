@@ -40,7 +40,7 @@ const IOC_TYPE_COLORS = {
   CVE: "#FF6D00",
 };
 
-export default function SearchHistory() {
+export default function SearchHistory({ showHeader = true }) {
   const searchHistory = useRecoilValue(searchHistoryState);
   const resetSearchHistory = useResetRecoilState(searchHistoryState);
   const navigate = useNavigate();
@@ -62,21 +62,23 @@ export default function SearchHistory() {
 
   return (
     <Box sx={{ p: 1 }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <MdHistory size={20} />
-          <Typography variant="subtitle2" fontWeight="medium">
-            Search History
-          </Typography>
+      {showHeader && (
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <MdHistory size={28} />
+            <Typography variant="h6" fontWeight="bold">
+              Search History
+            </Typography>
+          </Box>
+          {searchHistory.length > 0 && (
+            <Tooltip title="Clear all history">
+              <IconButton size="small" onClick={handleClearHistory}>
+                <MdDelete size={16} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
-        {searchHistory.length > 0 && (
-          <Tooltip title="Clear all history">
-            <IconButton size="small" onClick={handleClearHistory}>
-              <MdDelete size={16} />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
+      )}
 
       {searchHistory.length === 0 ? (
         <Box sx={{ py: 2, textAlign: "center" }}>

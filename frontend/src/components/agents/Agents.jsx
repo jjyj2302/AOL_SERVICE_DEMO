@@ -14,6 +14,7 @@ import {
   Fab,
   Badge,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -27,6 +28,7 @@ import TriageResult from './results/TriageResult';
 import MalwareResult from './results/MalwareResult';
 import InfrastructureResult from './results/InfrastructureResult';
 import CampaignResult from './results/CampaignResult';
+import api from '../../api';
 
 const AGENTS = [
   {
@@ -119,19 +121,11 @@ export default function Agents() {
 
     try {
       const agent = AGENTS[selectedAgent];
-      const response = await fetch(`http://localhost:8000${agent.endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ioc: trimmedIoc }),
+      const response = await api.post(agent.endpoint, {
+        ioc: trimmedIoc
       });
 
-      if (!response.ok) {
-        throw new Error(`분석 실패: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response.data;
 
       console.log('[DEBUG] Raw API response:', data);
       console.log('[DEBUG] data.result type:', typeof data.result);
@@ -210,263 +204,244 @@ export default function Agents() {
   };
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: "1200px", mx: "auto" }}>
       {/* Hero Section */}
       <Paper
+        elevation={0}
         sx={{
-          p: 4,
-          mb: 3,
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          borderRadius: 2,
-          boxShadow: 4,
+          p: { xs: 3, md: 5 },
+          mb: 4,
+          background: (theme) => theme.palette.mode === 'dark'
+            ? "linear-gradient(135deg, rgba(30,41,59,0.4) 0%, rgba(15,23,42,0.4) 100%)"
+            : "linear-gradient(135deg, rgba(241,245,249,0.8) 0%, rgba(226,232,240,0.8) 100%)",
+          backdropFilter: "blur(20px)",
+          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+          color: "text.primary",
+          borderRadius: "24px",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? "0 8px 32px rgba(0, 0, 0, 0.2)"
+            : "0 8px 32px rgba(255, 255, 255, 0.4)"
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <SecurityIcon sx={{ fontSize: 48 }} />
-          <Box>
-            <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
-              Threat Hunting Agents
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit', mt: 1 }}>
-              각 AI Agent를 선택하여 독립적인 IOC 분석을 수행하세요
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Agent Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: 2, overflow: 'hidden', boxShadow: 3 }}>
-        <Tabs
-          value={selectedAgent}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          sx={{
-            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            '& .MuiTab-root': {
-              transition: 'all 0.3s',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-              },
-            },
-            '& .Mui-selected': {
-              background: selectedAgent === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' :
-                          selectedAgent === 1 ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' :
-                          selectedAgent === 2 ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' :
-                          'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
-              color: 'white !important',
-              fontWeight: 700,
-            },
-          }}
-        >
-          {AGENTS.map((agent, index) => (
-            <Tab
-              key={agent.id}
-              icon={React.cloneElement(agent.icon, { sx: { fontSize: 32 } })}
-              label={agent.name}
-              iconPosition="start"
-              sx={{
-                minHeight: 80,
-                fontSize: '1.1rem',
-                fontWeight: 500,
-              }}
-            />
-          ))}
-        </Tabs>
-      </Paper>
-
-      {/* Agent Info */}
-      <Paper
-        sx={{
-          p: 3,
-          mb: 3,
-          background: selectedAgent === 0 ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' :
-                      selectedAgent === 1 ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' :
-                      selectedAgent === 2 ? 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)' :
-                      'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
-          color: 'white',
-          borderRadius: 2,
-          boxShadow: 3,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Box
-            sx={{
-              fontSize: 48,
-              p: 2,
-              bgcolor: 'rgba(255,255,255,0.2)',
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {currentAgent.icon}
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
-              {currentAgent.name}
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit', mt: 0.5 }}>
-              {currentAgent.description}
-            </Typography>
-          </Box>
-        </Box>
-        <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
-        <Chip
-          label={`🛠️ Tools: ${currentAgent.tools}`}
-          sx={{
-            bgcolor: 'rgba(255,255,255,0.25)',
-            color: 'white',
-            fontSize: '1rem',
-            fontWeight: 600,
-            fontFamily: 'inherit',
-            px: 1,
-          }}
-        />
-      </Paper>
-
-      {/* IOC Input */}
-      <Paper
-        sx={{
-          p: 3,
-          mb: 3,
-          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-          border: '2px solid',
-          borderColor: 'info.light',
-          borderRadius: 2,
-          boxShadow: 3,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <SearchIcon sx={{ fontSize: 32, color: 'info.main' }} />
-          <Typography variant="h5" sx={{ fontWeight: 600, color: 'info.dark' }}>
-            IOC 입력
+        <Box sx={{ position: "relative", zIndex: 1, maxWidth: "800px" }}>
+          <Typography variant="h3" fontWeight={800} gutterBottom sx={{ mb: 1 }}>
+            AI Threat Agents
+          </Typography>
+          <Typography variant="h6" sx={{ mb: 0, opacity: 0.7, fontWeight: 400 }}>
+            전문 AI 에이전트를 선택하여 위협 분석을 시작하세요
           </Typography>
         </Box>
-        <Divider sx={{ my: 2, bgcolor: 'info.light' }} />
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-          <TextField
-            fullWidth
-            placeholder="hash, IP, domain, URL 입력..."
-            value={iocInput}
-            onChange={handleIocInputChange}
-            onKeyPress={handleKeyPress}
-            disabled={loading}
-            helperText={iocType ? `감지된 타입: ${iocType}` : ''}
-            FormHelperTextProps={{
-              sx: { color: 'success.main', fontFamily: 'inherit', fontSize: '1rem', fontWeight: 600 }
-            }}
-            sx={{
-              '& .MuiInputBase-root': {
-                bgcolor: 'white',
-                borderRadius: 1,
-              },
-              '& .MuiInputBase-input': {
-                fontFamily: 'inherit',
-                fontSize: '1.1rem',
-                p: 2,
-              },
-              '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': {
-                  borderColor: 'info.main',
-                  borderWidth: 2,
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'info.dark',
-                  borderWidth: 2,
-                },
-              },
-            }}
-          />
-          <Button
-            variant="contained"
-            onClick={handleAnalyze}
-            disabled={loading || !iocInput.trim()}
-            sx={{
-              minWidth: 56,
-              width: 56,
-              height: 56,
-              position: 'relative',
-              background: 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)',
-              boxShadow: 3,
-              '&:hover': {
-                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                transform: 'scale(1.05)',
-                transition: 'all 0.2s',
-              },
-            }}
-          >
-            <SearchIcon sx={{ fontSize: 32 }} />
-            {loading && (
-              <CircularProgress
-                size={48}
+      </Paper>
+
+      {/* Simple Tab Navigation */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 4,
+          borderRadius: "16px",
+          overflow: "hidden",
+          background: (theme) => alpha(theme.palette.background.paper, 0.6),
+          backdropFilter: "blur(12px)",
+          border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 0.5, p: 1 }}>
+          {AGENTS.map((agent, index) => {
+            const isSelected = selectedAgent === index;
+            return (
+              <Button
+                key={agent.id}
+                onClick={(e) => handleTabChange(e, index)}
+                startIcon={React.cloneElement(agent.icon, { fontSize: "small" })}
                 sx={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  marginTop: '-24px',
-                  marginLeft: '-24px',
+                  flex: 1,
+                  py: 1.5,
+                  borderRadius: "12px",
+                  textTransform: "none",
+                  fontWeight: isSelected ? 700 : 500,
+                  fontSize: "0.95rem",
+                  color: isSelected ? "primary.contrastText" : "text.primary",
+                  bgcolor: isSelected ? "primary.main" : "transparent",
+                  "&:hover": {
+                    bgcolor: isSelected ? "primary.dark" : "action.hover"
+                  },
+                  transition: "all 0.2s ease"
                 }}
-              />
-            )}
-          </Button>
+              >
+                {agent.name}
+              </Button>
+            );
+          })}
         </Box>
       </Paper>
+
+      {/* Main Input Section - Centered */}
+      <Box sx={{ maxWidth: 800, mx: "auto", mb: 6 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 5,
+            borderRadius: "24px",
+            background: (theme) => alpha(theme.palette.background.paper, 0.6),
+            backdropFilter: "blur(12px)",
+            border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            textAlign: "center"
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 64,
+              height: 64,
+              borderRadius: "20px",
+              bgcolor: "primary.main",
+              color: "white",
+              mb: 2
+            }}>
+              {React.cloneElement(AGENTS[selectedAgent].icon, { fontSize: "large" })}
+            </Box>
+            <Typography variant="h4" fontWeight={700} gutterBottom>
+              {AGENTS[selectedAgent].name}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+              {AGENTS[selectedAgent].description}
+            </Typography>
+            <Chip
+              label={`🛠️ ${AGENTS[selectedAgent].tools}`}
+              size="small"
+              sx={{ mt: 1, fontWeight: 600 }}
+            />
+          </Box>
+
+          <Paper
+            component="form"
+            elevation={0}
+            sx={{
+              p: "4px 8px",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "16px",
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+              border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              "&:hover, &:focus-within": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                borderColor: "primary.main"
+              }
+            }}
+          >
+            <Box sx={{ pl: 2 }} />
+            <TextField
+              fullWidth
+              placeholder="Hash, IP, Domain, URL을 입력하세요..."
+              value={iocInput}
+              onChange={handleIocInputChange}
+              onKeyPress={handleKeyPress}
+              disabled={loading}
+              variant="standard"
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  fontSize: "1.1rem",
+                  p: 1.5,
+                  "&::placeholder": { opacity: 0.7 }
+                }
+              }}
+            />
+            <Button
+              onClick={handleAnalyze}
+              disabled={loading || !iocInput.trim()}
+              sx={{
+                minWidth: 50,
+                width: 50,
+                height: 50,
+                borderRadius: "12px",
+                ml: 1,
+                color: "white",
+                bgcolor: "primary.main",
+                "&:hover": {
+                  bgcolor: "primary.dark",
+                }
+              }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : <SearchIcon />}
+            </Button>
+          </Paper>
+
+          {iocType && (
+            <Typography variant="caption" color="primary" sx={{ mt: 2, display: 'block', fontWeight: 600 }}>
+              ✓ 감지된 유형: {iocType}
+            </Typography>
+          )}
+        </Paper>
+      </Box>
 
       {/* Error Display */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3, '& .MuiAlert-message': { fontFamily: 'inherit', fontSize: '1.1rem' } }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: "12px" }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       {/* Result Display */}
       {result && (
-        <Box>
-          <Typography variant="h2" sx={{ my: 4, fontWeight: 700, fontFamily: 'inherit' }}>
-            분석 결과
-          </Typography>
+        <Box sx={{ animation: "fadeIn 0.5s ease-in-out" }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h4" fontWeight={800}>
+              Analysis Result
+            </Typography>
+            <Chip
+              label="Completed"
+              color="success"
+              size="small"
+              sx={{ ml: 2, fontWeight: 600, borderRadius: "8px" }}
+            />
+          </Box>
           {renderResult()}
-
         </Box>
       )}
 
-      {/* Discovered IOCs Section - Always show if any IOCs collected */}
+      {/* Discovered IOCs Section */}
       {allDiscoveredIocs.length > 0 && (
         <Paper
           ref={discoveredIocsRef}
+          elevation={0}
           sx={{
-            mt: 4,
+            mt: 6,
             p: 4,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            borderRadius: 2,
-            boxShadow: 4,
+            borderRadius: "24px",
+            background: (theme) => alpha(theme.palette.background.paper, 0.6),
+            backdropFilter: "blur(12px)",
+            border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-            <SecurityIcon sx={{ fontSize: 40 }} />
-            <Typography variant="h4" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
-              모든 Agent에서 발견된 IOCs (총 {allDiscoveredIocs.length}개)
+            <SecurityIcon color="primary" sx={{ fontSize: 32 }} />
+            <Typography variant="h5" fontWeight={700}>
+              Discovered IOCs ({allDiscoveredIocs.length})
             </Typography>
           </Box>
 
-          <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+          <Divider sx={{ my: 2 }} />
 
           <Box sx={{ mt: 3 }}>
             <DiscoveredIOCs
               discoveredIocs={allDiscoveredIocs}
               onIocClick={(ioc) => {
                 setIocInput(ioc);
-                // Optionally auto-analyze
               }}
             />
           </Box>
         </Paper>
       )}
 
-      {/* Floating Action Button for Discovered IOCs */}
+      {/* Floating Action Button */}
       {discoveredIocsCount > 0 && (
         <Fab
           color="primary"
@@ -476,6 +451,7 @@ export default function Agents() {
             position: 'fixed',
             bottom: 32,
             right: 32,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
           }}
         >
           <Badge badgeContent={discoveredIocsCount} color="error" max={99}>
@@ -483,6 +459,15 @@ export default function Agents() {
           </Badge>
         </Fab>
       )}
+
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
     </Box>
   );
 }

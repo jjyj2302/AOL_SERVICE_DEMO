@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { 
-  List, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  Typography, 
+import {
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
   Box,
   Collapse
 } from "@mui/material";
@@ -53,21 +53,42 @@ export default function SidebarTabs({ title, tabs }) {
           } : undefined}
           selected={isActive}
           sx={{
-            borderRadius: 1,
+            borderRadius: '24px', // Pill shape
             mb: 0.5,
-            pl: 2,
-            bgcolor: isActive ? 'primary.main' : 'transparent',
-            color: isActive ? 'primary.contrastText' : 'text.primary',
+            mx: 1,
+            px: 2,
+            transition: 'all 0.2s ease',
+            bgcolor: isActive ? 'action.selected' : 'transparent',
+            color: isActive ? 'text.primary' : 'text.secondary',
+            '&.Mui-selected': {
+              bgcolor: 'action.selected',
+              color: 'text.primary',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'action.selected',
+              },
+            },
             '&:hover': {
-              bgcolor: isActive ? 'primary.dark' : 'action.hover',
+              bgcolor: 'action.hover',
+              color: 'text.primary',
             },
           }}
         >
-          <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+          <ListItemIcon sx={{
+            color: isActive ? 'text.primary' : 'text.secondary',
+            minWidth: 36,
+            transition: 'color 0.2s ease'
+          }}>
             {tab.icon}
           </ListItemIcon>
-          <ListItemText primary={tab.label} />
-          {hasChildren && (isOpen ? <ExpandLess /> : <ExpandMore />)}
+          <ListItemText
+            primary={tab.label}
+            primaryTypographyProps={{
+              fontSize: '0.9rem',
+              fontWeight: isActive ? 600 : 500,
+            }}
+          />
+          {hasChildren && (isOpen ? <ExpandLess sx={{ color: 'text.secondary' }} /> : <ExpandMore sx={{ color: 'text.secondary' }} />)}
         </ListItemButton>
 
         {hasChildren && (
@@ -80,32 +101,29 @@ export default function SidebarTabs({ title, tabs }) {
                   to={child.path}
                   selected={location.pathname === child.path}
                   sx={{
-                    pl: 4.5,
+                    pl: 6,
                     py: 0.5,
-                    borderRadius: 0,
+                    mx: 1,
+                    mb: 0.2,
+                    borderRadius: '20px',
                     bgcolor: 'transparent',
-                    borderLeft: '1px solid',
-                    borderColor: 'divider',
-                    ml: 3,
                     '&.Mui-selected': {
-                      bgcolor: 'transparent',
-                      color: 'primary.main',
-                      borderColor: 'primary.main',
+                      bgcolor: 'action.selected',
+                      color: 'text.primary',
+                      fontWeight: 600,
                     },
                     '&:hover': {
-                      bgcolor: 'transparent',
-                      color: 'primary.main',
+                      bgcolor: 'action.hover',
+                      color: 'text.primary',
                     },
-                    fontSize: '0.875rem',
                   }}
                 >
-                  <ListItemText 
-                    primary={child.label} 
+                  <ListItemText
+                    primary={child.label}
                     primaryTypographyProps={{
-                      fontSize: '0.875rem',
-                      fontWeight: location.pathname === child.path ? 500 : 400,
+                      fontSize: '0.85rem',
+                      fontWeight: location.pathname === child.path ? 600 : 400,
                     }}
-                    sx={{ m: 0 }}
                   />
                 </ListItemButton>
               ))}
@@ -117,9 +135,9 @@ export default function SidebarTabs({ title, tabs }) {
   };
 
   return (
-    <Box sx={{ p: 1 }}>
-      <Typography variant="h6" gutterBottom>
-        {title}
+    <Box sx={{ p: 2 }}>
+      <Typography variant="subtitle2" color="text.secondary" sx={{ px: 2, mb: 1, fontWeight: 600, letterSpacing: '0.05em' }}>
+        {title.toUpperCase()}
       </Typography>
       <List>
         {tabs.map(tab => renderTab(tab))}
