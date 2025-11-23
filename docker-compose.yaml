@@ -1,5 +1,12 @@
 version: "3.8"
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - aol-network
+    restart: unless-stopped
+
   backend:
     networks:
       - aol-network
@@ -13,6 +20,8 @@ services:
     container_name: backend
     volumes:
       - ./data:/backend/data
+    depends_on:
+      - redis
     restart: unless-stopped
 
   frontend:

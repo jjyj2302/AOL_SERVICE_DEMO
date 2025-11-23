@@ -11,6 +11,7 @@ langchain-google-genai==2.1.2
 langgraph
 langgraph-supervisor
 openai==1.68.2
+redis==5.0.1
 mitreattack_python==3.0.8
 newspaper4k==0.9.3.1
 Pillow==11.1.0
