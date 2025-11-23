@@ -337,7 +337,7 @@ export default function Dashboard() {
                     borderColor: alpha(action.color, 0.5),
                     "& .icon-box": {
                       bgcolor: action.color,
-                      color: "white",
+                      color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
                       transform: "scale(1.1)"
                     }
                   },

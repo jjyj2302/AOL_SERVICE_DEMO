@@ -62,7 +62,7 @@ class ThreatHuntService:
             if 'result' in crew_result and hasattr(crew_result['result'], 'tasks_output'):
                 tasks_output = crew_result['result'].tasks_output
 
-                # Map task names to report keys
+                # Map task names to report keys (must match crew.py method names)
                 task_mapping = {
                     'initial_assessment': 'triage_report',
                     'malware_analysis': 'malware_report',

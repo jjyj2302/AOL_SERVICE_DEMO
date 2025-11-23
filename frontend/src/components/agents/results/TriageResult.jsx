@@ -148,18 +148,30 @@ export default function TriageResult({ data }) {
             sx={{
               p: 4,
               height: '100%',
-              background: `linear-gradient(135deg, ${
-                data.threat_level === 'CRITICAL' ? '#f44336' :
-                data.threat_level === 'HIGH' ? '#ff9800' :
-                data.threat_level === 'MEDIUM' ? '#2196f3' :
-                '#4caf50'
-              } 0%, ${
-                data.threat_level === 'CRITICAL' ? '#d32f2f' :
-                data.threat_level === 'HIGH' ? '#f57c00' :
-                data.threat_level === 'MEDIUM' ? '#1976d2' :
-                '#388e3c'
-              } 100%)`,
-              color: 'white',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? `linear-gradient(135deg, ${
+                    data.threat_level === 'CRITICAL' ? '#5d1f1f' :
+                    data.threat_level === 'HIGH' ? '#5d3a1a' :
+                    data.threat_level === 'MEDIUM' ? '#1a3a52' :
+                    '#1e4620'
+                  } 0%, ${
+                    data.threat_level === 'CRITICAL' ? '#3d1414' :
+                    data.threat_level === 'HIGH' ? '#3d2610' :
+                    data.threat_level === 'MEDIUM' ? '#0d1f2d' :
+                    '#0f2e11'
+                  } 100%)`
+                : `linear-gradient(135deg, ${
+                    data.threat_level === 'CRITICAL' ? '#ffebee' :
+                    data.threat_level === 'HIGH' ? '#fff3e0' :
+                    data.threat_level === 'MEDIUM' ? '#e3f2fd' :
+                    '#e8f5e9'
+                  } 0%, ${
+                    data.threat_level === 'CRITICAL' ? '#ffcdd2' :
+                    data.threat_level === 'HIGH' ? '#ffe0b2' :
+                    data.threat_level === 'MEDIUM' ? '#bbdefb' :
+                    '#c8e6c9'
+                  } 100%)`,
+              color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
@@ -174,14 +186,14 @@ export default function TriageResult({ data }) {
               </Box>
             </Box>
 
-            <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+            <Divider sx={{ my: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.12)' }} />
 
             <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
               <Chip
                 label={`IOC Type: ${data.ioc_type}`}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
                   fontSize: '1rem',
                   fontWeight: 500,
                   fontFamily: 'inherit'
@@ -239,7 +251,7 @@ export default function TriageResult({ data }) {
                           height: 48,
                           borderRadius: '50%',
                           bgcolor: discovery.priority_rank === 1 ? 'primary.main' : 'grey.400',
-                          color: 'white',
+                          color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : discovery.priority_rank === 1 ? theme.palette.primary.contrastText : '#ffffff',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -285,7 +297,7 @@ export default function TriageResult({ data }) {
                         <Box
                           sx={{
                             p: 2,
-                            bgcolor: 'grey.50',
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
                             borderRadius: 1,
                             borderLeft: '4px solid',
                             borderColor: 'primary.main',
@@ -373,10 +385,10 @@ export default function TriageResult({ data }) {
                       sx={{
                         p: 1.5,
                         mb: 2,
-                        bgcolor: 'grey.100',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
                         borderRadius: 1,
                         border: '1px solid',
-                        borderColor: 'grey.300',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.300',
                       }}
                     >
                       <Typography
@@ -431,7 +443,9 @@ export default function TriageResult({ data }) {
           sx={{
             p: 3,
             mb: 3,
-            background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #0d1b3e 0%, #1a0d2e 100%)'
+              : 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
             border: '2px solid',
             borderColor: 'primary.light',
           }}
@@ -447,7 +461,7 @@ export default function TriageResult({ data }) {
               <Grid item xs={12} key={index}>
                 <Card
                   sx={{
-                    bgcolor: 'white',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                     '&:hover': {
                       boxShadow: 3,
                       transform: 'translateX(4px)',
@@ -463,7 +477,7 @@ export default function TriageResult({ data }) {
                           height: 32,
                           borderRadius: '4px',
                           bgcolor: 'primary.main',
-                          color: 'white',
+                          color: 'primary.contrastText',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -496,7 +510,9 @@ export default function TriageResult({ data }) {
       <Paper
         sx={{
           p: 4,
-          background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+          background: (theme) => theme.palette.mode === 'dark'
+            ? 'linear-gradient(135deg, #3d2a0f 0%, #4a3310 100%)'
+            : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
           border: '2px solid',
           borderColor: 'warning.light',
         }}
@@ -510,7 +526,7 @@ export default function TriageResult({ data }) {
         <Box
           sx={{
             p: 3,
-            bgcolor: 'white',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
             borderRadius: 2,
             borderLeft: '6px solid',
             borderColor: 'warning.main',

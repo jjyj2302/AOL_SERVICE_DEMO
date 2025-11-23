@@ -61,7 +61,7 @@ const DetectionGauge = ({ detections }) => {
         sx={{
           height: 8,
           borderRadius: 4,
-          bgcolor: 'grey.200',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.200',
         }}
       />
     </Box>
@@ -78,8 +78,10 @@ export default function InfrastructureResult({ data }) {
         sx={{
           p: 4,
           mb: 3,
-          background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
-          color: 'white',
+          background: (theme) => theme.palette.mode === 'dark'
+            ? 'linear-gradient(135deg, #5d3a1a 0%, #3d2610 100%)'
+            : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+          color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
@@ -94,7 +96,7 @@ export default function InfrastructureResult({ data }) {
           </Box>
         </Box>
 
-        <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+        <Divider sx={{ my: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.12)' }} />
 
         <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.8, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }}>
           {data.infrastructure_relationship_map}
@@ -164,7 +166,7 @@ export default function InfrastructureResult({ data }) {
                       sx={{
                         p: 2,
                         mb: 2,
-                        bgcolor: 'grey.50',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
                         borderRadius: 1,
                       }}
                     >
@@ -218,7 +220,9 @@ export default function InfrastructureResult({ data }) {
         <Paper
           sx={{
             p: 3,
-            background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #1e4620 0%, #0f2e11 100%)'
+              : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
             border: '2px solid',
             borderColor: 'success.light',
           }}
@@ -241,7 +245,9 @@ export default function InfrastructureResult({ data }) {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #5d1f1f 0%, #3d1414 100%)'
+                : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
               border: '2px solid',
               borderColor: 'error.light',
             }}
@@ -249,7 +255,7 @@ export default function InfrastructureResult({ data }) {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: 'white' }}>
+                  <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white' }}>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Indicator</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Type</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Confidence</TableCell>
@@ -262,9 +268,9 @@ export default function InfrastructureResult({ data }) {
                     <TableRow
                       key={index}
                       sx={{
-                        bgcolor: 'white',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                         '&:hover': {
-                          bgcolor: 'rgba(255, 0, 0, 0.05)',
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.05)',
                           transform: 'scale(1.01)',
                           transition: 'all 0.2s',
                         },
@@ -320,7 +326,9 @@ export default function InfrastructureResult({ data }) {
         <Paper
           sx={{
             p: 3,
-            background: 'linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)',
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #0d3a42 0%, #082429 100%)'
+              : 'linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)',
             border: '2px solid',
             borderColor: 'info.light',
           }}
@@ -342,7 +350,9 @@ export default function InfrastructureResult({ data }) {
         <Paper
           sx={{
             p: 3,
-            background: 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #4a3f0d 0%, #332b08 100%)'
+              : 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
             border: '2px solid',
             borderColor: 'warning.light',
           }}
@@ -357,7 +367,9 @@ export default function InfrastructureResult({ data }) {
       <Paper
         sx={{
           p: 4,
-          background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+          background: (theme) => theme.palette.mode === 'dark'
+            ? 'linear-gradient(135deg, #2a1f3d 0%, #1a1229 100%)'
+            : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
           border: '2px solid',
           borderColor: 'secondary.light',
         }}
@@ -371,7 +383,7 @@ export default function InfrastructureResult({ data }) {
         <Box
           sx={{
             p: 3,
-            bgcolor: 'white',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
             borderRadius: 2,
             borderLeft: '6px solid',
             borderColor: 'secondary.main',

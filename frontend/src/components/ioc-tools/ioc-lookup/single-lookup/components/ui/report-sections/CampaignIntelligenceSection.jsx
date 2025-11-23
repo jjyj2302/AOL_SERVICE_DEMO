@@ -67,7 +67,7 @@ const DetectionGauge = ({ detections }) => {
         sx={{
           height: 6,
           borderRadius: 3,
-          bgcolor: 'grey.200',
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.200',
         }}
       />
     </Box>
@@ -144,12 +144,23 @@ const CampaignIntelligenceSection = ({ data }) => {
         sx={{
           p: 4,
           mb: 3,
-          background: data.threat_level === 'CRITICAL' || data.threat_level === 'HIGH'
-            ? 'linear-gradient(135deg, #f44336 0%, #c62828 100%)'
-            : data.threat_level === 'MEDIUM'
-            ? 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
-            : 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)',
-          color: 'white',
+          background: (theme) => {
+            const isDark = theme.palette.mode === 'dark';
+            if (data.threat_level === 'CRITICAL' || data.threat_level === 'HIGH') {
+              return isDark
+                ? 'linear-gradient(135deg, #5d1f1f 0%, #3d1414 100%)'
+                : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
+            } else if (data.threat_level === 'MEDIUM') {
+              return isDark
+                ? 'linear-gradient(135deg, #5d3a1a 0%, #3d2610 100%)'
+                : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)';
+            } else {
+              return isDark
+                ? 'linear-gradient(135deg, #1e4620 0%, #0f2e11 100%)'
+                : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)';
+            }
+          },
+          color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
           borderRadius: 2,
         }}
       >
@@ -165,7 +176,7 @@ const CampaignIntelligenceSection = ({ data }) => {
           </Box>
         </Box>
 
-        <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
+        <Divider sx={{ my: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.12)' }} />
 
         <Grid container spacing={3}>
           {/* Left: Summary */}
@@ -173,9 +184,9 @@ const CampaignIntelligenceSection = ({ data }) => {
             <Box
               sx={{
                 p: 3,
-                bgcolor: 'rgba(255,255,255,0.15)',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
                 borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.3)',
+                border: (theme) => theme.palette.mode === 'dark' ? '2px solid rgba(255,255,255,0.3)' : '2px solid rgba(0,0,0,0.2)',
                 mb: 2,
               }}
             >
@@ -189,8 +200,9 @@ const CampaignIntelligenceSection = ({ data }) => {
                 icon={<ShieldIcon />}
                 label={`Threat Level: ${data.threat_level}`}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                  border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(0,0,0,0.2)',
                   fontSize: '1rem',
                   fontWeight: 600,
                   fontFamily: 'inherit',
@@ -200,8 +212,9 @@ const CampaignIntelligenceSection = ({ data }) => {
                 icon={<FlagIcon />}
                 label={`Confidence: ${data.campaign_confidence}`}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                  border: (theme) => theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(0,0,0,0.2)',
                   fontSize: '1rem',
                   fontWeight: 600,
                   fontFamily: 'inherit',
@@ -212,9 +225,22 @@ const CampaignIntelligenceSection = ({ data }) => {
 
           {/* Right: Threat Score Gauge */}
           <Grid item xs={12} md={4}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', height: '100%' }}>
+            <Card
+              sx={{
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
+                border: (theme) => theme.palette.mode === 'dark' ? '2px solid rgba(255,255,255,0.3)' : '2px solid rgba(0,0,0,0.2)',
+                height: '100%'
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ color: 'white', opacity: 0.9 }}>
+                <Typography
+                  variant="subtitle2"
+                  gutterBottom
+                  sx={{
+                    color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                    fontWeight: 600
+                  }}
+                >
                   Threat Level Score
                 </Typography>
                 <ResponsiveContainer width="100%" height={150}>
@@ -230,10 +256,10 @@ const CampaignIntelligenceSection = ({ data }) => {
                   >
                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
                     <RadialBar
-                      background={{ fill: 'rgba(255,255,255,0.2)' }}
+                      background={{ fill: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
                       dataKey="value"
                       cornerRadius={10}
-                      fill="white"
+                      fill={theme.palette.mode === 'dark' ? 'white' : '#424242'}
                     />
                     <text
                       x="50%"
@@ -243,14 +269,20 @@ const CampaignIntelligenceSection = ({ data }) => {
                       style={{
                         fontSize: '28px',
                         fontWeight: 'bold',
-                        fill: 'white'
+                        fill: theme.palette.mode === 'dark' ? 'white' : '#000000'
                       }}
                     >
                       {threatScore}
                     </text>
                   </RadialBarChart>
                 </ResponsiveContainer>
-                <Typography variant="caption" sx={{ color: 'white', opacity: 0.9 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                    fontWeight: 600
+                  }}
+                >
                   Risk Assessment (0-100)
                 </Typography>
               </CardContent>
@@ -271,7 +303,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #0d1f2d 0%, #082429 100%)'
+                : 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
               border: '2px solid',
               borderColor: 'info.light',
               borderRadius: 2,
@@ -282,7 +316,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 <Grid item xs={12} key={index}>
                   <Card
                     sx={{
-                      bgcolor: 'white',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                       '&:hover': {
                         boxShadow: 3,
                         transform: 'translateX(4px)',
@@ -332,7 +366,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #250d2b 0%, #1a1229 100%)'
+                : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
               border: '2px solid',
               borderColor: 'secondary.light',
               borderRadius: 2,
@@ -344,7 +380,9 @@ const CampaignIntelligenceSection = ({ data }) => {
               <Card
                 sx={{
                   mb: 3,
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+                  background: (theme) => theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, #1a1229 0%, #0d0814 100%)'
+                    : 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
                   boxShadow: 3,
                   border: '1px solid',
                   borderColor: 'secondary.light',
@@ -457,7 +495,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 <Grid item xs={12} key={index}>
                   <Card
                     sx={{
-                      bgcolor: 'white',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                       '&:hover': {
                         boxShadow: 3,
                         transform: 'translateY(-2px)',
@@ -505,7 +543,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #332b08 0%, #3d2610 100%)'
+                : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
               border: '2px solid',
               borderColor: 'warning.light',
               borderRadius: 2,
@@ -530,7 +570,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #3d1414 0%, #5d1f1f 100%)'
+                : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
               border: '2px solid',
               borderColor: 'error.light',
               borderRadius: 2,
@@ -563,7 +605,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 <Grid container spacing={1}>
                   {data.threat_actor_attribution.overlap_indicators.map((indicator, index) => (
                     <Grid item xs={12} key={index}>
-                      <Card sx={{ bgcolor: 'white' }}>
+                      <Card sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white' }}>
                         <CardContent sx={{ p: 2 }}>
                           <Typography variant="body2">• {indicator}</Typography>
                         </CardContent>
@@ -574,7 +616,7 @@ const CampaignIntelligenceSection = ({ data }) => {
               </Box>
             )}
             {data.threat_actor_attribution.attribution_rationale && (
-              <Box sx={{ mt: 2, p: 3, bgcolor: 'white', borderRadius: 1, borderLeft: '4px solid', borderColor: 'error.main' }}>
+              <Box sx={{ mt: 2, p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white', borderRadius: 1, borderLeft: '4px solid', borderColor: 'error.main' }}>
                 <Typography variant="body2" sx={{ lineHeight: 1.7 }}>
                   <strong>Attribution Rationale:</strong> {data.threat_actor_attribution.attribution_rationale}
                 </Typography>
@@ -596,7 +638,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #082429 0%, #0d3a42 100%)'
+                : 'linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%)',
               border: '2px solid',
               borderColor: 'primary.light',
               borderRadius: 2,
@@ -608,7 +652,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 sx={{
                   mb: 2,
                   '&:before': { display: 'none' },
-                  bgcolor: 'white',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                   boxShadow: 2,
                   '&:hover': {
                     boxShadow: 4,
@@ -738,7 +782,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #3d1414 0%, #5d1f1f 100%)'
+                : 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
               border: '2px solid',
               borderColor: 'error.light',
               borderRadius: 2,
@@ -750,7 +796,9 @@ const CampaignIntelligenceSection = ({ data }) => {
               <Card
                 sx={{
                   mb: 3,
-                  background: 'linear-gradient(135deg, #ffffff 0%, #fef5f5 100%)',
+                  background: (theme) => theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, #1a1229 0%, #0d0814 100%)'
+                    : 'linear-gradient(135deg, #ffffff 0%, #fef5f5 100%)',
                   boxShadow: 3,
                   border: '1px solid',
                   borderColor: 'error.light',
@@ -961,7 +1009,7 @@ const CampaignIntelligenceSection = ({ data }) => {
             )}
 
             {/* IOC Table */}
-            <TableContainer sx={{ bgcolor: 'white', borderRadius: 1 }}>
+            <TableContainer sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white', borderRadius: 1 }}>
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}>
@@ -1046,7 +1094,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #0f2e11 0%, #1e4620 100%)'
+                : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
               border: '2px solid',
               borderColor: 'success.light',
               borderRadius: 2,
@@ -1057,7 +1107,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 <Grid item xs={12} key={index}>
                   <Card
                     sx={{
-                      bgcolor: 'white',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                       '&:hover': {
                         boxShadow: 3,
                         transform: 'translateX(4px)',
@@ -1107,7 +1157,9 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, #332b08 0%, #4a3f0d 100%)'
+                : 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
               border: '2px solid',
               borderColor: 'warning.light',
               borderRadius: 2,
@@ -1118,7 +1170,7 @@ const CampaignIntelligenceSection = ({ data }) => {
                 <Grid item xs={12} key={index}>
                   <Card
                     sx={{
-                      bgcolor: 'white',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
                       borderLeft: '4px solid',
                       borderColor: 'warning.main',
                       '&:hover': {
@@ -1146,7 +1198,9 @@ const CampaignIntelligenceSection = ({ data }) => {
         <Paper
           sx={{
             p: 4,
-            background: 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, #1a1229 0%, #2a1f3d 100%)'
+              : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
             border: '2px solid',
             borderColor: 'secondary.light',
             borderRadius: 2,
@@ -1161,7 +1215,7 @@ const CampaignIntelligenceSection = ({ data }) => {
           <Box
             sx={{
               p: 3,
-              bgcolor: 'white',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
               borderRadius: 2,
               borderLeft: '6px solid',
               borderColor: 'secondary.main',

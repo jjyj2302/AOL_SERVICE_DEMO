@@ -276,7 +276,7 @@ export default function Agents() {
                     borderColor: alpha(agentColor, 0.5),
                     '& .agent-icon-box': {
                       bgcolor: agentColor,
-                      color: 'white',
+                      color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
                       transform: 'scale(1.1) rotate(5deg)'
                     }
                   },
@@ -385,7 +385,7 @@ export default function Agents() {
               height: 64,
               borderRadius: "20px",
               bgcolor: "primary.main",
-              color: "white",
+              color: "primary.contrastText",
               mb: 2
             }}>
               {React.cloneElement(AGENTS[selectedAgent].icon, { fontSize: "large" })}
@@ -449,7 +449,7 @@ export default function Agents() {
                 height: 50,
                 borderRadius: "12px",
                 ml: 1,
-                color: "white",
+                color: "primary.contrastText",
                 bgcolor: "primary.main",
                 "&:hover": {
                   bgcolor: "primary.dark",
