@@ -423,11 +423,11 @@ export default function CampaignResult({ data }) {
                         }}
                       />
                     </Box>
-                    <Typography variant="body1" sx={{ mb: 2, color: 'white', lineHeight: 1.8 }}>
+                    <Typography variant="body1" sx={{ mb: 2, color: 'black', lineHeight: 1.8 }}>
                       {hypothesis.hypothesis_description}
                     </Typography>
                     <Divider sx={{ my: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: 'white' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, color: 'black' }}>
                       Detection Platform: {hypothesis.detection_platform}
                     </Typography>
                     <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.3)', borderRadius: 1, mb: 2 }}>
