@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from urllib.parse import quote
 import time
 from app.core.settings.api_keys.cache import APIKeyCache
+from app.core.cache.redis_cache import RedisCache
 from ..schemas.tool_outputs import URLScanOutput, URLScanResult
 
 
@@ -34,6 +35,7 @@ class URLScanTool(BaseTool):
     )
     args_schema: Type[BaseModel] = URLScanInput
     api_key: str = Field(default="", exclude=True)
+    redis_cache: Any = Field(default=None, exclude=True)
 
     def __init__(self, api_key: str = None):
         super().__init__()
@@ -50,6 +52,9 @@ class URLScanTool(BaseTool):
         else:
             print("URLScan API key loaded successfully.")
 
+        # Initialize Redis cache
+        self.redis_cache = RedisCache.get_instance()
+
     def _run(self, query: str) -> URLScanOutput:
         """Execute URLScan search for the given query."""
         try:
@@ -61,10 +66,16 @@ class URLScanTool(BaseTool):
             # Simple query validation and cleaning
             clean_query = self._validate_and_clean_query(query)
 
+            # Redis Cache Check
+            cached_result = self.redis_cache.get_ioc_result('urlscan', 'query', clean_query)
+            if cached_result:
+                print(f"[CACHE HIT] URLScan query: {clean_query}")
+                return URLScanOutput(**cached_result)
+
             # URLScan search API endpoint
             search_url = f"https://urlscan.io/api/v1/search/?q={quote(clean_query)}"
 
-            print(f"Executing URLScan query: {clean_query}")
+            print(f"[URLScan API] Executing query: {clean_query}")
 
             # Prepare headers with API key if available
             headers = {
@@ -89,7 +100,12 @@ class URLScanTool(BaseTool):
             data = response.json()
 
             # Format results as Pydantic object
-            return self._format_urlscan_results(data, clean_query)
+            result = self._format_urlscan_results(data, clean_query)
+
+            # Save to Redis Cache
+            self.redis_cache.set_ioc_result('urlscan', 'query', clean_query, result.model_dump())
+
+            return result
 
         except Exception as error:
             print(f'URLScan search error: {error}')

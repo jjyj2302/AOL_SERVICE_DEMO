@@ -89,3 +89,5 @@ backend/data/
 # Task files
 # tasks.json
 # tasks/ 
+backend/reports/*.json
+backend/reports/*.md

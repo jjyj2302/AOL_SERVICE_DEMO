@@ -171,18 +171,6 @@ class URLScanResult(BaseModel):
     status_code: Optional[int] = None
     urlscan_link: str
 
-    # Deep Analysis Fields
-    screenshot_url: Optional[str] = None
-    page_title: Optional[str] = None
-    page_domain: Optional[str] = None
-    server_software: Optional[str] = None
-
-    # Infrastructure Role Classification
-    infrastructure_role: Optional[str] = None
-    role_confidence: Optional[str] = None
-    role_evidence: List[str] = Field(default_factory=list)
-    detected_brands: List[str] = Field(default_factory=list)
-
 
 class URLScanOutput(BaseModel):
     """Structured output from URLScan search."""

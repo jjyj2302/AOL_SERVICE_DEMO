@@ -1,6 +1,7 @@
 """FastAPI routes for AOL Threat Hunter."""
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi.concurrency import run_in_threadpool
 from typing import Dict, Any
 
 from ..schemas import (
@@ -43,8 +44,9 @@ async def investigate_ioc(request: ThreatHuntRequest) -> ThreatHuntResponse:
         # Get service
         service = get_threat_hunt_service()
 
-        # Run investigation
-        result = service.investigate_ioc(
+        # Run investigation in threadpool to prevent blocking event loop
+        result = await run_in_threadpool(
+            service.investigate_ioc,
             ioc=request.ioc,
             investigation_type=request.investigation_type
         )
@@ -92,8 +94,8 @@ async def batch_investigate_iocs(
         # Get service
         service = get_threat_hunt_service()
 
-        # Run batch investigation
-        result = service.batch_investigate(
+        # Run batch investigation in parallel
+        result = await service.batch_investigate_async(
             iocs=request.iocs,
             investigation_type=request.investigation_type
         )

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from urllib.parse import quote
 import time
 from app.core.settings.api_keys.cache import APIKeyCache
+from app.core.cache.redis_cache import RedisCache
 from ..schemas.tool_outputs import URLScanOutput, URLScanResult
 
 
@@ -34,6 +35,7 @@ class URLScanTool(BaseTool):
     )
     args_schema: Type[BaseModel] = URLScanInput
     api_key: str = Field(default="", exclude=True)
+    redis_cache: Any = Field(default=None, exclude=True)
 
     def __init__(self, api_key: str = None):
         super().__init__()
@@ -50,6 +52,9 @@ class URLScanTool(BaseTool):
         else:
             print("URLScan API key loaded successfully.")
 
+        # Initialize Redis cache
+        self.redis_cache = RedisCache.get_instance()
+
     def _run(self, query: str) -> URLScanOutput:
         """Execute URLScan search for the given query."""
         try:
@@ -61,10 +66,16 @@ class URLScanTool(BaseTool):
             # Simple query validation and cleaning
             clean_query = self._validate_and_clean_query(query)
 
+            # Redis Cache Check (use query as IOC)
+            cached_result = self.redis_cache.get_ioc_result('urlscan', 'query', clean_query)
+            if cached_result:
+                print(f"[CACHE HIT] URLScan query: {clean_query}")
+                return URLScanOutput(**cached_result)
+
             # URLScan search API endpoint
             search_url = f"https://urlscan.io/api/v1/search/?q={quote(clean_query)}"
 
-            print(f"Executing URLScan query: {clean_query}")
+            print(f"[URLScan API] Executing query: {clean_query}")
 
             # Prepare headers with API key if available
             headers = {
@@ -89,7 +100,12 @@ class URLScanTool(BaseTool):
             data = response.json()
 
             # Format results as Pydantic object
-            return self._format_urlscan_results(data, clean_query)
+            result = self._format_urlscan_results(data, clean_query)
+
+            # Save to Redis Cache
+            self.redis_cache.set_ioc_result('urlscan', 'query', clean_query, result.model_dump())
+
+            return result
 
         except Exception as error:
             print(f'URLScan search error: {error}')
@@ -118,8 +134,83 @@ class URLScanTool(BaseTool):
         
         return clean_query
 
+    def _detect_brands_from_title(self, page_title: str) -> list[str]:
+        """Detect impersonated brands from page title."""
+        if not page_title:
+            return []
+
+        # Korean FSI brand mapping
+        brand_keywords = {
+            "신한": "Shinhan Card",
+            "국민": "KB Kookmin Bank",
+            "NH": "NH Bank",
+            "농협": "NH Bank",
+            "IBK": "IBK Bank",
+            "우리": "Woori Bank",
+            "하나": "Hana Bank",
+            "카카오뱅크": "Kakao Bank",
+            "토스": "Toss",
+            "삼성": "Samsung Card",
+            "현대": "Hyundai Card",
+            "롯데": "Lotte Card",
+            "BC": "BC Card",
+        }
+
+        detected = []
+        page_title_lower = page_title.lower()
+
+        for keyword, brand_name in brand_keywords.items():
+            if keyword.lower() in page_title_lower:
+                detected.append(brand_name)
+
+        return list(set(detected))
+
+    def _classify_infrastructure_role(
+        self,
+        url: str,
+        page_title: str | None,
+        page_domain: str | None,
+        server_software: str | None
+    ) -> Dict[str, Any]:
+        """Classify infrastructure role based on Voice Phishing methodology."""
+        evidence = []
+        role = "unknown"
+        confidence = "LOW"
+
+        url_lower = url.lower() if url else ""
+        title_lower = page_title.lower() if page_title else ""
+
+        # Distribution Server Indicators
+        if any(keyword in url_lower for keyword in ['/download', '/install', '/apk', '/app']):
+            evidence.append("URL contains download/install keywords")
+            role = "distribution_server"
+            confidence = "HIGH"
+        elif re.search(r'/\d+/', url_lower):  # Numeric paths like /123/
+            evidence.append("URL contains numeric paths (common in distribution)")
+            role = "distribution_server"
+            confidence = "MEDIUM"
+
+        # Phishing Server Indicators (highest priority)
+        bank_paths = ['/nhbank/', '/ibk/', '/shinhan/', '/kb/', '/hana/']
+        if any(path in url_lower for path in bank_paths):
+            evidence.append(f"URL contains financial institution path")
+            role = "phishing_server"
+            confidence = "HIGH"
+
+        # Brand impersonation in title
+        if page_title and any(brand in title_lower for brand in ["신한", "국민", "NH", "농협", "카드"]):
+            evidence.append(f"Page title contains Korean financial brand: {page_title}")
+            role = "phishing_server"
+            confidence = "HIGH"
+
+        return {
+            'role': role,
+            'confidence': confidence,
+            'evidence': evidence if evidence else ["No clear role indicators found"]
+        }
+
     def _format_urlscan_results(self, data: Dict[str, Any], query: str) -> URLScanOutput:
-        """Format URLScan results as structured Pydantic object - NO DATA LOSS!"""
+        """Format URLScan results as structured Pydantic object - Optimized for Deep Analysis."""
         results_data = data.get('results', [])
         total = data.get('total', 0)
 
@@ -136,7 +227,9 @@ class URLScanTool(BaseTool):
                 unique_countries=[]
             )
 
-        # Parse ALL results - NO TRUNCATION!
+        # Optimization: Limit to top 50 results to prevent context overflow
+        processed_results = results_data[:50]
+        
         urlscan_results = []
         unique_domains = set()
         unique_ips = set()
@@ -145,9 +238,32 @@ class URLScanTool(BaseTool):
         unique_countries = set()
         timestamps = []
 
-        for result in results_data:  # Process ALL results, not [:20]!
+        for result in processed_results:
             task = result.get('task', {})
             page = result.get('page', {})
+
+            # Extract Deep Analysis Fields
+            screenshot_url = task.get('screenshotURL')
+            page_title = page.get('title')
+            page_domain = page.get('domain')
+            
+            server_software = None
+            page_server = page.get('server')
+            if isinstance(page_server, dict):
+                server_software = page_server.get('ip')
+            elif isinstance(page_server, str):
+                server_software = page_server
+
+            # Auto-classify infrastructure role
+            role_info = self._classify_infrastructure_role(
+                url=task.get('url', ''),
+                page_title=page_title,
+                page_domain=page_domain,
+                server_software=server_software
+            )
+
+            # Detect brands from page title
+            detected_brands = self._detect_brands_from_title(page_title) if page_title else []
 
             # Create URLScanResult object
             urlscan_result = URLScanResult(
@@ -160,7 +276,17 @@ class URLScanTool(BaseTool):
                 asn=page.get('asn'),
                 asn_name=page.get('asnname'),
                 status_code=page.get('status'),
-                urlscan_link=result.get('result', '')
+                urlscan_link=result.get('result', ''),
+                
+                # Deep Analysis Fields
+                screenshot_url=screenshot_url,
+                page_title=page_title,
+                page_domain=page_domain,
+                server_software=server_software,
+                infrastructure_role=role_info['role'],
+                role_confidence=role_info['confidence'],
+                role_evidence=role_info['evidence'],
+                detected_brands=detected_brands
             )
             urlscan_results.append(urlscan_result)
 

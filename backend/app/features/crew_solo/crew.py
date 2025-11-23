@@ -38,7 +38,9 @@ class ThreatHuntingCrew():
             cache = APIKeyCache.get_instance()
             openai_key_data = cache.get_key('openai')
             if openai_key_data and openai_key_data.get('key'):
-                os.environ['OPENAI_API_KEY'] = openai_key_data.get('key')
+                openai_key = openai_key_data.get('key')
+                os.environ['OPENAI_API_KEY'] = openai_key
+                os.environ['CHROMA_OPENAI_API_KEY'] = openai_key  # For Chroma memory
 
         # Initialize tools
         self.virustotal_tool = VirusTotalTool()
@@ -134,6 +136,12 @@ class ThreatHuntingCrew():
     @crew
     def crew(self) -> Crew:
         """Creates the Smart Threat Hunting crew with Hierarchical Process"""
+        # Ensure Chroma API key is set before Crew initialization
+        if not os.getenv('CHROMA_OPENAI_API_KEY'):
+            openai_key = os.getenv('OPENAI_API_KEY')
+            if openai_key:
+                os.environ['CHROMA_OPENAI_API_KEY'] = openai_key
+
         return Crew(
             agents=[
                 self.triage_specialist(),
@@ -151,7 +159,14 @@ class ThreatHuntingCrew():
             process=Process.hierarchical,  # Hierarchical process with dynamic agent recall
             manager_agent=self.correlation_orchestrator(),  # Orchestrator acts as Manager
             verbose=True,
-            memory=False,
+            memory=True,  # Enable memory for learning from past analyses
+            cache=True,   # Enable LLM response caching
+            embedder={    # Optimize memory embeddings
+                "provider": "openai",
+                "config": {
+                    "model": "text-embedding-3-small"
+                }
+            },
             max_iter=15  # Prevent infinite loops - max 15 iterations
         )
 

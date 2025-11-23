@@ -312,6 +312,55 @@ class ThreatActorAttribution(BaseModel):
     attribution_rationale: str = Field(..., description="Detailed rationale for attribution assessment")
 
 
+    # Risk Assessment
+    organizational_impact: str = Field(..., description="Assessment of organizational impact and risk")
+
+
+# ============================================================================
+# Voice Phishing Style Reporting Extensions
+# ============================================================================
+
+class InfrastructureRole(BaseModel):
+    """Role classification for a specific infrastructure node."""
+    ip: str = Field(..., description="IP address of the node")
+    domain: Optional[str] = Field(None, description="Domain name if available")
+    role: Literal["distribution", "phishing", "c2", "gateway", "landing", "unknown"] = Field(
+        ..., 
+        description="Classified role: distribution (APK download), phishing (credential harvest), c2 (command control)"
+    )
+    confidence: Literal["HIGH", "MEDIUM", "LOW"] = Field(..., description="Confidence in role classification")
+    evidence: List[str] = Field(..., description="Technical evidence supporting this role (e.g., '/download' path, bank logo)")
+
+
+class InfrastructureChain(BaseModel):
+    """Connected infrastructure chain showing the flow of the attack."""
+    chain_id: str = Field(..., description="Unique identifier for this chain")
+    chain_type: Literal["smishing_distribution", "credential_harvesting", "malware_c2", "hybrid"] = Field(
+        ..., 
+        description="Type of infrastructure chain"
+    )
+    nodes: List[InfrastructureRole] = Field(..., description="Ordered list of nodes in this chain")
+    description: str = Field(..., description="Description of how this chain operates (e.g., 'User clicks SMS -> Landing Page -> APK Download')")
+
+
+class AttackScenario(BaseModel):
+    """Reconstructed attack scenario based on infrastructure and malware analysis."""
+    scenario_name: str = Field(..., description="Name of the scenario (e.g., 'Shinhan Bank Loan Fraud')")
+    target_audience: str = Field(..., description="Likely target audience (e.g., 'Middle-aged users seeking loans')")
+    lure_mechanism: str = Field(..., description="How victims are lured (e.g., 'SMS claiming low-interest government loan')")
+    execution_flow: List[str] = Field(..., description="Step-by-step execution flow from victim's perspective")
+    estimated_success_rate: Literal["HIGH", "MEDIUM", "LOW"] = Field(..., description="Estimated success rate based on sophistication")
+
+
+class OrganizationAssessment(BaseModel):
+    """Strategic assessment of the threat organization."""
+    sophistication_level: Literal["APT", "ORGANIZED_CRIME", "SCRIPT_KIDDIE"] = Field(..., description="Technical sophistication level")
+    infrastructure_scale: Literal["LARGE", "MEDIUM", "SMALL"] = Field(..., description="Scale of infrastructure (based on node count and diversity)")
+    primary_objective: str = Field(..., description="Primary goal (e.g., 'Financial Theft', 'Espionage', 'Botnet Expansion')")
+    regional_focus: Optional[str] = Field(None, description="Targeted region (e.g., 'South Korea', 'Global')")
+
+
+# Update CampaignIntelligenceOutput to include Voice Phishing fields
 class CampaignIntelligenceOutput(BaseModel):
     """Structured output from Strategic Campaign Intelligence Synthesis task."""
 
@@ -334,6 +383,24 @@ class CampaignIntelligenceOutput(BaseModel):
     campaign_evidence: List[str] = Field(
         default_factory=list,
         description="Specific evidence supporting campaign classification"
+    )
+
+    # Voice Phishing: Infrastructure Analysis
+    infrastructure_chain: List[InfrastructureChain] = Field(
+        default_factory=list,
+        description="Reconstructed infrastructure chains showing attack flow"
+    )
+
+    # Voice Phishing: Scenario Analysis
+    attack_scenarios: List[AttackScenario] = Field(
+        default_factory=list,
+        description="Reconstructed attack scenarios from victim perspective"
+    )
+
+    # Voice Phishing: Organization Assessment
+    organization_assessment: Optional[OrganizationAssessment] = Field(
+        None,
+        description="Strategic assessment of the threat actor organization"
     )
 
     # TTPs & Attack Chain

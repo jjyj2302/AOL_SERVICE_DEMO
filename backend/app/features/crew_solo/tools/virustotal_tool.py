@@ -8,6 +8,7 @@ import json
 import os
 from datetime import datetime
 from app.core.settings.api_keys.cache import APIKeyCache
+from app.core.cache.redis_cache import RedisCache
 from ..schemas.tool_outputs import (
     VirusTotalHashOutput,
     VirusTotalDomainOutput,
@@ -52,6 +53,7 @@ class VirusTotalTool(BaseTool):
     )
     args_schema: Type[BaseModel] = VirusTotalInput
     api_key: str = Field(default="", exclude=True)
+    redis_cache: Any = Field(default=None, exclude=True)
 
     def __init__(self, api_key: str = None):
         super().__init__()
@@ -66,6 +68,9 @@ class VirusTotalTool(BaseTool):
         if not self.api_key:
             raise ValueError("VirusTotal API key not found. Please configure in Settings or set VIRUSTOTAL_API_KEY environment variable.")
 
+        # Initialize Redis cache
+        self.redis_cache = RedisCache.get_instance()
+
     def _run(self, ioc: str, ioc_type: str) -> Union[VirusTotalHashOutput, VirusTotalDomainOutput, VirusTotalIPOutput, str]:
         """Execute focused VirusTotal analysis - returns structured Pydantic objects."""
         try:
@@ -75,21 +80,44 @@ class VirusTotalTool(BaseTool):
                 ioc = ioc.get('description', ioc.get('value', str(ioc)))
             if isinstance(ioc_type, dict):
                 ioc_type = ioc_type.get('description', ioc_type.get('value', str(ioc_type)))
-            print(f"🔍 VT Analysis: {ioc} ({ioc_type})")
+
+            # Redis Cache Check
+            cached_result = self.redis_cache.get_ioc_result('virustotal', ioc_type, ioc)
+            if cached_result:
+                print(f"[CACHE HIT] VT {ioc} ({ioc_type})")
+                # Reconstruct Pydantic object from cached dict
+                if ioc_type == 'hash':
+                    return VirusTotalHashOutput(**cached_result)
+                elif ioc_type == 'ip':
+                    return VirusTotalIPOutput(**cached_result)
+                elif ioc_type == 'domain':
+                    return VirusTotalDomainOutput(**cached_result)
+                else:
+                    return cached_result.get('result', cached_result)
+
+            print(f"[VT API] Analyzing {ioc} ({ioc_type})")
 
             # Get primary data + essential relationships in minimal API calls
             if ioc_type == 'hash':
-                return self._analyze_hash(ioc)
+                result = self._analyze_hash(ioc)
             elif ioc_type == 'ip':
-                return self._analyze_ip(ioc)
+                result = self._analyze_ip(ioc)
             elif ioc_type == 'domain':
-                return self._analyze_domain(ioc)
+                result = self._analyze_domain(ioc)
             elif ioc_type == 'url':
-                return self._analyze_url(ioc)
+                result = self._analyze_url(ioc)
             elif ioc_type == 'filename':
-                return self._analyze_filename(ioc)
+                result = self._analyze_filename(ioc)
             else:
                 return f"Unsupported IOC type: {ioc_type}"
+
+            # Save to Redis Cache
+            if isinstance(result, (VirusTotalHashOutput, VirusTotalIPOutput, VirusTotalDomainOutput)):
+                self.redis_cache.set_ioc_result('virustotal', ioc_type, ioc, result.model_dump())
+            elif isinstance(result, str):
+                self.redis_cache.set_ioc_result('virustotal', ioc_type, ioc, {'result': result})
+
+            return result
 
         except Exception as error:
             return f"VirusTotal analysis failed for {ioc}: {str(error)}"

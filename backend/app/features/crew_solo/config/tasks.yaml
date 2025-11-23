@@ -255,6 +255,11 @@ strategic_campaign_intelligence_synthesis:
       patterns be systematically hunted across the environment?**
     - **CRITICAL: Extract ALL discovered IOCs from all analysis phases with comprehensive WHY and WHERE for frontend visualization**
     
+    Voice Phishing Style Reporting (MANDATORY):
+    - **Infrastructure Chain**: Reconstruct the attack flow based **SOLELY on technical evidence** (e.g., URL patterns, file types, server responses). Do not hallucinate steps not supported by data.
+    - **Attack Scenario**: Identify the target and lure mechanism by analyzing page content, title keywords, and social engineering tactics. **Do not assume a specific bank or institution unless explicitly detected in the page content.**
+    - **Organization Assessment**: Evaluate sophistication and scale based on objective metrics (infrastructure diversity, technical complexity, anti-analysis techniques).
+    
     Expert Analytical Reasoning:
     Think like a senior threat intelligence analyst who provides strategic assessment for decision-making AND 
     like an experienced threat hunter who sees investigation findings as intelligence for proactive hunting. 
@@ -276,6 +281,41 @@ strategic_campaign_intelligence_synthesis:
       "campaign_name": "Campaign name or identifier",
       "campaign_confidence": "HIGH|MEDIUM|LOW",
       "campaign_evidence": ["Specific evidence supporting campaign classification"],
+      
+      "infrastructure_chain": [
+        {
+          "chain_id": "unique_id",
+          "chain_type": "smishing_distribution|credential_harvesting|malware_c2|hybrid",
+          "nodes": [
+            {
+              "ip": "1.2.3.4",
+              "domain": "example.com",
+              "role": "distribution|phishing|c2|gateway|landing",
+              "confidence": "HIGH|MEDIUM|LOW",
+              "evidence": ["Evidence string"]
+            }
+          ],
+          "description": "Description of how this chain operates"
+        }
+      ],
+      
+      "attack_scenarios": [
+        {
+          "scenario_name": "Scenario Name (e.g., Shinhan Bank Loan Fraud)",
+          "target_audience": "Target Audience",
+          "lure_mechanism": "Lure Mechanism",
+          "execution_flow": ["Step 1", "Step 2"],
+          "estimated_success_rate": "HIGH|MEDIUM|LOW"
+        }
+      ],
+      
+      "organization_assessment": {
+        "sophistication_level": "APT|ORGANIZED_CRIME|SCRIPT_KIDDIE",
+        "infrastructure_scale": "LARGE|MEDIUM|SMALL",
+        "primary_objective": "Primary Goal",
+        "regional_focus": "Target Region"
+      },
+
       "mitre_tactics": [
         {
           "tactic": "MITRE tactic name (e.g., Command and Control)",
@@ -337,3 +377,4 @@ strategic_campaign_intelligence_synthesis:
     - discovered_iocs should contain ALL IOCs with discovery context for frontend visualization
     - Provide 3-5 hunt hypotheses with COMPLETE executable queries
     - Hunt queries MUST be syntactically valid and executable
+    - **Generate detailed Infrastructure Chain, Attack Scenarios, and Organization Assessment based on Voice Phishing methodology**

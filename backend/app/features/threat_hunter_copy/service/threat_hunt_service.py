@@ -1,8 +1,9 @@
 """Service layer for threat hunting investigations using CrewAI."""
 import logging
 import json
+import asyncio
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pathlib import Path
 from functools import lru_cache
 
@@ -160,4 +161,61 @@ class ThreatHuntService:
             'successful': successful,
             'failed': failed,
             'results': results
+        }
+
+    async def batch_investigate_async(
+        self,
+        iocs: List[str],
+        investigation_type: str = "comprehensive"
+    ) -> Dict[str, Any]:
+        """
+        Run investigations for multiple IOCs in parallel.
+
+        Args:
+            iocs: List of IOCs to investigate
+            investigation_type: Type of investigation
+
+        Returns:
+            Dictionary containing batch investigation results
+        """
+        logger.info(f"Starting parallel batch investigation for {len(iocs)} IOCs")
+
+        # Create async tasks for all IOCs
+        tasks = [
+            asyncio.to_thread(self.investigate_ioc, ioc, investigation_type)
+            for ioc in iocs
+        ]
+
+        # Execute all tasks in parallel
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results and handle exceptions
+        processed_results = []
+        successful = 0
+        failed = 0
+
+        for ioc, result in zip(iocs, results):
+            if isinstance(result, Exception):
+                logger.error(f"Failed to investigate {ioc}: {result}")
+                processed_results.append({
+                    'status': 'failed',
+                    'ioc': ioc,
+                    'error_message': str(result)
+                })
+                failed += 1
+            else:
+                processed_results.append(result)
+                if result.get('status') == 'success':
+                    successful += 1
+                else:
+                    failed += 1
+
+        logger.info(f"Parallel batch investigation completed. Success: {successful}, Failed: {failed}")
+
+        return {
+            'status': 'completed',
+            'total': len(iocs),
+            'successful': successful,
+            'failed': failed,
+            'results': processed_results
         }
