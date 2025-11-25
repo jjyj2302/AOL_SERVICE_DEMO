@@ -84,11 +84,11 @@ export default function Main() {
         </Typography>
         <List disablePadding>
           {[
-            { label: "Triage Analyst", icon: ManageSearchIcon, color: "#4F46E5" },
-            { label: "Malware Analyst", icon: BugReportIcon, color: "#DC2626" },
-            { label: "Infrastructure Analyst", icon: DnsIcon, color: "#059669" },
-            { label: "Campaign Analyst", icon: CampaignIcon, color: "#D97706" },
-            { label: "Agents 탐색하기", icon: ExploreIcon, color: "text.secondary" }
+            { label: "Triage Analyst", icon: ManageSearchIcon, color: "#4F46E5", agentIndex: 0 },
+            { label: "Malware Analyst", icon: BugReportIcon, color: "#DC2626", agentIndex: 1 },
+            { label: "Infrastructure Analyst", icon: DnsIcon, color: "#059669", agentIndex: 2 },
+            { label: "Campaign Analyst", icon: CampaignIcon, color: "#D97706", agentIndex: 3 },
+            { label: "Agents 탐색하기", icon: ExploreIcon, color: "text.secondary", agentIndex: null }
           ].map((item) => (
             <ListItemButton
               key={item.label}
@@ -98,7 +98,7 @@ export default function Main() {
                 py: 1,
                 "&:hover": { bgcolor: "action.hover" }
               }}
-              onClick={() => navigate("/agents")}
+              onClick={() => navigate(item.agentIndex !== null ? `/agents?agent=${item.agentIndex}` : "/agents")}
             >
               <ListItemIcon sx={{ minWidth: 36, color: item.color }}>
                 <item.icon fontSize="small" />

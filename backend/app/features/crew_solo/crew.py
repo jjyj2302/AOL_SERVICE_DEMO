@@ -159,14 +159,8 @@ class ThreatHuntingCrew():
             process=Process.hierarchical,  # Hierarchical process with dynamic agent recall
             manager_agent=self.correlation_orchestrator(),  # Orchestrator acts as Manager
             verbose=True,
-            memory=True,  # Enable memory for learning from past analyses
+            memory=False,  # Disabled memory due to embedding compatibility issues
             cache=True,   # Enable LLM response caching
-            embedder={    # Optimize memory embeddings
-                "provider": "openai",
-                "config": {
-                    "model": "text-embedding-3-small"
-                }
-            },
             max_iter=15  # Prevent infinite loops - max 15 iterations
         )
 

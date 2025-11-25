@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -73,8 +74,27 @@ export default function Agents() {
   const [allDiscoveredIocs, setAllDiscoveredIocs] = useState([]);
   const [agentResults, setAgentResults] = useState({});
   const discoveredIocsRef = useRef(null);
+  const [searchParams] = useSearchParams();
+
+  // Read agent parameter from URL and set initial agent
+  useEffect(() => {
+    const agentParam = searchParams.get('agent');
+    if (agentParam !== null) {
+      const agentIndex = parseInt(agentParam, 10);
+      if (!isNaN(agentIndex) && agentIndex >= 0 && agentIndex < AGENTS.length) {
+        console.log('[DEBUG] Setting initial agent from URL:', agentIndex, AGENTS[agentIndex]?.name);
+        setSelectedAgent(agentIndex);
+        // Load result for this agent if exists
+        const agentId = AGENTS[agentIndex].id;
+        if (agentResults[agentId]) {
+          setResult(agentResults[agentId]);
+        }
+      }
+    }
+  }, [searchParams]);
 
   const handleTabChange = (event, newValue) => {
+    console.log('[DEBUG] handleTabChange called with:', newValue, 'Agent:', AGENTS[newValue]?.name);
     setSelectedAgent(newValue);
     // Load result for this agent if exists
     const agentId = AGENTS[newValue].id;
@@ -175,6 +195,7 @@ export default function Agents() {
   };
 
   const currentAgent = AGENTS[selectedAgent];
+  console.log('[DEBUG] Current selectedAgent index:', selectedAgent, 'Agent:', currentAgent?.name);
 
   const scrollToDiscoveredIocs = () => {
     discoveredIocsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -256,9 +277,20 @@ export default function Agents() {
             return (
               <Paper
                 key={agent.id}
+                component="button"
+                type="button"
                 elevation={0}
-                onClick={(e) => handleTabChange(e, index)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('[DEBUG] Card clicked:', agent.name, 'Index:', index);
+                  handleTabChange(e, index);
+                }}
                 sx={{
+                  border: 'none',
+                  outline: 'none',
+                  textAlign: 'left',
+                  width: '100%',
                   p: 3,
                   cursor: 'pointer',
                   borderRadius: '20px',
@@ -270,6 +302,7 @@ export default function Agents() {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
+                  userSelect: 'none',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: `0 12px 24px -10px ${alpha(agentColor, 0.3)}`,
@@ -388,16 +421,16 @@ export default function Agents() {
               color: "primary.contrastText",
               mb: 2
             }}>
-              {React.cloneElement(AGENTS[selectedAgent].icon, { fontSize: "large" })}
+              {React.cloneElement(currentAgent.icon, { fontSize: "large" })}
             </Box>
             <Typography variant="h4" fontWeight={700} gutterBottom>
-              {AGENTS[selectedAgent].name}
+              {currentAgent.name}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-              {AGENTS[selectedAgent].description}
+              {currentAgent.description}
             </Typography>
             <Chip
-              label={`🛠️ ${AGENTS[selectedAgent].tools}`}
+              label={`🛠️ ${currentAgent.tools}`}
               size="small"
               sx={{ mt: 1, fontWeight: 600 }}
             />

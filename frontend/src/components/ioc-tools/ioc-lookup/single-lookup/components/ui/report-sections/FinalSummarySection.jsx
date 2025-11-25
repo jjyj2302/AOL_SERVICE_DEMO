@@ -571,11 +571,11 @@ export default function FinalSummarySection({ data }) {
               <TableBody>
                 {campaignData.extracted_iocs.map((ioc, index) => (
                   <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                    <TableCell sx={{ color: 'rgba(0,0,0,0.7)', fontFamily: 'monospace', fontSize: '0.85rem', maxWidth: 300, wordBreak: 'break-all' }}>
+                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)', fontFamily: 'monospace', fontSize: '0.85rem', maxWidth: 300, wordBreak: 'break-all' }}>
                       {ioc.indicator}
                     </TableCell>
                     <TableCell>
-                      <Chip label={ioc.ioc_type} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'rgba(0,0,0,0.7)' }} />
+                      <Chip label={ioc.ioc_type} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)' }} />
                     </TableCell>
                     <TableCell>
                       <Chip
@@ -590,10 +590,10 @@ export default function FinalSummarySection({ data }) {
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: 'rgba(0,0,0,0.7)' }}>
+                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)' }}>
                       {ioc.detections || 'N/A'}
                     </TableCell>
-                    <TableCell sx={{ color: 'rgba(0,0,0,0.7)', fontSize: '0.85rem' }}>
+                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)', fontSize: '0.85rem' }}>
                       {ioc.first_seen ? new Date(ioc.first_seen).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell>
@@ -651,31 +651,31 @@ export default function FinalSummarySection({ data }) {
                         sx={{ bgcolor: COLORS[hypothesis.confidence] || COLORS.UNKNOWN, color: 'white', fontWeight: 600 }}
                       />
                     </Box>
-                    <Typography variant="h6" sx={{ color: 'rgba(0, 0, 0, 0.7)', fontWeight: 600, mb: 1 }}>
+                    <Typography variant="h6" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 600, mb: 1 }}>
                       {hypothesis.hypothesis_name}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.7)', mb: 2, lineHeight: 1.8 }}>
+                    <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', mb: 2, lineHeight: 1.8 }}>
                       {hypothesis.hypothesis_description}
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid item xs={12} md={6}>
-                        <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.7)' }}>
+                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
                           Detection Platform:
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
+                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
                           {hypothesis.detection_platform}
                         </Typography>
                       </Grid>
                       <Grid item xs={12} md={6}>
-                        <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.7)' }}>
+                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
                           Hunt Timeline:
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
+                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
                           {hypothesis.hunt_timeline}
                         </Typography>
                       </Grid>
                       <Grid item xs={12}>
-                        <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.7)' }}>
+                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
                           Executable Query:
                         </Typography>
                         <Box sx={{
@@ -692,10 +692,10 @@ export default function FinalSummarySection({ data }) {
                         </Box>
                       </Grid>
                       <Grid item xs={12}>
-                        <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.7)' }}>
+                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
                           Success Criteria:
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
+                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
                           {hypothesis.success_criteria}
                         </Typography>
                       </Grid>
