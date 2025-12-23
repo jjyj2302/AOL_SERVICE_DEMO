@@ -1,93 +1,116 @@
-# Claude Code 설정 (개인 설정 파일)
-.claude/
-.claude/**
+# ===========================================
+# Python
+# ===========================================
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+.env/
 
-# 데이터베이스 파일
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ===========================================
+# Node.js / Frontend
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+
+# ===========================================
+# Environment & Secrets
+# ===========================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ===========================================
+# Database
+# ===========================================
 data/
 *.db
 *.sqlite
 *.sqlite3
 
-# 환경 설정
-.env
-.env.local
-.env.*.local
-
-# 로그 파일
-*.log
-logs/
-
-# OS 관련
-.DS_Store
-Thumbs.db
-
-# IDE 설정
+# ===========================================
+# IDE / Editor
+# ===========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# Python 캐시 (백업)
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Docker 볼륨 데이터
-docker-volumes/
-
-# Logs
-logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-dev-debug.log
-# Dependency directories
-node_modules/
-# Environment variables
-# Editor directories and files
-.idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
-# OS specific
 
-# Task Master AI (프로젝트 관리 도구)
+# ===========================================
+# OS
+# ===========================================
+.DS_Store
+Thumbs.db
+
+# ===========================================
+# Logs
+# ===========================================
+*.log
+logs/
+dev-debug.log
+
+# ===========================================
+# Docker
+# ===========================================
+docker-volumes/
+
+# ===========================================
+# Project Specific
+# ===========================================
+# Claude Code settings
+.claude/
+
+# Task Master AI
 .taskmaster/
 .mcp.json
 
-# 개발 문서 (개인 메모)
-CLAUDE.md
-ARCHITECTURE.md
-backend/PYDANTIC_FILTERING_PLAN.md
-backend/STATE_UPDATE_ISSUE.md
-
-# 테스트 파일
-test_*.py
-backend/test_*.py
-
-# VirusTotal 응답 샘플 (개발용)
-backend/vt_*.json
-
-# LangGraph 예제
-langgraph-example/
-
-# Python 가상환경
-venv/
-env/
-ENV/
-
-# 개발 데이터
-backend/data/
-
-# 환경 설정 예제
-.env.example 
-
-# Task files
-# tasks.json
-# tasks/ 
+# Reports & temp files
 backend/reports/*.json
 backend/reports/*.md
+backend/vt_*.json
+
+# Test files (개발용)
+backend/test_*.py
+
+# Pip installation artifacts
+backend/=*
+frontend/=*
+
+# Frontend build output
+frontend/build/
