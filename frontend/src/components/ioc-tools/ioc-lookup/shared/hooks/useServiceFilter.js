@@ -1,11 +1,8 @@
 import { useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
-import { apiKeysState } from '../../../../../state';
 import { useServiceDefinitions } from './useServiceDefinitions';
 import { SERVICE_DEFINITIONS } from '../config/serviceConfig';
 
 export function useServiceFilter(iocType, externallyFilteredServices) {
-  const apiKeys = useRecoilValue(apiKeysState);
   const { serviceDefinitions, loading } = useServiceDefinitions();
 
   const servicesToRender = useMemo(() => {

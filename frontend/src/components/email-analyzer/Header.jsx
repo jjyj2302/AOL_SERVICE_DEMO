@@ -12,13 +12,11 @@ import {
   TableHead,
   TableRow,
   Typography,
-  useTheme,
 } from "@mui/material";
 import HorizontalSplitIcon from "@mui/icons-material/HorizontalSplit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export default function Header(props) {
-  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const handleAccordionChange = () => {

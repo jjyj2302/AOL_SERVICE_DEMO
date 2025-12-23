@@ -16,16 +16,15 @@ import {
 } from '@mui/material';
 import {
   Security as SecurityIcon,
-  Assignment as AssignmentIcon,
   BugReport as MalwareIcon,
   Language as IocValueIcon,
   Schedule as TimeIcon,
   Person as PersonIcon,
   Label as TagIcon,
-  InfoOutlined as InfoIcon, 
+  InfoOutlined as InfoIcon,
   Link as LinkIcon,
-  ReportProblemOutlined as ReportProblemIcon, 
-  CheckCircleOutline as CheckCircleOutlineIcon, 
+  ReportProblemOutlined as ReportProblemIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
 } from '@mui/icons-material';
 
 import NoDetails from '../NoDetails';

@@ -13,13 +13,11 @@ import {
   TableContainer,
   TableRow,
   Typography,
-  useTheme,
 } from "@mui/material";
 import LinkIcon from "@mui/icons-material/Link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export default function Urls(props) {
-  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [url, setUrl] = useState(null);
   const [showUrlAnalyse, setShowUrlAnalyse] = useState(false);

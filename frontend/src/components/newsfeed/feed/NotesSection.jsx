@@ -12,7 +12,6 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import ReactMarkdown from "react-markdown";
-import { grey } from "@mui/material/colors";
 
 export default function NotesSection({
   item,

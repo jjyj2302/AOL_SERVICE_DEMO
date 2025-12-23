@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   TextField,
-  Tooltip,
   IconButton,
   Chip,
   Stack,
@@ -9,7 +8,6 @@ import {
   Box,
   Autocomplete
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import tagData from '../data/TagData.json';

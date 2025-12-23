@@ -1,5 +1,5 @@
 import { useEffect, useMemo, createContext, useState } from "react";
-import { useSetRecoilState, useRecoilValue } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { Routes, Route } from 'react-router-dom';
 import api from "./api";
 
@@ -31,8 +31,6 @@ function App() {
   const setModules = useSetRecoilState(modulesState);
   const setGeneralSettings = useSetRecoilState(generalSettingsState);
   const setNewsfeedList = useSetRecoilState(newsfeedListState);
-
-  const generalSettings = useRecoilValue(generalSettingsState);
 
   // Initialize theme mode from local storage or default to light
   const [mode, setMode] = useState(() => {

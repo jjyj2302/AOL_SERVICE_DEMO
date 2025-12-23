@@ -14,7 +14,7 @@ import {
   Divider,
   Stack
 } from '@mui/material';
-import { styled, useTheme, alpha } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
 import {
   Info as InfoIcon,
   Edit as EditIcon,
@@ -178,8 +178,6 @@ const useTemplateExecution = () => {
  * Main UseTemplateView component
  */
 export default function UseTemplateView() {
-  const theme = useTheme();
-  
   // State management hooks
   const {
     templates,

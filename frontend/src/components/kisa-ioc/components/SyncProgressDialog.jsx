@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import ErrorIcon from '@mui/icons-material/Error';
 import { useRecoilValue } from 'recoil';
 import { kisaDialogsState } from '../state/kisaAtoms';
 import { useKisaSync } from '../hooks/useKisaSync';

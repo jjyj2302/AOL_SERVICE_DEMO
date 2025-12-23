@@ -12,14 +12,12 @@ import Card from "@mui/material/Card";
 import { LinearProgress } from "@mui/material";
 import Grow from "@mui/material/Grow";
 import Stack from "@mui/material/Stack";
-import { useTheme } from '@mui/material/styles';
 
 
 export default function ShowOpenAiAnswer(props) {
     const [loading, setLoading] = React.useState(false);
     const [result, setResult] = React.useState(null);
     const apiKeys = useRecoilValue(apiKeysState);
-    const theme = useTheme();
 
     async function callOpenAI(input, endpoint) {
         setLoading(true);
