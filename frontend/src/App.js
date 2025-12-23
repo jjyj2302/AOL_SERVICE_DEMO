@@ -32,8 +32,6 @@ function App() {
   const setGeneralSettings = useSetRecoilState(generalSettingsState);
   const setNewsfeedList = useSetRecoilState(newsfeedListState);
 
-  const generalSettings = useRecoilValue(generalSettingsState);
-
   // Initialize theme mode from local storage or default to light
   const [mode, setMode] = useState(() => {
     const savedMode = localStorage.getItem("themeMode");

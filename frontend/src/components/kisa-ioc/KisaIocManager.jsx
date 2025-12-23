@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { Box, Container, Typography, Button, IconButton, useTheme, alpha } from '@mui/material';
+import React from 'react';
+import { useRecoilState } from 'recoil';
+import { Box, Container, Typography, Button, useTheme, alpha } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SyncIcon from '@mui/icons-material/Sync';
 import SecurityIcon from '@mui/icons-material/Security';
-import SettingsIcon from '@mui/icons-material/Settings';
 
 import StatisticsDashboard from './components/StatisticsDashboard';
 import FilterBar from './components/FilterBar';
@@ -25,12 +24,6 @@ const KisaIocManager = () => {
 
     const handleOpenSync = () => {
         setDialogs(prev => ({ ...prev, syncOpen: true }));
-    };
-
-    const handleOpenFirewall = () => {
-        // This might be triggered from table selection action, or here for global rules
-        // For now we might hide this button if it's actions-based, 
-        // but the design showed [동기화] [설정] buttons in header
     };
 
     return (

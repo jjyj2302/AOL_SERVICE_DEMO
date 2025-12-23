@@ -30,7 +30,6 @@ import {
 import { alpha } from '@mui/material/styles';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import SecurityIcon from '@mui/icons-material/Security';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import BugReportIcon from '@mui/icons-material/BugReport';
@@ -38,16 +37,11 @@ import HubIcon from '@mui/icons-material/Hub';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import PendingIcon from '@mui/icons-material/Pending';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import WarningIcon from '@mui/icons-material/Warning';
-import CodeIcon from '@mui/icons-material/Code';
-import LinkIcon from '@mui/icons-material/Link';
 import DnsIcon from '@mui/icons-material/Dns';
-import PublicIcon from '@mui/icons-material/Public';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import {
   ResponsiveContainer,
   RadialBarChart,
@@ -56,9 +50,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
-  Cell,
-  Legend
+  Tooltip
 } from 'recharts';
 
 // Apple-style Color Palette (Consistent with BulkLookup.jsx)

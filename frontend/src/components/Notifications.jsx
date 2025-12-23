@@ -10,7 +10,6 @@ import {
   Divider,
   Typography,
   Button,
-  Collapse,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NewspaperIcon from "@mui/icons-material/Newspaper";
