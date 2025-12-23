@@ -1,10 +1,8 @@
 import React from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Chip,
-  Divider,
   Grid,
   Card,
   CardContent,
@@ -14,69 +12,75 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Alert,
   Button,
+  useTheme,
 } from '@mui/material';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import SummarizeIcon from '@mui/icons-material/Summarize';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import BugReportIcon from '@mui/icons-material/BugReport';
+import {
+  PieChart, Pie, Cell, ResponsiveContainer,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  Tooltip, Legend
+} from 'recharts';
 import SecurityIcon from '@mui/icons-material/Security';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import GpsFixedIcon from '@mui/icons-material/GpsFixed';
-import SearchIcon from '@mui/icons-material/Search';
-import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import PrintIcon from '@mui/icons-material/Print';
+import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import SearchIcon from '@mui/icons-material/Search';
 
+// Apple-style Color Palette
 const COLORS = {
-  HIGH: '#f44336',
-  MEDIUM: '#ff9800',
-  LOW: '#4caf50',
-  UNKNOWN: '#9e9e9e',
-  CRITICAL: '#d32f2f',
+  HIGH: '#FF3B30',      // System Red
+  MEDIUM: '#FF9500',    // System Orange
+  LOW: '#34C759',       // System Green
+  UNKNOWN: '#8E8E93',   // System Gray
+  CRITICAL: '#AF52DE',  // System Purple
+  PRIMARY: '#007AFF',   // System Blue
+  TEXT_PRIMARY: '#1D1D1F',
+  TEXT_SECONDARY: '#86868B',
+  BG_LIGHT: '#F5F5F7',
+  CARD_BG_LIGHT: '#FFFFFF',
+  BORDER_LIGHT: '#E5E5EA',
 };
 
 const THREAT_LEVEL_COLORS = {
-  CRITICAL: '#d32f2f',
-  HIGH: '#f44336',
-  MEDIUM: '#ff9800',
-  LOW: '#4caf50',
-  UNKNOWN: '#9e9e9e',
+  CRITICAL: '#AF52DE',
+  HIGH: '#FF3B30',
+  MEDIUM: '#FF9500',
+  LOW: '#34C759',
+  UNKNOWN: '#8E8E93',
 };
 
 export default function FinalSummarySection({ data }) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   if (!data) return null;
 
-  // Debug: Log the data structure
-  console.log('[FinalSummarySection] Received data:', data);
-  console.log('[FinalSummarySection] Data keys:', Object.keys(data));
-
-  // Campaign data can be in two places:
-  // 1. data.full_analysis.campaign (from structured summary)
-  // 2. data directly (when campaign report is passed directly as final_report)
   const campaignData = data.full_analysis?.campaign || data;
-  console.log('[FinalSummarySection] Campaign data keys:', Object.keys(campaignData));
 
-  // Prepare visualization data
+  // --- Data Preparation for Charts ---
+
+  // 1. IOC Confidence (Donut Chart)
   const confidenceData = data.visualization_data?.ioc_confidence_distribution || {};
   const confidencePieData = Object.entries(confidenceData).map(([key, value]) => ({
     name: key,
     value: value
   }));
 
+  // 2. MITRE ATT&CK (Radar Chart)
+  // Transform the mitre_coverage object into an array for RadarChart
   const mitreData = data.visualization_data?.mitre_coverage || {};
-  const mitreBarData = Object.entries(mitreData).map(([tactic, count]) => ({
-    tactic: tactic.length > 15 ? tactic.substring(0, 15) + '...' : tactic,
-    fullTactic: tactic,
-    count: count
+  // If no data, provide some placeholders or handle empty state
+  const radarData = Object.entries(mitreData).map(([tactic, count]) => ({
+    subject: tactic,
+    A: count,
+    fullMark: Math.max(...Object.values(mitreData), 5) // Scale based on max value
   }));
 
+  // --- Handlers ---
   const handlePdfExport = () => {
-    // TODO: Implement PDF export functionality
-    console.log('PDF Export clicked from Final Summary');
     alert('PDF 내보내기 기능은 곧 추가됩니다!');
   };
 
@@ -84,28 +88,40 @@ export default function FinalSummarySection({ data }) {
     window.print();
   };
 
+  // --- Styles ---
+  const cardStyle = {
+    bgcolor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : COLORS.CARD_BG_LIGHT,
+    borderRadius: '18px',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${COLORS.BORDER_LIGHT}`,
+    boxShadow: isDarkMode ? 'none' : '0 4px 24px rgba(0,0,0,0.02)',
+    transition: 'transform 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(0,0,0,0.06)',
+    }
+  };
+
+  const sectionTitleStyle = {
+    fontWeight: 600,
+    mb: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+    fontSize: '1.1rem'
+  };
+
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        mt: 3,
-        p: 4,
-        background: (theme) => theme.palette.mode === 'dark'
-          ? 'rgba(30, 30,30, 0.6)'
-          : 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(20px)',
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-        borderRadius: '24px',
-        boxShadow: (theme) => theme.palette.mode === 'dark'
-          ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-          : '0 8px 32px rgba(0, 0, 0, 0.04)',
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <SummarizeIcon sx={{ fontSize: 40, color: 'text.primary' }} />
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+    <Box sx={{ mt: 2, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
+
+      {/* Header Section */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY, letterSpacing: '-0.02em' }}>
             Final Summary
+          </Typography>
+          <Typography variant="body2" sx={{ color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, mt: 0.5 }}>
+            Comprehensive Threat Intelligence Analysis
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -114,592 +130,326 @@ export default function FinalSummarySection({ data }) {
             startIcon={<PictureAsPdfIcon />}
             onClick={handlePdfExport}
             sx={{
-              borderRadius: "12px",
+              borderRadius: "20px",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 500,
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : COLORS.BORDER_LIGHT,
+              color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+              '&:hover': {
+                borderColor: COLORS.PRIMARY,
+                bgcolor: 'transparent'
+              }
             }}
           >
-            PDF 저장
+            Export PDF
           </Button>
           <Button
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
             sx={{
-              borderRadius: "12px",
+              borderRadius: "20px",
               textTransform: "none",
-              fontWeight: 600
+              fontWeight: 500,
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : COLORS.BORDER_LIGHT,
+              color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+              '&:hover': {
+                borderColor: COLORS.PRIMARY,
+                bgcolor: 'transparent'
+              }
             }}
           >
-            인쇄
+            Print
           </Button>
         </Box>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
-
-      {/* Threat Level & Campaign Name */}
-      {(campaignData.threat_level || campaignData.campaign_name) && (
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={2}>
-            {campaignData.threat_level && (
-              <Grid item xs={12} md={6}>
-                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <WarningIcon sx={{ fontSize: 32, color: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        위협 수준
-                      </Typography>
-                    </Box>
-                    <Typography variant="h3" sx={{ fontWeight: 700, color: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN }}>
-                      {campaignData.threat_level}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-            {campaignData.campaign_name && (
-              <Grid item xs={12} md={6}>
-                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '16px', height: '100%' }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <CampaignIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        캠페인 이름
-                      </Typography>
-                    </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {campaignData.campaign_name}
-                    </Typography>
-                    {campaignData.campaign_confidence && (
-                      <Chip
-                        label={`Confidence: ${campaignData.campaign_confidence}`}
-                        sx={{ mt: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)', borderRadius: '12px', fontWeight: 600 }}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      )}
-
-      {/* Executive Summary */}
-      {(data.executive_summary || campaignData.executive_summary) && (
-        <Box
-          sx={{
-            p: 3,
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-            borderRadius: '16px',
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-            mb: 3,
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon sx={{ color: 'text.secondary' }} /> Executive Summary
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              whiteSpace: 'pre-wrap',
-              lineHeight: 2,
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-            }}
-          >
-            {data.executive_summary || campaignData.executive_summary}
-          </Typography>
-        </Box>
-      )}
-
-      {/* Campaign Evidence */}
-      {campaignData.campaign_evidence && campaignData.campaign_evidence.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GpsFixedIcon sx={{ color: 'text.secondary' }} /> 캠페인 증거
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {campaignData.campaign_evidence.map((evidence, index) => (
-              <Card key={index} elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                    <Box
-                      sx={{
-                        minWidth: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-                        color: 'text.primary',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {index + 1}
-                    </Box>
-                    <Typography variant="body1" sx={{ flex: 1, lineHeight: 1.8, color: 'text.primary' }}>
-                      {evidence}
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-        </Box>
-      )}
-
-      {/* Statistics Cards */}
-      {data.statistics && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssessmentIcon /> 주요 통계
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.total_iocs_found}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  총 IOC 발견
+      {/* Top Cards: Threat Level & Campaign */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Threat Level Card */}
+        <Grid item xs={12} md={4}>
+          <Card elevation={0} sx={cardStyle}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600, mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Threat Level
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{
+                  width: 12, height: 12, borderRadius: '50%',
+                  bgcolor: THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN,
+                  boxShadow: `0 0 12px ${THREAT_LEVEL_COLORS[campaignData.threat_level] || COLORS.UNKNOWN}`
+                }} />
+                <Typography variant="h3" sx={{ fontWeight: 700, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
+                  {campaignData.threat_level || 'UNKNOWN'}
                 </Typography>
               </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.high_confidence_iocs}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                  고신뢰도 IOC
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.detection_rate_average}%
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  평균 탐지율
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.malicious_infrastructure_count}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  악성 인프라
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.total_mitre_techniques}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  MITRE 기법
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 2, textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.campaign_clusters}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  캠페인 클러스터
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.medium_confidence_iocs}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                  중신뢰도 IOC
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', textAlign: 'center' }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                  {data.statistics.low_confidence_iocs}
-                </Typography>
-                <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                  저신뢰도 IOC
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      )}
-
-      {/* MITRE ATT&CK Tactics with Techniques */}
-      {campaignData.mitre_tactics && campaignData.mitre_tactics.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityIcon sx={{ color: 'text.secondary' }} /> MITRE ATT&CK Tactics
-          </Typography>
-          <Grid container spacing={2}>
-            {campaignData.mitre_tactics.map((tactic, index) => (
-              <Grid item xs={12} md={6} key={index}>
-                <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px', height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 1 }}>
-                      {tactic.tactic}
-                    </Typography>
-                    {tactic.techniques && tactic.techniques.length > 0 && (
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
-                          Techniques:
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          {tactic.techniques.map((tech, idx) => (
-                            <Chip
-                              key={idx}
-                              label={tech}
-                              size="small"
-                              sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)', fontWeight: 600, borderRadius: '8px' }}
-                            />
-                          ))}
-                        </Box>
-                      </Box>
-                    )}
-                    {tactic.evidence && (
-                      <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderRadius: '8px', mt: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                          <strong>Evidence:</strong> {tactic.evidence}
-                        </Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
-
-      {/* Attack Chain TTPs */}
-      {campaignData.attack_chain_ttps && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUpIcon sx={{ color: 'text.secondary' }} /> Attack Chain TTPs
-          </Typography>
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-              borderRadius: '16px',
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Typography variant="body1" sx={{ lineHeight: 2, whiteSpace: 'pre-wrap' }}>
-              {campaignData.attack_chain_ttps}
-            </Typography>
-          </Box>
-        </Box>
-      )}
-
-      {/* Threat Actor Attribution */}
-      {campaignData.threat_actor_attribution && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BugReportIcon sx={{ color: 'text.secondary' }} /> Threat Actor Attribution
-          </Typography>
-          <Card elevation={0} sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: '12px' }}>
-            <CardContent>
-              <Grid container spacing={2}>
-                {campaignData.threat_actor_attribution.attributed_actor && (
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 0.5 }}>
-                      Attributed Actor:
-                    </Typography>
-                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                      {campaignData.threat_actor_attribution.attributed_actor}
-                    </Typography>
-                  </Grid>
-                )}
-                {campaignData.threat_actor_attribution.confidence && (
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 0.5 }}>
-                      Confidence:
-                    </Typography>
-                    <Chip
-                      label={campaignData.threat_actor_attribution.confidence}
-                      sx={{
-                        bgcolor: COLORS[campaignData.threat_actor_attribution.confidence] || COLORS.UNKNOWN,
-                        color: 'white',
-                        fontWeight: 600,
-                      }}
-                    />
-                  </Grid>
-                )}
-                {campaignData.threat_actor_attribution.overlap_indicators && campaignData.threat_actor_attribution.overlap_indicators.length > 0 && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
-                      Overlap Indicators:
-                    </Typography>
-                    <Box component="ul" sx={{ m: 0, pl: 3 }}>
-                      {campaignData.threat_actor_attribution.overlap_indicators.map((indicator, idx) => (
-                        <li key={idx}>
-                          <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.8 }}>
-                            {indicator}
-                          </Typography>
-                        </li>
-                      ))}
-                    </Box>
-                  </Grid>
-                )}
-                {campaignData.threat_actor_attribution.attribution_rationale && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1 }}>
-                      Attribution Rationale:
-                    </Typography>
-                    <Box sx={{ p: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderRadius: '8px' }}>
-                      <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.8 }}>
-                        {campaignData.threat_actor_attribution.attribution_rationale}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
-              </Grid>
             </CardContent>
           </Card>
-        </Box>
-      )}
+        </Grid>
 
-      {/* Visualization Section */}
+        {/* Campaign Name Card */}
+        <Grid item xs={12} md={8}>
+          <Card elevation={0} sx={cardStyle}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600, mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Campaign Identity
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
+                  {campaignData.campaign_name || 'Unidentified Campaign'}
+                </Typography>
+                {campaignData.campaign_confidence && (
+                  <Chip
+                    label={campaignData.campaign_confidence}
+                    size="small"
+                    sx={{
+                      bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                      color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+                      fontWeight: 600,
+                      borderRadius: '6px'
+                    }}
+                  />
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Main Content Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* IOC Confidence Distribution Pie Chart */}
-        {confidencePieData.length > 0 && (
-          <Grid item xs={12} md={6}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'white', fontWeight: 600 }}>
-                  IOC 신뢰도 분포
-                </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={confidencePieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      label={({ name, value }) => `${name}: ${value}`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {confidencePieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[entry.name] || COLORS.UNKNOWN} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '4px', color: 'white' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
 
-        {/* MITRE ATT&CK Coverage Bar Chart */}
-        {mitreBarData.length > 0 && (
-          <Grid item xs={12} md={6}>
-            <Card sx={{ bgcolor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)' }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom sx={{ color: 'white', fontWeight: 600 }}>
-                  MITRE ATT&CK 커버리지
+        {/* Left Column: Executive Summary & Evidence */}
+        <Grid item xs={12} lg={7}>
+          {/* Executive Summary */}
+          <Card elevation={0} sx={{ ...cardStyle, mb: 3 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography sx={sectionTitleStyle}>
+                <InfoIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> Executive Summary
+              </Typography>
+              <Typography variant="body1" sx={{
+                lineHeight: 1.8,
+                color: isDarkMode ? '#ddd' : '#333',
+                fontSize: '1rem'
+              }}>
+                {data.executive_summary || campaignData.executive_summary || "No summary available."}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          {/* Campaign Evidence */}
+          {campaignData.campaign_evidence && campaignData.campaign_evidence.length > 0 && (
+            <Card elevation={0} sx={cardStyle}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography sx={sectionTitleStyle}>
+                  <GpsFixedIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> Key Evidence
                 </Typography>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={mitreBarData}>
-                    <XAxis dataKey="tactic" tick={{ fill: 'white', fontSize: 11 }} angle={-45} textAnchor="end" height={80} />
-                    <YAxis tick={{ fill: 'white' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#333', border: 'none', borderRadius: '4px' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <Box sx={{ bgcolor: '#333', p: 1.5, borderRadius: 1, color: 'white' }}>
-                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {payload[0].payload.fullTactic}
-                              </Typography>
-                              <Typography variant="body2">
-                                Count: {payload[0].value}
-                              </Typography>
-                            </Box>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="count" fill="#9c27b0" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {campaignData.campaign_evidence.map((evidence, index) => (
+                    <Box key={index} sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                      <Box sx={{
+                        minWidth: 24, height: 24, borderRadius: '50%',
+                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                        color: isDarkMode ? '#fff' : COLORS.TEXT_SECONDARY,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.75rem', fontWeight: 700, mt: 0.3
+                      }}>
+                        {index + 1}
+                      </Box>
+                      <Typography variant="body2" sx={{ color: isDarkMode ? '#ccc' : '#444', lineHeight: 1.6 }}>
+                        {evidence}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
               </CardContent>
             </Card>
-          </Grid>
-        )}
+          )}
+        </Grid>
+
+        {/* Right Column: Visualizations */}
+        <Grid item xs={12} lg={5}>
+          {/* MITRE ATT&CK Radar Chart */}
+          <Card elevation={0} sx={{ ...cardStyle, mb: 3 }}>
+            <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: 350 }}>
+              <Typography sx={{ ...sectionTitleStyle, width: '100%', color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
+                <SecurityIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> MITRE ATT&CK Coverage
+              </Typography>
+              <Box sx={{ width: '100%', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {radarData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                      <PolarGrid stroke={isDarkMode ? '#444' : '#E5E5EA'} />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fill: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontSize: 11 }}
+                      />
+                      <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                      <Radar
+                        name="Techniques"
+                        dataKey="A"
+                        stroke={COLORS.PRIMARY}
+                        fill={COLORS.PRIMARY}
+                        fillOpacity={0.3}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDarkMode ? '#333' : '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY
+                        }}
+                        itemStyle={{ color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No MITRE ATT&CK data available
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* IOC Confidence Donut Chart */}
+          <Card elevation={0} sx={cardStyle}>
+            <CardContent sx={{ p: 3, minHeight: 300 }}>
+              <Typography sx={{ ...sectionTitleStyle, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
+                <AssessmentIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> IOC Confidence
+              </Typography>
+              <Box sx={{ width: '100%', height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {confidencePieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={confidencePieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {confidencePieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[entry.name] || COLORS.UNKNOWN} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDarkMode ? '#333' : '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY
+                        }}
+                        itemStyle={{ color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        iconType="circle"
+                        formatter={(value) => <span style={{ color: isDarkMode ? '#ccc' : COLORS.TEXT_PRIMARY, fontSize: '0.85rem' }}>{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No IOC Confidence data available
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
       {/* Extracted IOCs Table */}
       {campaignData.extracted_iocs && campaignData.extracted_iocs.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityIcon /> 추출된 IOC 목록 ({campaignData.extracted_iocs.length}개)
-          </Typography>
-          <TableContainer sx={{ bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 1, maxHeight: 600 }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>Indicator</TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>Type</TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>Confidence</TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>Detections</TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>First Seen</TableCell>
-                  <TableCell sx={{ bgcolor: 'rgba(0,0,0,0.3)', color: 'white', fontWeight: 700 }}>Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {campaignData.extracted_iocs.map((ioc, index) => (
-                  <TableRow key={index} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}>
-                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)', fontFamily: 'monospace', fontSize: '0.85rem', maxWidth: 300, wordBreak: 'break-all' }}>
-                      {ioc.indicator}
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={ioc.ioc_type} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)' }} />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={ioc.confidence}
-                        size="small"
-                        sx={{
-                          bgcolor: ioc.confidence?.includes('HIGH') ? COLORS.HIGH :
-                            ioc.confidence?.includes('MEDIUM') ? COLORS.MEDIUM :
-                              ioc.confidence?.includes('LOW') ? COLORS.LOW : COLORS.UNKNOWN,
-                          color: 'rgba(0,0,0,0.7)',
-                          fontWeight: 600
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)' }}>
-                      {ioc.detections || 'N/A'}
-                    </TableCell>
-                    <TableCell sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.7)', fontSize: '0.85rem' }}>
-                      {ioc.first_seen ? new Date(ioc.first_seen).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={ioc.recommended_action}
-                        size="small"
-                        sx={{
-                          bgcolor: ioc.recommended_action === 'block' ? '#d32f2f' :
-                            ioc.recommended_action === 'investigate' ? '#ff9800' : 'rgba(255,255,255,0.2)',
-                          color: 'rgba(0,0,0,0.7)',
-                          fontWeight: 600
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {campaignData.extracted_iocs.length > 50 && (
-            <Typography variant="caption" sx={{ mt: 1, display: 'block', opacity: 0.8 }}>
-              모든 {campaignData.extracted_iocs.length}개의 IOC가 표시됩니다
+        <Card elevation={0} sx={cardStyle}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography sx={sectionTitleStyle}>
+              <SearchIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> Extracted Indicators
             </Typography>
-          )}
-        </Box>
+            <TableContainer sx={{ maxHeight: 400 }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ bgcolor: isDarkMode ? '#2c2c2e' : '#F5F5F7', color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600 }}>Indicator</TableCell>
+                    <TableCell sx={{ bgcolor: isDarkMode ? '#2c2c2e' : '#F5F5F7', color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600 }}>Type</TableCell>
+                    <TableCell sx={{ bgcolor: isDarkMode ? '#2c2c2e' : '#F5F5F7', color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600 }}>Confidence</TableCell>
+                    <TableCell sx={{ bgcolor: isDarkMode ? '#2c2c2e' : '#F5F5F7', color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, fontWeight: 600 }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {campaignData.extracted_iocs.map((ioc, index) => (
+                    <TableRow key={index} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.85rem', color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
+                        {ioc.indicator}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={ioc.ioc_type}
+                          size="small"
+                          sx={{
+                            bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                            color: isDarkMode ? '#ccc' : '#666',
+                            fontSize: '0.75rem',
+                            height: 24
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption" sx={{
+                          fontWeight: 600,
+                          color: ioc.confidence?.includes('HIGH') ? COLORS.HIGH :
+                            ioc.confidence?.includes('MEDIUM') ? COLORS.MEDIUM :
+                              COLORS.LOW
+                        }}>
+                          {ioc.confidence}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={ioc.recommended_action}
+                          size="small"
+                          sx={{
+                            bgcolor: ioc.recommended_action === 'block' ? 'rgba(255, 59, 48, 0.1)' : 'rgba(0, 122, 255, 0.1)',
+                            color: ioc.recommended_action === 'block' ? COLORS.HIGH : COLORS.PRIMARY,
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            height: 24
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Hunt Hypotheses */}
-      {campaignData.hunt_hypotheses && campaignData.hunt_hypotheses.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SearchIcon /> Hunt Hypotheses
+      {/* Recommendations Section */}
+      {(campaignData.recommended_actions || data.recommendations) && (
+        <Box sx={{ mt: 4 }}>
+          <Typography sx={sectionTitleStyle}>
+            <TrendingUpIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> Recommended Actions
           </Typography>
           <Grid container spacing={2}>
-            {campaignData.hunt_hypotheses.map((hypothesis, index) => (
-              <Grid item xs={12} key={index}>
-                <Card sx={{
-                  bgcolor: 'rgba(255,255,255,0.15)',
-                  border: '2px solid rgba(255,255,255,0.3)',
-                  borderLeftColor: hypothesis.priority === 1 ? '#f44336' : hypothesis.priority === 2 ? '#ff9800' : '#4caf50',
-                  borderLeftWidth: 4
+            {(campaignData.recommended_actions || data.recommendations || []).map((rec, index) => (
+              <Grid item xs={12} md={6} key={index}>
+                <Card elevation={0} sx={{
+                  ...cardStyle,
+                  borderLeft: `4px solid ${COLORS.PRIMARY}`,
+                  borderRadius: '12px'
                 }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <Chip
-                        label={`Priority ${hypothesis.priority}`}
-                        sx={{
-                          bgcolor: hypothesis.priority === 1 ? '#f44336' : hypothesis.priority === 2 ? '#ff9800' : '#4caf50',
-                          color: 'white',
-                          fontWeight: 600
-                        }}
-                      />
-                      <Chip
-                        label={hypothesis.confidence}
-                        sx={{ bgcolor: COLORS[hypothesis.confidence] || COLORS.UNKNOWN, color: 'white', fontWeight: 600 }}
-                      />
-                    </Box>
-                    <Typography variant="h6" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 600, mb: 1 }}>
-                      {hypothesis.hypothesis_name}
+                  <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Typography variant="body2" sx={{ color: isDarkMode ? '#ddd' : '#333', fontWeight: 500 }}>
+                      {rec}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', mb: 2, lineHeight: 1.8 }}>
-                      {hypothesis.hypothesis_description}
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
-                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
-                          Detection Platform:
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
-                          {hypothesis.detection_platform}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
-                          Hunt Timeline:
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
-                          {hypothesis.hunt_timeline}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
-                          Executable Query:
-                        </Typography>
-                        <Box sx={{
-                          p: 2,
-                          bgcolor: 'rgba(0,0,0,0.3)',
-                          borderRadius: 1,
-                          mt: 0.5,
-                          fontFamily: 'monospace',
-                          fontSize: '0.85rem',
-                          color: '#4caf50',
-                          overflowX: 'auto'
-                        }}>
-                          {hypothesis.executable_query}
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12}>
-                        <Typography variant="caption" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.8)' : 'rgba(0, 0, 0, 0.7)' }}>
-                          Success Criteria:
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? 'white' : 'rgba(0, 0, 0, 0.7)', fontWeight: 500 }}>
-                          {hypothesis.success_criteria}
-                        </Typography>
-                      </Grid>
-                    </Grid>
                   </CardContent>
                 </Card>
               </Grid>
@@ -708,106 +458,6 @@ export default function FinalSummarySection({ data }) {
         </Box>
       )}
 
-      {/* Threat Categories */}
-      {data.threat_categories && data.threat_categories.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <BugReportIcon /> 위협 분류
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {data.threat_categories.map((category, index) => (
-              <Chip
-                key={index}
-                label={category}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.3)',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                }}
-              />
-            ))}
-          </Box>
-        </Box>
-      )}
-
-      {/* Recommendations */}
-      {(campaignData.recommended_actions || data.recommendations) && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon sx={{ color: 'text.secondary' }} /> 주요 권장사항
-          </Typography>
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-              borderRadius: '16px',
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Box component="ul" sx={{ m: 0, pl: 3 }}>
-              {(campaignData.recommended_actions || data.recommendations || []).map((rec, index) => (
-                <li key={index}>
-                  <Typography variant="body2" sx={{ lineHeight: 1.8, mb: 1 }}>
-                    {rec}
-                  </Typography>
-                </li>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      )}
-
-      {/* Intelligence Gaps */}
-      {campaignData.intelligence_gaps && campaignData.intelligence_gaps.length > 0 && (
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WarningIcon /> Intelligence Gaps
-          </Typography>
-          <Box
-            sx={{
-              p: 3,
-              bgcolor: 'rgba(255, 152, 0, 0.2)',
-              borderRadius: 2,
-              border: '1px solid rgba(255, 152, 0, 0.5)',
-            }}
-          >
-            <Box component="ul" sx={{ m: 0, pl: 3 }}>
-              {campaignData.intelligence_gaps.map((gap, index) => (
-                <li key={index}>
-                  <Typography variant="body2" sx={{ lineHeight: 1.8, mb: 1 }}>
-                    {gap}
-                  </Typography>
-                </li>
-              ))}
-            </Box>
-          </Box>
-        </Box>
-      )}
-
-      {/* Organizational Impact */}
-      {campaignData.organizational_impact && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TrendingUpIcon /> Organizational Impact
-          </Typography>
-          <Alert
-            severity="error"
-            sx={{
-              bgcolor: 'rgba(244, 67, 54, 0.2)',
-              border: '1px solid rgba(244, 67, 54, 0.5)',
-              color: 'white',
-              '& .MuiAlert-icon': {
-                color: 'white'
-              }
-            }}
-          >
-            <Typography variant="body1" sx={{ lineHeight: 2 }}>
-              {campaignData.organizational_impact}
-            </Typography>
-          </Alert>
-        </Box>
-      )}
-    </Paper>
+    </Box>
   );
 }

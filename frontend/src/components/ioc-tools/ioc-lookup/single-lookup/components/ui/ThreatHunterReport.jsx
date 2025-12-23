@@ -3,18 +3,13 @@ import {
   Box,
   Paper,
   Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Tabs,
+  Tab,
   CircularProgress,
   Alert,
   Chip,
-  Divider,
-  Button,
+  useMediaQuery,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import PrintIcon from '@mui/icons-material/Print';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
@@ -31,10 +26,11 @@ import InfrastructureResult from '../../../../../agents/results/InfrastructureRe
 
 const ThreatHunterReport = ({ ioc }) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
-  const [expanded, setExpanded] = useState('triage'); // Default expanded panel
+  const [currentTab, setCurrentTab] = useState(0);
 
   useEffect(() => {
     console.log('[ThreatHunterReport] Component rendered with ioc:', ioc);
@@ -84,15 +80,15 @@ const ThreatHunterReport = ({ ioc }) => {
     }
   }, [ioc]);
 
-  const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
   };
 
   if (loading) {
     return (
-      <Paper sx={{ p: 4, mt: 3, textAlign: 'center', borderRadius: 2 }}>
-        <CircularProgress size={40} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
+      <Paper sx={{ p: 4, mt: 3, textAlign: 'center', borderRadius: '18px', boxShadow: '0 4px 24px rgba(0,0,0,0.02)' }}>
+        <CircularProgress size={40} sx={{ color: '#007AFF' }} />
+        <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
           Running AOL Multi-Agent Investigation...
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -104,8 +100,8 @@ const ThreatHunterReport = ({ ioc }) => {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mt: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1">Investigation Failed</Typography>
+      <Alert severity="error" sx={{ mt: 3, borderRadius: '12px' }}>
+        <Typography variant="subtitle1" fontWeight={600}>Investigation Failed</Typography>
         <Typography variant="body2">{error}</Typography>
       </Alert>
     );
@@ -117,155 +113,156 @@ const ThreatHunterReport = ({ ioc }) => {
 
   const reportSections = [
     {
+      key: 'summary',
+      title: 'Final Summary',
+      icon: <SummarizeIcon />,
+      content: reportData.final_report,
+      component: FinalSummarySection
+    },
+    {
       key: 'triage',
       title: 'Triage Assessment',
       icon: <AssessmentIcon />,
-      content: reportData.triage_report
+      content: reportData.triage_report,
+      component: TriageResult
     },
     {
       key: 'malware',
       title: 'Malware Analysis',
       icon: <BugReportIcon />,
-      content: reportData.malware_report
+      content: reportData.malware_report,
+      component: MalwareResult
     },
     {
       key: 'infrastructure',
       title: 'Infrastructure Correlation',
       icon: <PublicIcon />,
-      content: reportData.infrastructure_report
+      content: reportData.infrastructure_report,
+      component: InfrastructureResult
     },
     {
       key: 'campaign',
       title: 'Campaign Intelligence',
       icon: <CampaignIcon />,
-      content: reportData.campaign_report
+      content: reportData.campaign_report,
+      component: CampaignIntelligenceSection
     }
   ];
 
-  const handlePdfExport = () => {
-    // TODO: Implement PDF export functionality
-    console.log('PDF Export clicked');
-    alert('PDF 내보내기 기능은 곧 추가됩니다!');
-  };
+  // Filter out sections with no content
+  const activeSections = reportSections.filter(section => section.content);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const CurrentSectionComponent = activeSections[currentTab]?.component;
+  const currentSectionData = activeSections[currentTab]?.content;
 
   return (
-    <Box sx={{ mt: 3 }}>
+    <Box sx={{ mt: 3, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
       {/* Header with Title */}
       <Paper
         elevation={0}
         sx={{
           p: 3,
-          mb: 2,
-          borderRadius: "16px",
-          bgcolor: (theme) => theme.palette.mode === 'dark'
-            ? 'rgba(30, 41, 59, 0.4)'
-            : 'rgba(241, 245, 249, 0.8)',
-          backdropFilter: 'blur(12px)',
-          border: (theme) => `1px solid ${theme.palette.divider}`,
+          mb: 3,
+          borderRadius: "18px",
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(28, 28, 30, 0.6)' : '#FFFFFF',
+          border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E5EA'}`,
+          boxShadow: (theme) => theme.palette.mode === 'dark' ? 'none' : '0 4px 24px rgba(0,0,0,0.02)',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <SecurityIcon sx={{ mr: 1, fontSize: 32, color: theme.palette.primary.main }} />
-          <Typography variant="h5" fontWeight={700}>
-            Threat Intelligence Report
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <SecurityIcon sx={{ mr: 1.5, fontSize: 32, color: '#007AFF' }} />
+            <Typography variant="h5" fontWeight={700} sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#fff' : '#1D1D1F' }}>
+              Threat Intelligence Report
+            </Typography>
+          </Box>
+          <Box sx={{ flexGrow: 1 }} />
           <Chip
-            label={reportData.status === 'success' ? 'Complete' : 'Failed'}
-            color={reportData.status === 'success' ? 'success' : 'error'}
+            label={reportData.status === 'success' ? 'Analysis Complete' : 'Analysis Failed'}
+            sx={{
+              bgcolor: reportData.status === 'success' ? 'rgba(52, 199, 89, 0.1)' : 'rgba(255, 59, 48, 0.1)',
+              color: reportData.status === 'success' ? '#34C759' : '#FF3B30',
+              fontWeight: 600,
+              borderRadius: '8px'
+            }}
             size="small"
-            sx={{ ml: 2 }}
           />
         </Box>
-        <Typography variant="body2" color="text.secondary">
-          IOC: <strong>{reportData.ioc}</strong> • Investigation ID: {reportData.investigation_id}
+        <Typography variant="body2" sx={{ color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#86868B', ml: 0.5 }}>
+          IOC: <strong style={{ color: theme.palette.mode === 'dark' ? '#fff' : '#1D1D1F' }}>{reportData.ioc}</strong> • Investigation ID: {reportData.investigation_id}
         </Typography>
       </Paper>
 
-      {/* Agent Results */}
-      <Box sx={{ mb: 4 }}>
-        {reportSections.map((section) => {
-          // Determine which component to use for each section
-          let SectionComponent = null;
+      {/* Tabs Navigation */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          borderRadius: "14px",
+          overflow: 'hidden',
+          border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E5EA'}`,
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(28, 28, 30, 0.6)' : '#FFFFFF',
+          boxShadow: 'none'
+        }}
+      >
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          variant={isMobile ? "scrollable" : "fullWidth"}
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            '& .MuiTab-root': {
+              minHeight: 56,
+              textTransform: 'none',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              gap: 1,
+              color: (theme) => theme.palette.mode === 'dark' ? '#aaa' : '#86868B',
+              '&.Mui-selected': {
+                color: '#007AFF',
+              }
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: '#007AFF',
+              height: 3,
+              borderRadius: '3px 3px 0 0'
+            }
+          }}
+        >
+          {activeSections.map((section) => (
+            <Tab
+              key={section.key}
+              icon={section.icon}
+              label={section.title}
+              iconPosition="start"
+            />
+          ))}
+        </Tabs>
+      </Paper>
 
-          if (section.key === 'triage' && typeof section.content === 'object') {
-            SectionComponent = () => <TriageResult data={section.content} />;
-          } else if (section.key === 'malware' && typeof section.content === 'object') {
-            SectionComponent = () => <MalwareResult data={section.content} />;
-          } else if (section.key === 'infrastructure' && typeof section.content === 'object') {
-            SectionComponent = () => <InfrastructureResult data={section.content} />;
-          } else if (section.key === 'campaign' && section.content) {
-            SectionComponent = () => <CampaignIntelligenceSection data={section.content} />;
-          }
-
-          // Use dedicated component if available
-          if (SectionComponent && section.content) {
-            return (
-              <Accordion
-                key={section.key}
-                expanded={expanded === section.key}
-                onChange={handleAccordionChange(section.key)}
-                elevation={0}
-                sx={{
-                  mb: 2,
-                  '&:before': { display: 'none' },
-                  borderRadius: "16px !important",
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  overflow: 'hidden'
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{
-                    bgcolor: (theme) => expanded === section.key
-                      ? theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                      : 'transparent',
-                    '&:hover': {
-                      bgcolor: (theme) => theme.palette.mode === 'dark'
-                        ? 'rgba(255, 255,255, 0.02)'
-                        : 'rgba(0, 0, 0, 0.01)'
-                    },
-                    minHeight: 64,
-                    '& .MuiAccordionSummary-content': { my: 2 }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box sx={{
-                      color: 'primary.main',
-                      display: 'flex',
-                      mr: 2,
-                      width: 40,
-                      height: 40,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                      borderRadius: "10px"
-                    }}>
-                      {section.icon}
-                    </Box>
-                    <Typography variant="h6" fontWeight={600}>
-                      {section.title}
-                    </Typography>
-                  </Box>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.01)' }}>
-                  <SectionComponent />
-                </AccordionDetails>
-              </Accordion>
-            );
-          }
-
-          return null;
-        })}
+      {/* Content Area */}
+      <Box sx={{ minHeight: 400 }}>
+        {CurrentSectionComponent && (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: "18px",
+              border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E5E5EA'}`,
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(28, 28, 30, 0.6)' : '#FFFFFF',
+              boxShadow: (theme) => theme.palette.mode === 'dark' ? 'none' : '0 4px 24px rgba(0,0,0,0.02)',
+              animation: 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              '@keyframes fadeIn': {
+                '0%': { opacity: 0, transform: 'translateY(10px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}
+          >
+            <CurrentSectionComponent data={currentSectionData} />
+          </Paper>
+        )}
       </Box>
-
-      {/* Final Summary - Now Full Width Below */}
-      {reportData.final_report && (
-        <FinalSummarySection data={reportData.final_report} />
-      )}
     </Box>
   );
 };

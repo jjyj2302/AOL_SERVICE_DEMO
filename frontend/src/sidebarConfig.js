@@ -1,9 +1,10 @@
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import SearchIcon from "@mui/icons-material/Search";
-import DocumentScannerIcon from "@mui/icons-material/DocumentScanner";
+import HistoryIcon from "@mui/icons-material/History";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
+import SecurityIcon from "@mui/icons-material/Security";
 
 export const mainMenuItems = [
   // IOC Tools moved to sidebar - no top menu items
@@ -31,13 +32,18 @@ export const iocToolsTabs = [
     icon: <ManageSearchIcon />,
   },
   {
-    label: "Extractor",
-    path: "/ioc-tools/extractor",
-    icon: <DocumentScannerIcon />,
+    label: "History",
+    path: "/ioc-tools/history",
+    icon: <HistoryIcon />,
   },
   {
     label: "Defang/Fang",
     path: "/ioc-tools/defanger",
     icon: <HealthAndSafetyIcon />,
+  },
+  {
+    label: "KISA IoC",
+    path: "/kisa-ioc",
+    icon: <SecurityIcon />,
   },
 ];

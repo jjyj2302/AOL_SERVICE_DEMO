@@ -4,9 +4,6 @@ import {
   Paper,
   Typography,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
   Divider,
   Table,
   TableBody,
@@ -18,16 +15,30 @@ import {
   CardContent,
   Grid,
   LinearProgress,
+  useTheme,
 } from '@mui/material';
-import PublicIcon from '@mui/icons-material/Public';
+import MapIcon from '@mui/icons-material/Map';
 import HubIcon from '@mui/icons-material/Hub';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SearchIcon from '@mui/icons-material/Search';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import MapIcon from '@mui/icons-material/Map';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
+
+// Apple-style Color Palette
+const COLORS = {
+  HIGH: '#FF3B30',      // System Red
+  MEDIUM: '#FF9500',    // System Orange
+  LOW: '#34C759',       // System Green
+  UNKNOWN: '#8E8E93',   // System Gray
+  CRITICAL: '#AF52DE',  // System Purple
+  PRIMARY: '#007AFF',   // System Blue
+  TEXT_PRIMARY: '#1D1D1F',
+  TEXT_SECONDARY: '#86868B',
+  BG_LIGHT: '#F5F5F7',
+  CARD_BG_LIGHT: '#FFFFFF',
+  BORDER_LIGHT: '#E5E5EA',
+};
 
 const DetectionGauge = ({ detections }) => {
   if (!detections || typeof detections !== 'string') return null;
@@ -37,11 +48,10 @@ const DetectionGauge = ({ detections }) => {
 
   const percentage = (detected / total) * 100;
 
-  // Color based on detection rate
   const getColor = () => {
-    if (percentage >= 50) return 'error';
-    if (percentage >= 20) return 'warning';
-    return 'success';
+    if (percentage >= 50) return COLORS.HIGH;
+    if (percentage >= 20) return COLORS.MEDIUM;
+    return COLORS.LOW;
   };
 
   return (
@@ -50,18 +60,21 @@ const DetectionGauge = ({ detections }) => {
         <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
           {detected}/{total}
         </Typography>
-        <Typography variant="caption" sx={{ fontWeight: 600, color: `${getColor()}.main` }}>
+        <Typography variant="caption" sx={{ fontWeight: 600, color: getColor() }}>
           {percentage.toFixed(0)}%
         </Typography>
       </Box>
       <LinearProgress
         variant="determinate"
         value={percentage}
-        color={getColor()}
         sx={{
-          height: 8,
-          borderRadius: 4,
-          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.200',
+          height: 6,
+          borderRadius: 3,
+          bgcolor: '#E5E5EA',
+          '& .MuiLinearProgress-bar': {
+            bgcolor: getColor(),
+            borderRadius: 3,
+          }
         }}
       />
     </Box>
@@ -69,36 +82,53 @@ const DetectionGauge = ({ detections }) => {
 };
 
 export default function InfrastructureResult({ data }) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   if (!data) return null;
 
+  const cardStyle = {
+    bgcolor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : COLORS.CARD_BG_LIGHT,
+    borderRadius: '18px',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${COLORS.BORDER_LIGHT}`,
+    boxShadow: isDarkMode ? 'none' : '0 4px 24px rgba(0,0,0,0.02)',
+    height: '100%',
+    transition: 'transform 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(0,0,0,0.06)',
+    }
+  };
+
+  const sectionTitleStyle = {
+    fontWeight: 600,
+    mb: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+    fontSize: '1.1rem'
+  };
+
   return (
-    <Box>
+    <Box sx={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
       {/* Infrastructure Relationship Map - Hero Section */}
-      <Paper
-        sx={{
-          p: 4,
-          mb: 3,
-          background: (theme) => theme.palette.mode === 'dark'
-            ? 'linear-gradient(135deg, #5d3a1a 0%, #3d2610 100%)'
-            : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-          color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-        }}
-      >
+      <Paper sx={{ ...cardStyle, p: 4, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <MapIcon sx={{ fontSize: 48 }} />
+          <MapIcon sx={{ fontSize: 48, color: COLORS.PRIMARY }} />
           <Box>
-            <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit' }}>
+            <Typography variant="h6" sx={{ opacity: 0.9, color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY }}>
               인프라 관계 맵
             </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
+            <Typography variant="h3" sx={{ fontWeight: 700, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
               Infrastructure Network
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ my: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.12)' }} />
+        <Divider sx={{ my: 2, bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : COLORS.BORDER_LIGHT }} />
 
-        <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.8, fontFamily: 'inherit', whiteSpace: 'pre-wrap' }}>
+        <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
           {data.infrastructure_relationship_map}
         </Typography>
       </Paper>
@@ -106,71 +136,44 @@ export default function InfrastructureResult({ data }) {
       {/* Campaign Clusters */}
       {data.campaign_clusters && data.campaign_clusters.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <HubIcon sx={{ fontSize: 32 }} color="primary" />
-            <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-              캠페인 클러스터
-            </Typography>
-          </Box>
+          <Typography sx={sectionTitleStyle}>
+            <HubIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 캠페인 클러스터
+          </Typography>
           <Grid container spacing={2}>
             {data.campaign_clusters.map((cluster, index) => (
               <Grid item xs={12} key={index}>
-                <Card
-                  sx={{
-                    border: '2px solid',
-                    borderColor: cluster.confidence === 'HIGH' ? 'error.main' :
-                                 cluster.confidence === 'MEDIUM' ? 'warning.main' : 'info.main',
-                    '&:hover': {
-                      boxShadow: 6,
-                      transform: 'translateY(-2px)',
-                      transition: 'all 0.3s',
-                    },
-                  }}
-                >
+                <Card elevation={0} sx={{ ...cardStyle, borderLeft: cluster.confidence === 'HIGH' ? `4px solid ${COLORS.HIGH}` : undefined }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                       <Box
                         sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: '50%',
-                          bgcolor: cluster.confidence === 'HIGH' ? 'error.light' :
-                                   cluster.confidence === 'MEDIUM' ? 'warning.light' : 'info.light',
-                          color: cluster.confidence === 'HIGH' ? 'error.main' :
-                                 cluster.confidence === 'MEDIUM' ? 'warning.main' : 'info.main',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '1.2rem',
+                          width: 48, height: 48, borderRadius: '50%',
+                          bgcolor: cluster.confidence === 'HIGH' ? COLORS.HIGH : COLORS.MEDIUM,
+                          color: '#fff',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: '1.2rem'
                         }}
                       >
                         {index + 1}
                       </Box>
                       <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
                           {cluster.cluster_name}
                         </Typography>
                         <Chip
                           label={cluster.confidence}
                           size="small"
-                          color={
-                            cluster.confidence === 'HIGH' ? 'error' :
-                            cluster.confidence === 'MEDIUM' ? 'warning' : 'info'
-                          }
+                          sx={{
+                            bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                            color: cluster.confidence === 'HIGH' ? COLORS.HIGH : COLORS.MEDIUM,
+                            fontWeight: 600
+                          }}
                         />
                       </Box>
                     </Box>
 
-                    <Box
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    <Box sx={{ p: 2, mb: 2, bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9F9F9', borderRadius: '12px' }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: isDarkMode ? '#ccc' : COLORS.TEXT_SECONDARY }}>
                         인프라 요소
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -179,25 +182,14 @@ export default function InfrastructureResult({ data }) {
                             key={idx}
                             label={element}
                             size="small"
-                            variant="outlined"
-                            color="primary"
-                            sx={{ fontFamily: 'monospace', fontWeight: 500 }}
+                            sx={{ bgcolor: 'rgba(0, 122, 255, 0.1)', color: COLORS.PRIMARY, fontFamily: 'monospace' }}
                           />
                         ))}
                       </Box>
                     </Box>
 
-                    <Box
-                      sx={{
-                        p: 2,
-                        bgcolor: 'primary.light',
-                        bgcolor: 'rgba(33, 150, 243, 0.08)',
-                        borderRadius: 1,
-                        borderLeft: '4px solid',
-                        borderColor: 'primary.main',
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ lineHeight: 1.7 }}>
+                    <Box sx={{ p: 2, bgcolor: 'rgba(0, 122, 255, 0.05)', borderRadius: '12px', borderLeft: `4px solid ${COLORS.PRIMARY}` }}>
+                      <Typography variant="body2" sx={{ lineHeight: 1.7, color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
                         <strong>근거:</strong> {cluster.clustering_evidence}
                       </Typography>
                     </Box>
@@ -211,23 +203,11 @@ export default function InfrastructureResult({ data }) {
 
       {/* Clustering Assessment */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <AssessmentIcon sx={{ fontSize: 32 }} color="success" />
-          <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-            클러스터링 평가
-          </Typography>
-        </Box>
-        <Paper
-          sx={{
-            p: 3,
-            background: (theme) => theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #1e4620 0%, #0f2e11 100%)'
-              : 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-            border: '2px solid',
-            borderColor: 'success.light',
-          }}
-        >
-          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+        <Typography sx={sectionTitleStyle}>
+          <AssessmentIcon fontSize="small" sx={{ color: COLORS.LOW }} /> 클러스터링 평가
+        </Typography>
+        <Paper sx={{ ...cardStyle, p: 3, borderLeft: `4px solid ${COLORS.LOW}` }}>
+          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap', color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
             {data.clustering_assessment}
           </Typography>
         </Paper>
@@ -236,60 +216,38 @@ export default function InfrastructureResult({ data }) {
       {/* Additional IOCs */}
       {data.additional_iocs && data.additional_iocs.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <SearchIcon sx={{ fontSize: 32 }} color="error" />
-            <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-              추가 발견 IOC
-            </Typography>
-          </Box>
-          <Paper
-            sx={{
-              p: 3,
-              background: (theme) => theme.palette.mode === 'dark'
-                ? 'linear-gradient(135deg, #5d1f1f 0%, #3d1414 100%)'
-                : 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
-              border: '2px solid',
-              borderColor: 'error.light',
-            }}
-          >
+          <Typography sx={sectionTitleStyle}>
+            <SearchIcon fontSize="small" sx={{ color: COLORS.HIGH }} /> 추가 발견 IOC
+          </Typography>
+          <Paper sx={{ ...cardStyle, p: 0, overflow: 'hidden' }}>
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white' }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Indicator</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Type</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Confidence</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Detections</TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.95rem' }}>Action</TableCell>
+                  <TableRow sx={{ bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F5F5F7' }}>
+                    <TableCell sx={{ fontWeight: 600, color: COLORS.TEXT_SECONDARY }}>Indicator</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: COLORS.TEXT_SECONDARY }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: COLORS.TEXT_SECONDARY }}>Confidence</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: COLORS.TEXT_SECONDARY }}>Detections</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: COLORS.TEXT_SECONDARY }}>Action</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {data.additional_iocs.map((ioc, index) => (
-                    <TableRow
-                      key={index}
-                      sx={{
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
-                        '&:hover': {
-                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.05)',
-                          transform: 'scale(1.01)',
-                          transition: 'all 0.2s',
-                        },
-                      }}
-                    >
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, color: 'error.main' }}>
+                    <TableRow key={index} hover>
+                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, color: COLORS.HIGH }}>
                         {ioc.indicator}
                       </TableCell>
                       <TableCell>
-                        <Chip label={ioc.ioc_type} size="small" color="primary" />
+                        <Chip label={ioc.ioc_type} size="small" sx={{ bgcolor: 'rgba(0, 122, 255, 0.1)', color: COLORS.PRIMARY }} />
                       </TableCell>
                       <TableCell>
                         <Chip
                           label={ioc.confidence}
                           size="small"
-                          color={
-                            ioc.confidence === 'HIGH' ? 'error' :
-                            ioc.confidence === 'MEDIUM' ? 'warning' : 'info'
-                          }
+                          sx={{
+                            bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                            color: ioc.confidence === 'HIGH' ? COLORS.HIGH : ioc.confidence === 'MEDIUM' ? COLORS.MEDIUM : COLORS.LOW
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -299,11 +257,11 @@ export default function InfrastructureResult({ data }) {
                         <Chip
                           label={ioc.recommended_action}
                           size="small"
-                          color={
-                            ioc.recommended_action === 'block' ? 'error' :
-                            ioc.recommended_action === 'investigate' ? 'warning' : 'info'
-                          }
-                          sx={{ fontWeight: 600 }}
+                          sx={{
+                            bgcolor: ioc.recommended_action === 'block' ? 'rgba(255, 59, 48, 0.1)' : 'rgba(0, 122, 255, 0.1)',
+                            color: ioc.recommended_action === 'block' ? COLORS.HIGH : COLORS.PRIMARY,
+                            fontWeight: 600
+                          }}
                         />
                       </TableCell>
                     </TableRow>
@@ -317,23 +275,11 @@ export default function InfrastructureResult({ data }) {
 
       {/* ASN & Hosting Patterns */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <BusinessIcon sx={{ fontSize: 32 }} color="info" />
-          <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-            ASN & 호스팅 패턴
-          </Typography>
-        </Box>
-        <Paper
-          sx={{
-            p: 3,
-            background: (theme) => theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #0d3a42 0%, #082429 100%)'
-              : 'linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)',
-            border: '2px solid',
-            borderColor: 'info.light',
-          }}
-        >
-          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+        <Typography sx={sectionTitleStyle}>
+          <BusinessIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> ASN & 호스팅 패턴
+        </Typography>
+        <Paper sx={{ ...cardStyle, p: 3 }}>
+          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap', color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
             {data.asn_hosting_patterns}
           </Typography>
         </Paper>
@@ -341,67 +287,29 @@ export default function InfrastructureResult({ data }) {
 
       {/* Temporal Correlation */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-          <AccessTimeIcon sx={{ fontSize: 32 }} color="warning" />
-          <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-            시간적 상관관계
-          </Typography>
-        </Box>
-        <Paper
-          sx={{
-            p: 3,
-            background: (theme) => theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #4a3f0d 0%, #332b08 100%)'
-              : 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
-            border: '2px solid',
-            borderColor: 'warning.light',
-          }}
-        >
-          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+        <Typography sx={sectionTitleStyle}>
+          <AccessTimeIcon fontSize="small" sx={{ color: COLORS.MEDIUM }} /> 시간적 상관관계
+        </Typography>
+        <Paper sx={{ ...cardStyle, p: 3 }}>
+          <Typography variant="body1" sx={{ lineHeight: 1.8, whiteSpace: 'pre-wrap', color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
             {data.temporal_correlation}
           </Typography>
         </Paper>
       </Box>
 
       {/* Campaign Scale Assessment */}
-      <Paper
-        sx={{
-          p: 4,
-          background: (theme) => theme.palette.mode === 'dark'
-            ? 'linear-gradient(135deg, #2a1f3d 0%, #1a1229 100%)'
-            : 'linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%)',
-          border: '2px solid',
-          borderColor: 'secondary.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-          <TrendingUpIcon sx={{ fontSize: 32 }} color="secondary" />
-          <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-            캠페인 규모 평가
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            p: 3,
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
-            borderRadius: 2,
-            borderLeft: '6px solid',
-            borderColor: 'secondary.main',
-          }}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              whiteSpace: 'pre-wrap',
-              lineHeight: 2,
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-            }}
-          >
-            {data.campaign_scale_assessment}
-          </Typography>
-        </Box>
-      </Paper>
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={sectionTitleStyle}>
+          <TrendingUpIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 캠페인 규모 평가
+        </Typography>
+        <Paper sx={{ ...cardStyle, p: 4 }}>
+          <Box sx={{ p: 3, bgcolor: isDarkMode ? 'rgba(255,255,255,0.03)' : '#F9F9F9', borderRadius: '12px' }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 2, color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
+              {data.campaign_scale_assessment}
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
     </Box>
   );
 }

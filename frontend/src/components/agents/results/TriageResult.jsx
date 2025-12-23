@@ -8,10 +8,9 @@ import {
   Grid,
   Card,
   CardContent,
+  useTheme,
 } from '@mui/material';
-import WarningIcon from '@mui/icons-material/Warning';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import InfoIcon from '@mui/icons-material/Info';
+
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import LinkIcon from '@mui/icons-material/Link';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
@@ -21,32 +20,28 @@ import DnsIcon from '@mui/icons-material/Dns';
 import LanguageIcon from '@mui/icons-material/Language';
 import { ResponsivePie } from '@nivo/pie';
 
-const getThreatLevelColor = (level) => {
-  switch (level?.toUpperCase()) {
-    case 'CRITICAL':
-      return 'error';
-    case 'HIGH':
-      return 'warning';
-    case 'MEDIUM':
-      return 'info';
-    case 'LOW':
-      return 'success';
-    default:
-      return 'default';
-  }
+// Apple-style Color Palette
+const COLORS = {
+  HIGH: '#FF3B30',      // System Red
+  MEDIUM: '#FF9500',    // System Orange
+  LOW: '#34C759',       // System Green
+  UNKNOWN: '#8E8E93',   // System Gray
+  CRITICAL: '#AF52DE',  // System Purple
+  PRIMARY: '#007AFF',   // System Blue
+  TEXT_PRIMARY: '#1D1D1F',
+  TEXT_SECONDARY: '#86868B',
+  BG_LIGHT: '#F5F5F7',
+  CARD_BG_LIGHT: '#FFFFFF',
+  BORDER_LIGHT: '#E5E5EA',
 };
 
-const getThreatLevelIcon = (level) => {
+const getThreatLevelColor = (level) => {
   switch (level?.toUpperCase()) {
-    case 'CRITICAL':
-    case 'HIGH':
-      return <WarningIcon />;
-    case 'MEDIUM':
-      return <InfoIcon />;
-    case 'LOW':
-      return <CheckCircleIcon />;
-    default:
-      return null;
+    case 'CRITICAL': return COLORS.CRITICAL;
+    case 'HIGH': return COLORS.HIGH;
+    case 'MEDIUM': return COLORS.MEDIUM;
+    case 'LOW': return COLORS.LOW;
+    default: return COLORS.UNKNOWN;
   }
 };
 
@@ -63,18 +58,8 @@ const DetectionRatioChart = ({ ratio }) => {
   const undetected = total - detected;
 
   const data = [
-    {
-      id: '탐지',
-      label: '탐지',
-      value: detected,
-      color: '#f44336',
-    },
-    {
-      id: '미탐지',
-      label: '미탐지',
-      value: undetected,
-      color: '#e0e0e0',
-    },
+    { id: '탐지', label: '탐지', value: detected, color: COLORS.HIGH },
+    { id: '미탐지', label: '미탐지', value: undetected, color: '#E5E5EA' },
   ];
 
   return (
@@ -87,18 +72,12 @@ const DetectionRatioChart = ({ ratio }) => {
         cornerRadius={4}
         activeOuterRadiusOffset={8}
         colors={{ datum: 'data.color' }}
-        borderWidth={1}
-        borderColor={{ from: 'color', modifiers: [['darker', 0.2]] }}
+        borderWidth={0}
         enableArcLinkLabels={false}
         arcLabelsTextColor="#ffffff"
         arcLabel={(d) => `${d.value}`}
         theme={{
-          labels: {
-            text: {
-              fontSize: 14,
-              fontWeight: 600,
-            },
-          },
+          labels: { text: { fontSize: 14, fontWeight: 600 } },
         }}
       />
       <Box
@@ -110,24 +89,10 @@ const DetectionRatioChart = ({ ratio }) => {
           textAlign: 'center',
         }}
       >
-        <Typography
-          variant="h3"
-          sx={{
-            fontWeight: 700,
-            color: '#f44336',
-            lineHeight: 1,
-          }}
-        >
+        <Typography variant="h3" sx={{ fontWeight: 700, color: COLORS.HIGH, lineHeight: 1 }}>
           {detected}/{total}
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-            fontWeight: 500,
-            mt: 0.5,
-          }}
-        >
+        <Typography variant="body2" sx={{ color: COLORS.TEXT_SECONDARY, fontWeight: 500, mt: 0.5 }}>
           Detection Ratio
         </Typography>
       </Box>
@@ -136,72 +101,68 @@ const DetectionRatioChart = ({ ratio }) => {
 };
 
 export default function TriageResult({ data }) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   if (!data) return null;
 
+  const cardStyle = {
+    bgcolor: isDarkMode ? 'rgba(28, 28, 30, 0.6)' : COLORS.CARD_BG_LIGHT,
+    borderRadius: '18px',
+    border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : `1px solid ${COLORS.BORDER_LIGHT}`,
+    boxShadow: isDarkMode ? 'none' : '0 4px 24px rgba(0,0,0,0.02)',
+    height: '100%',
+    transition: 'transform 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: isDarkMode ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(0,0,0,0.06)',
+    }
+  };
+
+  const sectionTitleStyle = {
+    fontWeight: 600,
+    mb: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
+    fontSize: '1.1rem'
+  };
+
   return (
-    <Box>
-      {/* Threat Level Summary with Grid Layout */}
+    <Box sx={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
+      {/* Threat Level Summary */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {/* Main Threat Level Card */}
         <Grid item xs={12} md={8}>
-          <Paper
-            sx={{
-              p: 4,
-              height: '100%',
-              background: (theme) => theme.palette.mode === 'dark'
-                ? `linear-gradient(135deg, ${
-                    data.threat_level === 'CRITICAL' ? '#5d1f1f' :
-                    data.threat_level === 'HIGH' ? '#5d3a1a' :
-                    data.threat_level === 'MEDIUM' ? '#1a3a52' :
-                    '#1e4620'
-                  } 0%, ${
-                    data.threat_level === 'CRITICAL' ? '#3d1414' :
-                    data.threat_level === 'HIGH' ? '#3d2610' :
-                    data.threat_level === 'MEDIUM' ? '#0d1f2d' :
-                    '#0f2e11'
-                  } 100%)`
-                : `linear-gradient(135deg, ${
-                    data.threat_level === 'CRITICAL' ? '#ffebee' :
-                    data.threat_level === 'HIGH' ? '#fff3e0' :
-                    data.threat_level === 'MEDIUM' ? '#e3f2fd' :
-                    '#e8f5e9'
-                  } 0%, ${
-                    data.threat_level === 'CRITICAL' ? '#ffcdd2' :
-                    data.threat_level === 'HIGH' ? '#ffe0b2' :
-                    data.threat_level === 'MEDIUM' ? '#bbdefb' :
-                    '#c8e6c9'
-                  } 100%)`,
-              color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
-            }}
-          >
+          <Paper sx={{ ...cardStyle, p: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <SecurityIcon sx={{ fontSize: 48 }} />
+              <SecurityIcon sx={{ fontSize: 48, color: getThreatLevelColor(data.threat_level) }} />
               <Box>
-                <Typography variant="h6" sx={{ opacity: 0.9, fontFamily: 'inherit' }}>
+                <Typography variant="h6" sx={{ opacity: 0.9, color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY }}>
                   위협 수준 평가
                 </Typography>
-                <Typography variant="h2" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
+                <Typography variant="h2" sx={{ fontWeight: 700, color: getThreatLevelColor(data.threat_level) }}>
                   {data.threat_level}
                 </Typography>
               </Box>
             </Box>
 
-            <Divider sx={{ my: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.12)' }} />
+            <Divider sx={{ my: 2, bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : COLORS.BORDER_LIGHT }} />
 
             <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
               <Chip
                 label={`IOC Type: ${data.ioc_type}`}
                 sx={{
-                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)',
-                  color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                  bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                  color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY,
                   fontSize: '1rem',
                   fontWeight: 500,
-                  fontFamily: 'inherit'
+                  borderRadius: '8px'
                 }}
               />
             </Box>
 
-            <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.8, fontFamily: 'inherit' }}>
+            <Typography variant="body1" sx={{ mt: 2, lineHeight: 1.8, color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
               {data.detection_summary}
             </Typography>
           </Paper>
@@ -210,7 +171,7 @@ export default function TriageResult({ data }) {
         {/* Detection Ratio Chart */}
         {data.detection_ratio && (
           <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, height: '100%' }}>
+            <Paper sx={{ ...cardStyle, p: 3 }}>
               <DetectionRatioChart ratio={data.detection_ratio} />
             </Paper>
           </Grid>
@@ -220,97 +181,55 @@ export default function TriageResult({ data }) {
       {/* Priority Discoveries */}
       {data.priority_discoveries && data.priority_discoveries.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <GpsFixedIcon sx={{ fontSize: 32 }} color="primary" />
-            <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-              우선순위 발견 사항
-            </Typography>
-          </Box>
+          <Typography sx={sectionTitleStyle}>
+            <GpsFixedIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 우선순위 발견 사항
+          </Typography>
           <Grid container spacing={2}>
             {data.priority_discoveries.map((discovery, index) => (
               <Grid item xs={12} key={index}>
-                <Card
-                  sx={{
-                    position: 'relative',
-                    overflow: 'visible',
-                    border: '2px solid',
-                    borderColor: 'grey.300',
-                    '&:hover': {
-                      boxShadow: 6,
-                      transform: 'translateY(-2px)',
-                      transition: 'all 0.3s',
-                    },
-                  }}
-                >
+                <Card elevation={0} sx={{ ...cardStyle, borderLeft: discovery.priority_rank === 1 ? `4px solid ${COLORS.PRIMARY}` : undefined }}>
                   <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                      {/* Priority Number Badge */}
                       <Box
                         sx={{
-                          minWidth: 48,
-                          height: 48,
-                          borderRadius: '50%',
-                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.900',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '1.2rem',
+                          minWidth: 40, height: 40, borderRadius: '50%',
+                          bgcolor: discovery.priority_rank === 1 ? COLORS.PRIMARY : isDarkMode ? 'rgba(255,255,255,0.1)' : '#E5E5EA',
+                          color: discovery.priority_rank === 1 ? '#fff' : COLORS.TEXT_SECONDARY,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: '1.1rem'
                         }}
                       >
                         {discovery.priority_rank}
                       </Box>
 
                       <Box sx={{ flex: 1 }}>
-                        {/* Tags */}
-                        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                           <Chip
                             label={discovery.confidence}
                             size="small"
-                            color={getThreatLevelColor(discovery.confidence)}
-                            sx={{ fontWeight: 600 }}
+                            sx={{
+                              bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7',
+                              color: getThreatLevelColor(discovery.confidence),
+                              fontWeight: 600
+                            }}
                           />
                           <Chip
                             label={discovery.recommended_specialist}
                             size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ fontWeight: 500 }}
+                            sx={{
+                              bgcolor: 'rgba(0, 122, 255, 0.1)',
+                              color: COLORS.PRIMARY,
+                              fontWeight: 500
+                            }}
                           />
                         </Box>
 
-                        {/* Discovery Content */}
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            mb: 1.5,
-                            fontFamily: 'inherit',
-                            fontWeight: 600,
-                            color: 'text.primary',
-                          }}
-                        >
+                        <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: isDarkMode ? '#fff' : COLORS.TEXT_PRIMARY }}>
                           {discovery.discovery}
                         </Typography>
 
-                        {/* Significance */}
-                        <Box
-                          sx={{
-                            p: 2,
-                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
-                            borderRadius: 1,
-                            borderLeft: '4px solid',
-                            borderColor: 'primary.main',
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontFamily: 'inherit',
-                              color: 'text.secondary',
-                              lineHeight: 1.7,
-                            }}
-                          >
+                        <Box sx={{ p: 2, bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F9F9F9', borderRadius: '12px' }}>
+                          <Typography variant="body2" sx={{ color: isDarkMode ? '#ccc' : COLORS.TEXT_SECONDARY, lineHeight: 1.6 }}>
                             <strong>중요도:</strong> {discovery.significance}
                           </Typography>
                         </Box>
@@ -327,106 +246,48 @@ export default function TriageResult({ data }) {
       {/* Discovered Relationships */}
       {data.discovered_relationships && data.discovered_relationships.length > 0 && (
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <LinkIcon sx={{ fontSize: 32 }} color="primary" />
-            <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-              발견된 관계
-            </Typography>
-          </Box>
+          <Typography sx={sectionTitleStyle}>
+            <LinkIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 발견된 관계
+          </Typography>
           <Grid container spacing={2}>
             {data.discovered_relationships.map((rel, index) => (
               <Grid item xs={12} md={6} key={index}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    border: '1px solid',
-                    borderColor: 'grey.200',
-                    '&:hover': {
-                      boxShadow: 4,
-                      borderColor: 'primary.main',
-                      transition: 'all 0.3s',
-                    },
-                  }}
-                >
-                  <CardContent>
-                    {/* Icon and Type */}
+                <Card elevation={0} sx={cardStyle}>
+                  <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 1,
-                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
-                          color: '#ffffff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {getRelationshipIcon(rel.relationship_type)}
-                      </Box>
+                      <Box sx={{ color: COLORS.PRIMARY }}>{getRelationshipIcon(rel.relationship_type)}</Box>
                       <Box sx={{ flex: 1 }}>
                         <Chip
                           label={rel.relationship_type}
                           size="small"
-                          color="primary"
-                          variant="outlined"
+                          sx={{ bgcolor: 'rgba(0, 122, 255, 0.1)', color: COLORS.PRIMARY }}
                         />
                       </Box>
                       <Chip
                         label={rel.confidence}
                         size="small"
-                        color={getThreatLevelColor(rel.confidence)}
+                        sx={{ bgcolor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F2F2F7', color: getThreatLevelColor(rel.confidence) }}
                       />
                     </Box>
 
-                    {/* Indicator */}
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        mb: 2,
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.300',
-                      }}
-                    >
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontFamily: 'monospace',
-                          fontWeight: 600,
-                          wordBreak: 'break-all',
-                          color: 'error.main',
-                        }}
-                      >
+                    <Box sx={{ p: 1.5, mb: 2, bgcolor: isDarkMode ? 'rgba(0,0,0,0.3)' : '#F5F5F7', borderRadius: '8px' }}>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600, color: COLORS.HIGH, wordBreak: 'break-all' }}>
                         {rel.indicator}
                       </Typography>
                     </Box>
 
-                    {/* Detection Stats */}
                     {rel.detection_stats && (
                       <Box sx={{ mb: 2 }}>
                         <Chip
                           icon={<SecurityIcon />}
                           label={rel.detection_stats}
                           size="small"
-                          variant="outlined"
-                          color="error"
-                          sx={{ fontWeight: 500 }}
+                          sx={{ bgcolor: 'rgba(255, 59, 48, 0.1)', color: COLORS.HIGH }}
                         />
                       </Box>
                     )}
 
-                    {/* Context */}
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'text.secondary',
-                        lineHeight: 1.6,
-                        fontFamily: 'inherit',
-                      }}
-                    >
+                    <Typography variant="body2" sx={{ color: isDarkMode ? '#aaa' : COLORS.TEXT_SECONDARY, lineHeight: 1.6 }}>
                       {rel.context}
                     </Typography>
                   </CardContent>
@@ -439,112 +300,47 @@ export default function TriageResult({ data }) {
 
       {/* Recommended Next Steps */}
       {data.recommended_next_steps && data.recommended_next_steps.length > 0 && (
-        <Paper
-          sx={{
-            p: 3,
-            mb: 3,
-            background: (theme) => theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #0d1b3e 0%, #1a0d2e 100%)'
-              : 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
-            border: '2px solid',
-            borderColor: 'primary.light',
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <PlaylistAddCheckIcon sx={{ fontSize: 32 }} color="primary" />
-            <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-              권장 후속 조치
-            </Typography>
-          </Box>
-          <Grid container spacing={2}>
-            {data.recommended_next_steps.map((step, index) => (
-              <Grid item xs={12} key={index}>
-                <Card
-                  sx={{
-                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
-                    '&:hover': {
-                      boxShadow: 3,
-                      transform: 'translateX(4px)',
-                      transition: 'all 0.2s',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                      <Box
-                        sx={{
-                          minWidth: 32,
-                          height: 32,
-                          borderRadius: '4px',
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {index + 1}
-                      </Box>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          flex: 1,
-                          fontFamily: 'inherit',
-                          lineHeight: 1.8,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {step}
-                      </Typography>
+        <Box sx={{ mb: 3 }}>
+          <Typography sx={sectionTitleStyle}>
+            <PlaylistAddCheckIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 권장 후속 조치
+          </Typography>
+          <Paper sx={{ ...cardStyle, p: 3 }}>
+            <Grid container spacing={2}>
+              {data.recommended_next_steps.map((step, index) => (
+                <Grid item xs={12} key={index}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box
+                      sx={{
+                        minWidth: 28, height: 28, borderRadius: '6px',
+                        bgcolor: COLORS.PRIMARY, color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '0.9rem', mt: 0.3
+                      }}
+                    >
+                      {index + 1}
                     </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Paper>
+                    <Typography variant="body1" sx={{ flex: 1, lineHeight: 1.6, color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
+                      {step}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+        </Box>
       )}
 
       {/* Analytical Summary */}
-      <Paper
-        sx={{
-          p: 4,
-          background: (theme) => theme.palette.mode === 'dark'
-            ? 'linear-gradient(135deg, #3d2a0f 0%, #4a3310 100%)'
-            : 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-          border: '2px solid',
-          borderColor: 'warning.light',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-          <DescriptionIcon sx={{ fontSize: 32 }} color="warning" />
-          <Typography variant="h4" sx={{ fontWeight: 600, fontFamily: 'inherit' }}>
-            분석 요약
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            p: 3,
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'grey.900' : 'white',
-            borderRadius: 2,
-            borderLeft: '6px solid',
-            borderColor: 'warning.main',
-          }}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              whiteSpace: 'pre-wrap',
-              lineHeight: 2,
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-            }}
-          >
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={sectionTitleStyle}>
+          <DescriptionIcon fontSize="small" sx={{ color: COLORS.PRIMARY }} /> 분석 요약
+        </Typography>
+        <Paper sx={{ ...cardStyle, p: 3, borderLeft: `4px solid ${COLORS.MEDIUM}` }}>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, color: isDarkMode ? '#ddd' : COLORS.TEXT_PRIMARY }}>
             {data.analytical_summary}
           </Typography>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
   );
 }

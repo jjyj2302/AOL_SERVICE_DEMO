@@ -13,6 +13,7 @@ import Dashboard from "./components/Dashboard";
 import IocTools from "./components/ioc-tools/IocTools";
 import Settings from "./components/settings/Settings";
 import Agents from "./components/agents/Agents";
+import KisaIocManager from "./components/kisa-ioc/KisaIocManager";
 
 import {
   apiKeysState,
@@ -23,7 +24,7 @@ import {
 
 import { lightTheme, darkTheme } from "./theme";
 
-export const ColorModeContext = createContext({ toggleColorMode: () => {} });
+export const ColorModeContext = createContext({ toggleColorMode: () => { } });
 
 function App() {
   const setApiKeys = useSetRecoilState(apiKeysState);
@@ -44,7 +45,7 @@ function App() {
       toggleColorMode: () => {
         setMode((prevMode) => {
           const newMode = prevMode === "light" ? "dark" : "light";
-          localStorage.setItem("themeMode", newMode); 
+          localStorage.setItem("themeMode", newMode);
           return newMode;
         });
         setGeneralSettings((prevSettings) => ({
@@ -72,19 +73,19 @@ function App() {
           api.get("/api/settings/general/"),
           api.get("/api/settings/modules/newsfeed/"),
         ]);
-  
+
         setApiKeys(apikeysResponse.data);
-  
+
         const modulesData = modulesResponse.data.reduce((dict, item) => {
           dict[item.name] = { enabled: item.enabled };
           return dict;
         }, {});
         setModules(modulesData);
-  
+
         const generalData = generalSettingsResponse.data[0];
         setGeneralSettings(generalData);
         document.body.setAttribute("data-font", generalData.font);
-  
+
         const newsfeedListData = newsfeedListResponse.data.reduce((dict, item) => {
           const { name, ...rest } = item;
           dict[name] = rest;
@@ -95,7 +96,7 @@ function App() {
         console.error("Error fetching data:", error);
       }
     };
-  
+
     fetchData();
   }, [setApiKeys, setGeneralSettings, setModules, setNewsfeedList]);
 
@@ -110,6 +111,7 @@ function App() {
               <Route path="ioc-tools/*" element={<IocTools />} />
               <Route path="agents" element={<Agents />} />
               <Route path="settings/*" element={<Settings />} />
+              <Route path="kisa-ioc" element={<KisaIocManager />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

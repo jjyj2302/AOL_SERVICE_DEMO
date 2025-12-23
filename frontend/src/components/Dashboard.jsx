@@ -27,7 +27,7 @@ import {
   ShowChart as ShowChartIcon,
   FindInPage,
   ManageSearch,
-  DocumentScanner,
+  History as HistoryIcon,
   HealthAndSafety,
   SmartToy,
   ArrowForward,
@@ -52,7 +52,7 @@ const COLORS = {
 const QUICK_ACTIONS = [
   { label: "Deep Analysis", path: "/ioc-tools/lookup", icon: FindInPage, color: "#5E81AC", desc: "심층 위협 분석" },
   { label: "Bulk Lookup", path: "/ioc-tools/bulk", icon: ManageSearch, color: "#BF616A", desc: "대량 IOC 조회" },
-  { label: "IOC Extractor", path: "/ioc-tools/extractor", icon: DocumentScanner, color: "#A3BE8C", desc: "IOC 추출 도구" },
+  { label: "History", path: "/ioc-tools/history", icon: HistoryIcon, color: "#A3BE8C", desc: "분석 기록 조회" },
   { label: "Defang/Fang", path: "/ioc-tools/defanger", icon: HealthAndSafety, color: "#EBCB8B", desc: "안전한 변환" },
   { label: "AI Agents", path: "/agents", icon: SmartToy, color: "#B48EAD", desc: "AI 기반 분석" },
 ];
