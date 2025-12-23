@@ -19,7 +19,6 @@ export default function IocExtractor() {
     extractedData,
     uploadProgress,
     isLoading,
-    error,
     hasResults,
     extractFromFile,
     copyAllIOCs,

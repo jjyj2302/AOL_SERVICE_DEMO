@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, InputAdornment, IconButton, Paper, Fade } from '@mui/material';
-import { MdNetworkCheck, MdDomain, MdLink, MdEmail, MdFingerprint, MdBugReport, MdSearch } from 'react-icons/md';
-import { Search as SearchIcon, Add as AddIcon, Mic as MicIcon, Image as ImageIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
+import { MdNetworkCheck, MdDomain, MdLink, MdEmail, MdFingerprint, MdBugReport } from 'react-icons/md';
+import { Search as SearchIcon, Add as AddIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 
 const IOC_TYPES = [
   { icon: MdNetworkCheck, label: "IP Address", color: "#4285F4" },

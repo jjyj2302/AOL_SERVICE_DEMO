@@ -43,7 +43,6 @@ const MetricSelect = ({ label, value, options, onChange }) => (
 export default function EnvironmentalScore() {
   const theme = useTheme();
   const [cvssScores, setCvssScores] = useRecoilState(cvssScoresAtom);
-  const [expanded, setExpanded] = useState(true);
 
   const handleSelectChange = (key) => (e) => {
     setCvssScores((prev) => ({

@@ -12,13 +12,11 @@ import {
   TableHead,
   TableRow,
   Typography,
-  useTheme,
 } from "@mui/material";
 import RouteIcon from "@mui/icons-material/Route";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export default function Hops(props) {
-  const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const handleAccordionChange = () => {

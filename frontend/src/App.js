@@ -1,5 +1,5 @@
 import { useEffect, useMemo, createContext, useState } from "react";
-import { useSetRecoilState, useRecoilValue } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { Routes, Route } from 'react-router-dom';
 import api from "./api";
 
