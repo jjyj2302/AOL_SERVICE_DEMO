@@ -383,15 +383,15 @@ class ThreatHuntingCrew():
 
 
 def main():
-    """CLI entry point for threat hunting investigation"""
+    """CLI entry point for crew solo investigation"""
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python -m app.features.threat_hunter_copy.crew <IOC>")
+        print("Usage: python -m app.features.crew_solo.crew <IOC>")
         print("\nExamples:")
-        print("  python -m app.features.threat_hunter_copy.crew rtmp.blog")
-        print("  python -m app.features.threat_hunter_copy.crew 8.8.8.8")
-        print("  python -m app.features.threat_hunter_copy.crew 44d88612fea8a8f36de82e1278abb02f")
+        print("  python -m app.features.crew_solo.crew rtmp.blog")
+        print("  python -m app.features.crew_solo.crew 8.8.8.8")
+        print("  python -m app.features.crew_solo.crew 44d88612fea8a8f36de82e1278abb02f")
         sys.exit(1)
 
     ioc = sys.argv[1]

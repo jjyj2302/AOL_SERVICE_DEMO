@@ -1,0 +1,324 @@
+# Bulk Analysis Tasks - Independent Execution Mode (No Context Dependencies)
+# Each task executes independently without waiting for other tasks
+
+bulk_triage_assessment:
+  description: >
+    Perform independent triage assessment for IOC: {ioc}
+
+    Analysis Approach:
+    - Determine the IOC type (hash, domain, IP, URL)
+    - Query VirusTotal for reputation and detection data
+    - Extract all discovered relationships (contacted IPs, referring files, passive DNS)
+    - Identify high-priority discoveries that indicate deeper threats
+    - Assess overall threat level based on evidence
+
+    INDEPENDENT EXECUTION MODE:
+    You are running in parallel with other agents analyzing the same IOC.
+    Do not reference or expect results from other agents.
+    Focus on what you can discover using your available tools.
+
+    Your results will be aggregated with other analyses in Phase 2.
+  expected_output: >
+    OUTPUT FORMAT REQUIREMENTS:
+    1. Format: Pure JSON object (NO Markdown, NO ```json wrapper)
+    2. Field names: English (ioc, threat_level, discovered_relationships, etc.)
+    3. Enum values: English (threat_level: "CRITICAL"|"HIGH"|"MEDIUM"|"LOW")
+    4. Text content: Korean (detection_summary, analytical_summary, context fields)
+
+    Required JSON structure:
+    {
+      "ioc": "The IOC being investigated",
+      "ioc_type": "hash|domain|ip|url",
+      "threat_level": "CRITICAL|HIGH|MEDIUM|LOW",
+      "detection_summary": "[Korean text] Detection statistics summary",
+      "detection_ratio": "21/93 format if applicable",
+      "discovered_relationships": [
+        {
+          "relationship_type": "contacted_ip|referring_file|passive_dns|etc",
+          "indicator": "The discovered indicator value",
+          "context": "[Korean text] Significance of this relationship",
+          "confidence": "HIGH|MEDIUM|LOW"
+        }
+      ],
+      "discovered_iocs": [
+        {
+          "indicator": "IOC value",
+          "ioc_type": "hash|ipv4|ipv6|domain|url",
+          "confidence": "HIGH|MEDIUM|LOW",
+          "discovery_reason": "[Korean text] Why this IOC was discovered",
+          "discovery_source": "Source of discovery (e.g., VirusTotal contacted_ips)"
+        }
+      ],
+      "analytical_summary": "[Korean text] Executive summary of triage findings"
+    }
+
+bulk_malware_analysis:
+  description: >
+    Perform independent malware behavioral analysis for IOC: {ioc}
+
+    Analysis Approach Based on IOC Type:
+    - Hash: Analyze behavioral data, C2 contacts, file relationships from VirusTotal
+    - Domain/IP: Find malware samples that communicate with this infrastructure
+    - URL: Analyze downloaded files and their behaviors
+
+    Focus Areas:
+    - Malware family identification
+    - Behavioral patterns and capabilities
+    - C2 communication mechanisms
+    - Attack chain analysis
+    - Infrastructure usage patterns
+
+    CRITICAL: When analyzing hashes, use the COMPLETE hash (64 characters for SHA256)
+
+    INDEPENDENT EXECUTION MODE:
+    You are running in parallel with other agents.
+    Analyze the IOC directly without waiting for triage results.
+  expected_output: >
+    OUTPUT FORMAT REQUIREMENTS:
+    1. Format: Pure JSON object (NO Markdown wrapper)
+    2. Field names: English
+    3. Enum values: English (priority: "HIGH"|"MEDIUM"|"LOW")
+    4. Text content: Korean
+
+    Required JSON structure:
+    {
+      "ioc_analyzed": "The IOC that was analyzed",
+      "malware_family": "Malware family name if identified",
+      "malware_type": "trojan|ransomware|backdoor|dropper|etc",
+      "behavioral_profile": "[Korean text] Comprehensive behavioral characteristics",
+      "infrastructure_usage_patterns": "[Korean text] How malware uses infrastructure",
+      "communication_mechanisms": ["List of communication protocols"],
+      "attack_chain_analysis": "[Korean text] Complete attack chain analysis",
+      "infrastructure_targets": [
+        {
+          "target_type": "c2_ip|c2_domain|download_url|exfil_endpoint",
+          "target": "The infrastructure indicator",
+          "behavioral_context": "[Korean text] How malware uses this",
+          "priority": "HIGH|MEDIUM|LOW"
+        }
+      ],
+      "discovered_iocs": [
+        {
+          "indicator": "IOC value",
+          "ioc_type": "hash|ipv4|ipv6|domain|url",
+          "confidence": "HIGH|MEDIUM|LOW",
+          "discovery_reason": "[Korean text]",
+          "discovery_source": "Source"
+        }
+      ],
+      "analysis_summary": "[Korean text] Summary of malware analysis"
+    }
+
+bulk_infrastructure_correlation:
+  description: >
+    Perform independent infrastructure correlation analysis for IOC: {ioc}
+
+    Analysis Approach Based on IOC Type:
+    - IP: Execute page.ip and server.ip queries to find related activities
+    - Domain: Resolve to IP, then analyze hosting patterns and related domains
+    - Hash: Extract contacted infrastructure from malware analysis
+    - URL: Analyze hosting infrastructure and related URLs
+
+    CRITICAL QUERY PRIORITIES for URLScan:
+    - page.ip:<ip> (HIGHEST: find other malware using this IP)
+    - server.ip:<ip> (find what else is hosted on this IP)
+    - domain:<domain> (find related scans)
+
+    Focus Areas:
+    - Infrastructure relationship mapping
+    - ASN clustering and hosting patterns
+    - Temporal correlation of infrastructure deployment
+    - Campaign-scale infrastructure indicators
+
+    INDEPENDENT EXECUTION MODE:
+    You are running in parallel with other agents.
+    Execute infrastructure queries without waiting for malware analysis results.
+  expected_output: >
+    OUTPUT FORMAT REQUIREMENTS:
+    1. Format: Pure JSON object (NO Markdown wrapper)
+    2. Field names: English
+    3. Enum values: English
+    4. Text content: Korean
+
+    Required JSON structure:
+    {
+      "ioc_analyzed": "The IOC that was analyzed",
+      "infrastructure_relationship_map": "[Korean text] Infrastructure relationships discovered",
+      "campaign_clusters": [
+        {
+          "cluster_name": "Cluster identifier",
+          "infrastructure_elements": ["IPs", "domains", "ASNs in cluster"],
+          "clustering_evidence": "[Korean text] Evidence for clustering",
+          "confidence": "HIGH|MEDIUM|LOW"
+        }
+      ],
+      "asn_analysis": "[Korean text] ASN hosting pattern analysis",
+      "temporal_patterns": "[Korean text] Deployment timing analysis",
+      "discovered_iocs": [
+        {
+          "indicator": "IOC value",
+          "ioc_type": "hash|ipv4|ipv6|domain|url",
+          "confidence": "HIGH|MEDIUM|LOW",
+          "discovery_reason": "[Korean text]",
+          "discovery_source": "URLScan query type"
+        }
+      ],
+      "correlation_summary": "[Korean text] Summary of infrastructure analysis"
+    }
+
+bulk_campaign_intelligence:
+  description: >
+    Perform independent campaign intelligence analysis for IOC: {ioc}
+
+    Analysis Focus:
+    - Assess campaign indicators based on this single IOC
+    - Map applicable MITRE ATT&CK techniques
+    - Generate Hunt Hypotheses specific to this IOC
+    - Evaluate threat actor attribution possibilities
+    - Recommend immediate actions
+
+    Hunt Hypothesis Requirements:
+    - Provide 1-2 hypotheses specific to this IOC
+    - Include executable detection queries (SIEM, YARA, EDR)
+    - Queries must be syntactically valid
+
+    INDEPENDENT EXECUTION MODE:
+    Provide campaign assessment based on what can be determined from this single IOC.
+    Your findings will be aggregated with all other IOC analyses in Phase 2.
+  expected_output: >
+    OUTPUT FORMAT REQUIREMENTS:
+    1. Format: Pure JSON object (NO Markdown wrapper)
+    2. Field names: English
+    3. Enum values: English (threat_level, detection_platform, confidence)
+    4. Text content: Korean
+
+    Required JSON structure:
+    {
+      "ioc_analyzed": "The IOC that was analyzed",
+      "threat_level": "CRITICAL|HIGH|MEDIUM|LOW",
+      "campaign_indicators": "[Korean text] Campaign association assessment",
+      "mitre_techniques": [
+        {
+          "technique_id": "T1071.001",
+          "technique_name": "Application Layer Protocol: Web Protocols",
+          "evidence": "[Korean text] Evidence for this technique"
+        }
+      ],
+      "hunt_hypotheses": [
+        {
+          "hypothesis_id": 1,
+          "hypothesis_name": "Short descriptive name",
+          "description": "[Korean text] Detailed hypothesis",
+          "detection_platform": "SIEM|YARA|EDR|Network",
+          "executable_query": "Syntactically valid detection query",
+          "priority": 1
+        }
+      ],
+      "threat_actor_indicators": "[Korean text] Attribution assessment if applicable",
+      "recommended_actions": ["[Korean text] Action 1", "[Korean text] Action 2"],
+      "intelligence_summary": "[Korean text] Summary of campaign analysis"
+    }
+
+# Phase 2: Aggregation Task
+bulk_aggregation:
+  description: >
+    Synthesize all Phase 1 analysis results into a comprehensive final report.
+
+    INPUT DATA:
+    You will receive aggregated results from Phase 1:
+    - all_triage_results: List of triage outputs for each IOC
+    - all_malware_results: List of malware analysis outputs for each IOC
+    - all_infrastructure_results: List of infrastructure correlation outputs for each IOC
+    - all_campaign_results: List of campaign intelligence outputs for each IOC
+    - total_iocs_analyzed: Number of IOCs analyzed
+
+    AGGREGATION TASKS:
+    1. Cross-IOC Pattern Analysis:
+       - Identify IOCs that share infrastructure
+       - Find IOCs with similar malware behaviors
+       - Detect campaign-level patterns
+
+    2. Campaign Clustering:
+       - Group IOCs by shared infrastructure
+       - Group IOCs by malware family
+       - Identify coordinated threat activities
+
+    3. Unified Intelligence:
+       - Generate comprehensive Hunt Hypotheses based on ALL findings
+       - Create unified MITRE ATT&CK mapping
+       - Provide overall threat assessment
+
+    4. Prioritization:
+       - Rank IOCs by threat severity
+       - Recommend response priorities
+       - Assess organizational impact
+  expected_output: >
+    OUTPUT FORMAT REQUIREMENTS:
+    1. Format: Pure JSON object (NO Markdown wrapper)
+    2. Field names: English
+    3. Enum values: English
+    4. Text content: Korean
+
+    Required JSON structure:
+    {
+      "executive_summary": "[Korean text] High-level summary for decision makers",
+      "total_iocs_analyzed": 10,
+      "overall_threat_level": "CRITICAL|HIGH|MEDIUM|LOW",
+      "campaign_clusters": [
+        {
+          "cluster_id": 1,
+          "cluster_name": "Campaign name or identifier",
+          "member_iocs": ["ioc1", "ioc2"],
+          "shared_infrastructure": ["shared IPs or domains"],
+          "clustering_rationale": "[Korean text] Why these IOCs are clustered",
+          "threat_level": "HIGH|MEDIUM|LOW"
+        }
+      ],
+      "cross_ioc_patterns": [
+        {
+          "pattern_type": "shared_infrastructure|similar_behavior|same_campaign",
+          "description": "[Korean text] Pattern description",
+          "affected_iocs": ["list of IOCs"],
+          "significance": "[Korean text] Why this pattern matters"
+        }
+      ],
+      "unified_mitre_mapping": [
+        {
+          "tactic": "Command and Control",
+          "techniques": ["T1071.001", "T1573"],
+          "evidence_from_iocs": ["ioc1", "ioc2"],
+          "assessment": "[Korean text] Tactic assessment"
+        }
+      ],
+      "aggregated_hunt_hypotheses": [
+        {
+          "hypothesis_id": 1,
+          "hypothesis_name": "Unified hypothesis name",
+          "description": "[Korean text] Comprehensive hypothesis",
+          "detection_platform": "SIEM|YARA|EDR",
+          "executable_query": "Detection query covering multiple IOCs",
+          "applicable_iocs": ["ioc1", "ioc2"],
+          "priority": 1
+        }
+      ],
+      "all_discovered_iocs": [
+        {
+          "indicator": "IOC value",
+          "ioc_type": "hash|ipv4|ipv6|domain|url",
+          "discovered_from": "Original IOC that led to discovery",
+          "confidence": "HIGH|MEDIUM|LOW",
+          "recommended_action": "block|monitor|investigate"
+        }
+      ],
+      "prioritized_response": [
+        {
+          "priority": 1,
+          "ioc": "Most critical IOC",
+          "reason": "[Korean text] Why this is priority",
+          "recommended_action": "[Korean text] Specific action"
+        }
+      ],
+      "intelligence_gaps": ["[Korean text] Gap 1", "[Korean text] Gap 2"],
+      "organizational_impact": "[Korean text] Overall impact assessment",
+      "final_recommendations": ["[Korean text] Recommendation 1", "[Korean text] Recommendation 2"]
+    }

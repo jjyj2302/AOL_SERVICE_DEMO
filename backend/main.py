@@ -28,10 +28,21 @@ from app.features.ioc_tools.ioc_defanger.routers import internal_defang_routes
 from app.features.ioc_tools.ioc_lookup.bulk_lookup.routers import bulk_ioc_lookup_routes
 from app.features.ioc_tools.ioc_lookup.single_lookup.routers import single_ioc_lookup_routes
 
-# Threat Hunter imports
-from app.features.threat_hunter_copy.routers.threat_hunter_routes import threat_hunter_routes as threat_hunter_router
-# from app.features.threat_hunter_copy.test_router import router as threat_hunter_test_router
+# Deep Analysis imports (formerly threat_hunter_copy)
+from app.features.deep_analysis.routers.threat_hunter_routes import threat_hunter_routes as deep_analysis_router
+# from app.features.deep_analysis.test_router import router as deep_analysis_test_router
 from app.features.crew_solo.solo_router import router as crew_solo_router
+
+# Bulk Analysis Async imports (parallel IOC analysis with aggregation)
+from app.features.bulk_analysis_async import bulk_analysis_router
+
+# History imports (analysis history with DB storage)
+from app.features.history import history_router
+from app.features.history.models import AnalysisSession, IocAnalysis, AggregationResult, UploadedFile
+
+# Threat Intel imports (KISA IoC Integration)
+from app.features.threat_intel.models import KISAIoC, KISASyncHistory
+from app.features.threat_intel.routers import kisa_router
 
 from app.core.settings.general.models.general_settings_models import Settings
 from app.core.settings.modules.models.modules_settings_models import ModuleSettings
@@ -123,10 +134,19 @@ routers = [
     bulk_ioc_lookup_routes.router,
     single_ioc_lookup_routes.router,
 
-    # Threat Hunter
-    threat_hunter_router,
-    # threat_hunter_test_router,  # Temporary test endpoint for Pydantic outputs
+    # Deep Analysis (CrewAI hierarchical - detailed IOC investigation)
+    deep_analysis_router,
+    # deep_analysis_test_router,  # Temporary test endpoint for Pydantic outputs
     crew_solo_router,  # Individual agent execution endpoints
+
+    # Bulk Analysis Async (parallel IOC analysis with Phase 2 aggregation)
+    bulk_analysis_router,
+
+    # History (analysis history with DB storage)
+    history_router,
+
+    # KISA IoC (한국인터넷진흥원 침해사고 공격 IoC 지표)
+    kisa_router,
 ]
 
 for router in routers:
