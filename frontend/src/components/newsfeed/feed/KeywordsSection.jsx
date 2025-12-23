@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { FindInPage as FindInPageIcon } from "@mui/icons-material";
-import { blueGrey, deepOrange, teal, indigo, pink, grey } from "@mui/material/colors";
+import { indigo } from "@mui/material/colors";
 
 export default function KeywordsSection({ item }) {
   if (!item.matches || item.matches.length === 0) {

@@ -9,7 +9,6 @@ import {
   Typography,
   InputAdornment,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 export default function FalsePositives({ falsePositives, handleFalsePositivesChange }) {

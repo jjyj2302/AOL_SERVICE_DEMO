@@ -11,12 +11,9 @@ import {
   AutoAwesome as AutoAwesomeIcon,
   ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
-import { grey } from "@mui/material/colors";
 import ReactMarkdown from "react-markdown";
-import { useTheme } from "@mui/material/styles";
 
 export default function AnalyzeSection({ item }) {
-  const theme = useTheme();
   
   // Extract the markdown content from the analysis_result
   const getMarkdownContent = () => {

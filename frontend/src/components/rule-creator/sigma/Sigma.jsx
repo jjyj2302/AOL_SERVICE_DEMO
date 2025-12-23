@@ -55,12 +55,6 @@ const initialDetection = {
   timeframe: '',
 };
 
-const initialCondition = {
-  field: '',
-  modifier: 'equals',
-  value: '',
-};
-
 export default function Sigma() {
   const [metadata, setMetadata] = useState(initialMetadata);
   const [logSource, setLogSource] = useState(initialLogSource);

@@ -191,24 +191,6 @@ const DynamicContentRenderer = ({ data, isDarkMode, level = 0 }) => {
   );
 };
 
-const JsonView = ({ data, isDarkMode }) => (
-  <Box
-    component="pre"
-    sx={{
-      p: 2,
-      bgcolor: isDarkMode ? 'rgba(0,0,0,0.3)' : '#F5F5F7',
-      borderRadius: '8px',
-      overflow: 'auto',
-      fontSize: '0.8rem',
-      fontFamily: 'monospace',
-      color: isDarkMode ? '#ccc' : COLORS.TEXT_PRIMARY,
-      maxHeight: '300px'
-    }}
-  >
-    {JSON.stringify(data, null, 2)}
-  </Box>
-);
-
 const DiscoveryList = ({ discoveries, isDarkMode }) => {
   if (!discoveries || discoveries.length === 0) return <Typography variant="body2" color="text.secondary">No discoveries found.</Typography>;
 
