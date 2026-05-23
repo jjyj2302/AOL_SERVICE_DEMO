@@ -41,3 +41,7 @@ pdfplumber>=0.11.4  # CrewAI 호환성
 
 # Threat Intelligence
 stix2==3.0.1
+
+# Testing
+pytest>=8.0,<9
+httpx>=0.27,<1   # FastAPI TestClient 의존성
