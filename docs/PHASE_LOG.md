@@ -16,8 +16,9 @@
 | **Phase 4** | Simulation Mode — 5대 금융권 시나리오 | ✅ 완료 | 2026-05-23 |
 | **Phase 5** | EC2 단일 인스턴스 배포 산출물 | ✅ 완료 | 2026-05-23 |
 | **Phase 5.5** | DB 마이그레이션 — SQLite → PostgreSQL 16 | ✅ 완료 | 2026-05-23 |
-| **Phase 6** | CI/CD 파이프라인 정리 | 🟡 진행중 | — |
-| **Phase 7** | MCP 라이브 모드 wire-up + 프론트엔드 신규 패널 | ⚪ 대기 | — |
+| **Phase 6** | CI/CD 파이프라인 정리 | ✅ 완료 | 2026-05-23 |
+| **Phase 7** | pytest 슈트 + deprecation 정리 | ✅ 완료 | 2026-05-23 |
+| **Phase 8** | MCP 라이브 모드 wire-up + 프론트엔드 신규 패널 | ⚪ 대기 | — |
 
 ---
 
@@ -183,21 +184,64 @@
 
 ---
 
-## 🟡 Phase 6 — CI/CD 파이프라인 정리 (진행중)
+## ✅ Phase 6 — CI/CD 파이프라인 정리
 
-### 계획
-- 기존 `.github/workflows/` 점검 → LangGraph 모듈/Docker 빌드/Compose 검증 추가
-- Python 린트 (`ruff`/`mypy`) + 신규 모듈 import 검증 단계 추가
-- ESLint 정리 점검
-- docker-compose config 검증을 PR 워크플로에 추가
+### 한 일
+- **`ci.yml` 전면 재작성** — 기존 파일은 모든 키가 2-space prefix 로 들여쓰여 있어 실행조차 안 되던 상태
+- 4 jobs 구성:
+  - `backend-lint`: py_compile 전체 + pytest 슈트 실행
+  - `frontend-build`: npm ci + build (cache 활성화)
+  - `compose-validate`: base + prod 오버레이 정합성 검증
+  - `docker-build`: backend/frontend 이미지 빌드 (GHA cache)
+- **`cd.yml`** — deprecated `actions/create-release@v1` → `softprops/action-gh-release@v2` 교체
+- `permissions.contents=write` 명시
+- `generate_release_notes: true` 활성화
+
+### 커밋 기록
+- `802b0299` ci(ci): CI 워크플로 YAML 들여쓰기 깨진 것 수정 및 검증 강화
+- `350b71ff` ci(ci): CD 워크플로 deprecated 액션 교체 및 권한 명시
+- `2cd7dd02` ci(ci): CI 워크플로 smoke test 를 정식 pytest 실행으로 격상
 
 ---
 
-## ⚪ Phase 7 — MCP 라이브 모드 + 프론트엔드 신규 패널 (대기)
+## ✅ Phase 7 — pytest 슈트 신설 + deprecation 정리
+
+### 한 일
+- **`backend/tests/`** 디렉터리 신설 — 4개 테스트 모듈 / **43 테스트 케이스 / 0.5초 / 100% 통과**
+  - `test_simulations.py` (9) — 5개 시나리오 시드 정합성
+  - `test_confidence.py` (14) — L0~L4 등급 경계 + 핵심 자산 휴먼 승인
+  - `test_graph.py` (7) — LangGraph StateGraph 전체 흐름
+  - `test_router.py` (13) — FastAPI `/api/lg/*` 엔드포인트
+- `conftest.py` — PYTHONPATH + DATABASE_URL=`sqlite:///:memory:` 강제 격리
+- `requirements.txt` — `pytest>=8.0`, `httpx>=0.27` 추가
+- **datetime.utcnow() deprecation 정리** — `datetime.now(timezone.utc)` 로 4개 호출 지점 교체
+- CI 의 `backend-lint` 잡이 매 PR 마다 pytest 자동 실행 → 회귀 안전망 확보
+
+### 무엇이 개선됐나
+| 항목 | Before | After |
+|---|---|---|
+| 자동화된 회귀 테스트 | 없음 (수동 smoke 만) | **43 케이스 pytest, 0.5초** |
+| L0~L4 경계 검증 | 사람 눈으로 보던 수준 | **10개 boundary 케이스 자동 검증** |
+| 라우터 응답 형식 | 수동 호출로 확인 | **13개 엔드포인트 통합 테스트** |
+| 핵심 자산 휴먼 승인 | 정성적 명세만 | **kakaobank/SWIFT/코어뱅킹 등 키워드 단위 테스트** |
+| Deprecation 경고 | 200+ 건 | **1건** (외부 langgraph) |
+
+### 커밋 기록
+- `dbadc3b6` refactor(llm): datetime.utcnow() deprecation 정리
+- `cbec3929` test(api): pytest 슈트 신설 — LangGraph/MCP/Simulation/Router 43개 케이스
+- `c30dd2c0` chore(api): pytest 및 httpx 테스트 의존성 추가
+
+---
+
+## ⚪ Phase 8 — MCP 라이브 모드 + 프론트엔드 신규 패널 (대기)
 
 ### 계획
 - `langchain-mcp-adapters` 의 `MultiServerMCPClient` 로 실 MCP 서버 wire-up
+  - 도커 compose 에 mcp-dnstwist, mcp-shodan, cve-mcp-server 사이드카 추가
+  - `mcp_clients.py` 의 `# TODO(live)` 부분 실 호출 구현
 - 프론트엔드 사이드바 **🎬 Simulation** 메뉴 + DNSTwist 타이포스쿼트 테이블 + Shodan 노출 자산 카드 추가
+- 시뮬레이션 결과 PDF 리포트 생성기 (jinja2 + weasyprint)
+- (선택) LangGraph PostgresSaver 체크포인터 연결 — 장시간 분석 재개 가능
 
 ---
 
