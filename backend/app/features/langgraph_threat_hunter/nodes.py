@@ -173,7 +173,7 @@ def triage_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             findings, _meta = call_agent(
                 "triage",
                 _live_user_prompt(s, {}, mcp_data={"virustotal": vt_result}),
-                max_tokens=900,
+                max_tokens=600,  # 짧은 평가 — 응답 시간 최소화
             )
             triage = TriageFindings(**_safe_findings(findings, TriageFindings))
         else:
@@ -201,7 +201,7 @@ def malware_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             findings, _meta = call_agent(
                 "malware",
                 _live_user_prompt(s, _prior_findings(s), mcp_data=mcp_data),
-                max_tokens=1800,
+                max_tokens=1100,
             )
             malware = MalwareFindings(**_safe_findings(findings, MalwareFindings))
         else:
@@ -229,11 +229,11 @@ def infrastructure_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, A
             findings, _meta = call_agent(
                 "infrastructure",
                 _live_user_prompt(s, _prior_findings(s), mcp_data={
-                    "dnstwist": dt_result,
+                    "dnstwist": dt_result[:15] if isinstance(dt_result, list) else dt_result,  # 토큰 절감
                     "shodan": sh_result,
-                    "osint_crtsh": os_result,
+                    "osint_crtsh": os_result[:5] if isinstance(os_result, list) else os_result,
                 }),
-                max_tokens=2000,
+                max_tokens=1300,
             )
             infra = InfraFindings(**_safe_findings(findings, InfraFindings))
         else:
@@ -268,7 +268,7 @@ def campaign_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             findings, _meta = call_agent(
                 "campaign",
                 _live_user_prompt(s, _prior_findings(s), mcp_data=mcp_data or None),
-                max_tokens=2800,
+                max_tokens=1800,  # 종합 단계 — 헌팅 쿼리·FW 룰 포함이지만 충분
             )
             campaign = CampaignFindings(**_safe_findings(findings, CampaignFindings))
         else:

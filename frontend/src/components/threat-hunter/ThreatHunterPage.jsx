@@ -256,6 +256,28 @@ export default function ThreatHunterPage() {
     if (ev.type === "node") {
       const nodeId = ev.node;
       const delta = ev.delta || {};
+
+      // Orchestrator 가 route_plan 반환하면 예정된 specialist 들의 "분석 중" placeholder 미리 표시
+      if (nodeId === "orchestrator" && Array.isArray(delta.route_plan)) {
+        const planSteps = delta.route_plan;
+        const upcoming = planSteps.map((step) => `${step}_step`);
+        // 기존 메시지에 placeholder 가 없는 specialist 만 추가
+        setMessages((prev) => {
+          const existing = new Set(prev.filter((m) => m.placeholder_for).map((m) => m.placeholder_for));
+          const additions = upcoming
+            .filter((nid) => !existing.has(nid))
+            .map((nid) => ({
+              role: "assistant",
+              agent: AGENT_META[nid] || null,
+              text: "🌀 분석 중...",
+              specialist: true,
+              placeholder_for: nid,
+              isThinking: true,
+            }));
+          return additions.length ? [...prev, ...additions] : prev;
+        });
+      }
+
       // 현재 노드 done 처리
       updateRun((prev) => {
         const states = { ...prev.agentStates };
@@ -336,21 +358,31 @@ export default function ThreatHunterPage() {
         };
       });
 
-      // chat_message 가 있으면 채팅 패널에 추가 (specialist 플래그로 history 제외)
+      // chat_message 가 있으면 채팅 패널에 추가 (있던 placeholder 가 있으면 교체, 없으면 신규)
       const chatText = extractChatMessage(nodeId, delta);
       if (chatText) {
-        appendMessage({
-          role: "assistant",
-          agent: AGENT_META[nodeId],
-          text: chatText,
-          specialist: true,
+        setMessages((prev) => {
+          const next = [...prev];
+          const idx = next.findIndex((m) => m.placeholder_for === nodeId && m.isThinking);
+          const newMsg = {
+            role: "assistant",
+            agent: AGENT_META[nodeId],
+            text: chatText,
+            specialist: true,
+          };
+          if (idx >= 0) {
+            next[idx] = newMsg;  // placeholder 교체
+          } else {
+            next.push(newMsg);
+          }
+          return next;
         });
       }
       return;
     }
 
     if (ev.type === "done") {
-      // 잔여 정리: idle → skipped, running → done (혹시 모를 잔재 방지)
+      // 잔여 정리: idle → skipped, running → done
       updateRun((prev) => {
         const states = { ...prev.agentStates };
         AGENTS.forEach((a) => {
@@ -364,20 +396,121 @@ export default function ThreatHunterPage() {
         };
       });
 
-      // 자료실에 리포트 추가
-      const cur = runRef.current;
-      const newReport = {
-        title: cur.title || cur.parsed?.ioc || "분석 리포트",
-        timestamp: new Date().toLocaleTimeString("ko-KR"),
-        pdf_path: ev.deliverables_hint?.pdf_report_path || "#",
-      };
-      setReports((prev) => [newReport, ...prev]);
+      // 분석 모드 종료 시 — 전체 산출물을 채팅창에 종합 메시지로 출력
+      if (ev.mode === "analysis") {
+        const cur = runRef.current;
+        const summary = buildFinalAnalysisSummary(cur);
+        if (summary) {
+          appendMessage({
+            role: "assistant",
+            text: summary,
+            analysis_summary: true,
+          });
+        }
+        // 자료실 리포트 추가 (PDF 다운로드는 보조)
+        if (ev.deliverables_hint?.pdf_report_path) {
+          const newReport = {
+            title: cur.title || cur.parsed?.ioc || "분석 리포트",
+            timestamp: new Date().toLocaleTimeString("ko-KR"),
+            pdf_path: ev.deliverables_hint.pdf_report_path,
+          };
+          setReports((prev) => [newReport, ...prev]);
+        }
+      }
+    }
+  };
 
-      appendMessage({
-        role: "assistant",
-        text: "✅ 분석 완료. 우측 Agent Studio 에서 산출물(방화벽 규칙·헌팅 쿼리·PDF)을 확인하세요.",
+  // ---- 분석 결과를 채팅창용 markdown 문자열로 종합 ----
+  const buildFinalAnalysisSummary = (run) => {
+    const f = run.findings || {};
+    const d = run.deliverables || {};
+    const final = run.final || {};
+
+    const parts = [];
+    parts.push(`## ✅ 분석 완료 — ${run.title || run.parsed?.ioc || ""}`);
+
+    // 메트릭
+    if (final.automation_level || final.confidence_score != null) {
+      const pct = ((final.confidence_score || 0) * 100).toFixed(0);
+      const lvl = final.automation_level || "?";
+      const approval = final.human_approval_required ? "**필수**" : "불필요";
+      parts.push(
+        `\n### 📊 메트릭\n` +
+        `- 자동화 등급: **${lvl}** · 신뢰도 **${pct}%** · 휴먼 승인 ${approval}\n` +
+        `- 처리 시간: ${final.elapsed_ms ?? "—"} ms`
+      );
+    }
+
+    // Executive Summary
+    const exec = d.executive_summary || f.campaign?.executive_summary || "";
+    if (exec) {
+      parts.push(`\n### 📈 Executive Summary\n${exec}`);
+    }
+
+    // 에이전트별 핵심 발견
+    if (f.triage?.threat_level) {
+      parts.push(
+        `\n### 🔍 Triage — 위협 평가\n` +
+        `- 위협 수준: **${f.triage.threat_level}** (탐지 ${f.triage.detection_ratio || "—"})\n` +
+        (f.triage.mitre_tactics?.length
+          ? `- MITRE 전술: ${f.triage.mitre_tactics.join(", ")}\n`
+          : "") +
+        (f.triage.priority_pivots?.length
+          ? `- 우선 단서: ${f.triage.priority_pivots.map((p) => `\n  · ${p}`).join("")}`
+          : "")
+      );
+    }
+
+    if (f.malware?.malware_family || f.malware?.c2_targets?.length) {
+      parts.push(
+        `\n### 👾 Malware\n` +
+        (f.malware.malware_family ? `- 패밀리: **${f.malware.malware_family}**\n` : "") +
+        (f.malware.behaviors?.length
+          ? `- 행위: ${f.malware.behaviors.join(", ")}\n`
+          : "") +
+        (f.malware.c2_targets?.length
+          ? `- C2 타깃: ${f.malware.c2_targets.join(", ")}`
+          : "")
+      );
+    }
+
+    if (f.infrastructure?.typosquat_domains?.length || f.infrastructure?.campaign_cluster_id) {
+      const ts = f.infrastructure.typosquat_domains || [];
+      parts.push(
+        `\n### 🌍 Infrastructure\n` +
+        (f.infrastructure.campaign_cluster_id
+          ? `- 캠페인 클러스터: **${f.infrastructure.campaign_cluster_id}**\n`
+          : "") +
+        (ts.length
+          ? `- 타이포스쿼트 ${ts.length}건:${ts.slice(0, 5).map((t) => `\n  · \`${t.domain}\` (${t.technique || "?"})`).join("")}`
+          : "")
+      );
+    }
+
+    // 방화벽 규칙
+    const fw = d.firewall_rules || f.campaign?.firewall_rules || [];
+    if (fw.length) {
+      parts.push(
+        `\n### 🛡️ 방화벽 차단 규칙 (${fw.length}건)\n` +
+        "```\n" + fw.join("\n") + "\n```"
+      );
+    }
+
+    // 헌팅 가설
+    const hunts = d.hunt_hypotheses || f.campaign?.hunt_hypotheses || [];
+    if (hunts.length) {
+      parts.push(`\n### 🔍 헌팅 가설 (${hunts.length}건)`);
+      hunts.forEach((h, i) => {
+        parts.push(
+          `\n**#${h.hypothesis_id ?? i + 1}** · ${h.platform || "?"} · ${h.timeline || ""}\n` +
+          "```\n" + (h.query || "") + "\n```\n" +
+          (h.criteria ? `- Success: ${h.criteria}` : "")
+        );
       });
     }
+
+    parts.push(`\n---\n*우측 Agent Studio 에서 메트릭 카드 / Audit Ledger / MCP 호출 기록을 확인하실 수 있습니다.*`);
+    return parts.join("\n");
   };
 
   const pickNextNode = (currentId, routePlan, _states) => {

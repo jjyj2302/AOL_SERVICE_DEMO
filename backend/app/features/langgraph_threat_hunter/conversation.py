@@ -243,7 +243,8 @@ async def stream_claude_response(
                 })
                 continue
 
-            parsed, meta = call_agent(agent_name, question, max_tokens=1500)
+            # Tool Use 자문 — 짧은 답변으로 응답 시간 최소화
+            parsed, meta = call_agent(agent_name, question, max_tokens=900)
             findings = parsed.get("findings", parsed) if isinstance(parsed, dict) else {}
             chat_msg = parsed.get("chat_message", "") if isinstance(parsed, dict) else ""
             result_payload = {"findings": findings, "chat_message": chat_msg}
