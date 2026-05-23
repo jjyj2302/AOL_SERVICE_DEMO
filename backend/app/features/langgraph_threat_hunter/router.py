@@ -8,9 +8,12 @@
 """
 from __future__ import annotations
 
+import asyncio
+import json
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from .graph import build_graph, get_simulation_graph
@@ -23,6 +26,12 @@ router = APIRouter(prefix="/api/lg", tags=["LangGraph Threat Hunting"])
 class InvestigateRequest(BaseModel):
     ioc: str = Field(..., description="조사할 IoC (IP/도메인/URL/해시/CVE)")
     ioc_type: IocType = Field("unknown", description="IoC 타입 — 모르면 unknown")
+
+
+class ChatRequest(BaseModel):
+    """자유 텍스트 입력 → 자동 IoC 감지 + LangGraph 실행."""
+    text: str = Field(..., description="사용자 입력 (IoC 그 자체, 또는 S1~S5 등 시나리오 ID)")
+    pace: float = Field(0.4, ge=0.0, le=2.0, description="노드 간 인위적 지연 (시연용)")
 
 
 class SimulationRunResult(BaseModel):
@@ -105,6 +114,182 @@ def simulate(scenario_id: str) -> SimulationRunResult:
         deliverables=deliverables,
         findings=findings,
     )
+
+
+_HASH_RE = __import__("re").compile(r"^[a-fA-F0-9]{32}$|^[a-fA-F0-9]{40}$|^[a-fA-F0-9]{64}$")
+_CVE_RE = __import__("re").compile(r"^CVE-\d{4}-\d{4,7}$", __import__("re").IGNORECASE)
+_IP_RE = __import__("re").compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+_DOMAIN_RE = __import__("re").compile(r"^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$", __import__("re").IGNORECASE)
+_URL_RE = __import__("re").compile(r"^https?://", __import__("re").IGNORECASE)
+
+
+def _parse_input(text: str) -> tuple[str, str, str | None]:
+    """사용자 입력 → (ioc, ioc_type, scenario_id?).
+
+    - "S1"~"S5" → 시나리오 모드
+    - 텍스트 내에서 IoC 패턴 추출 (CVE / hash / IP / URL / domain 순서)
+    - 매칭 실패 시 그대로 도메인으로 추정
+    """
+    raw = text.strip()
+    upper = raw.upper()
+    if upper in {"S1", "S2", "S3", "S4", "S5"}:
+        seed = get_scenario(upper) or {}
+        return seed.get("ioc", raw), seed.get("ioc_type", "unknown"), upper
+
+    # 텍스트에서 첫 번째 매칭 IoC 토큰 추출 (공백/문장부호로 분리)
+    tokens = __import__("re").split(r"[\s,;]+", raw)
+    for tok in tokens:
+        if not tok:
+            continue
+        if _CVE_RE.match(tok):
+            return tok.upper(), "cve", None
+        if _HASH_RE.match(tok):
+            return tok.lower(), "hash", None
+        if _IP_RE.match(tok):
+            return tok, "ip", None
+        if _URL_RE.match(tok):
+            return tok, "url", None
+        if _DOMAIN_RE.match(tok):
+            return tok.lower(), "domain", None
+    # fallback: 전체를 도메인으로 추정
+    return raw, "unknown", None
+
+
+@router.post("/chat/stream")
+async def chat_stream(req: ChatRequest):
+    """대화형 입력 → IoC 자동 감지 → LangGraph SSE 스트리밍.
+
+    프론트엔드의 챗봇 UI 가 사용하는 메인 엔드포인트.
+    - "S1"~"S5" 입력 시: 시뮬레이션 모드
+    - 그 외 IoC 패턴: 시뮬레이션 모드로 매핑 (S1 의 변형) — Phase 8 라이브
+      wire-up 시 실 MCP/LLM 호출로 자연스럽게 전환됨.
+    """
+    ioc, ioc_type, scenario_id = _parse_input(req.text)
+
+    if scenario_id is None:
+        # 라이브 모드는 아직 placeholder — 일단 시뮬레이션 그래프로 처리 (S1 시드 사용)
+        # 실 라이브 wire-up 시 build_graph(mode="live") 로 교체
+        scenario_id = "S1"
+        seed = get_scenario(scenario_id) or {}
+        title = f"라이브 분석 — {ioc}"
+    else:
+        seed = get_scenario(scenario_id) or {}
+        title = seed.get("title", "Scenario")
+
+    initial = ThreatHuntState(
+        ioc=ioc,
+        ioc_type=ioc_type,
+        mode="simulation",
+        scenario_id=scenario_id,
+    )
+
+    async def event_gen():
+        yield _sse({
+            "type": "start",
+            "parsed": {"ioc": ioc, "ioc_type": ioc_type, "scenario_id": scenario_id},
+            "title": title,
+            "before_minutes": seed.get("before_minutes"),
+            "estimated_after_seconds": seed.get("estimated_after_seconds"),
+        })
+
+        graph = get_simulation_graph()
+        for chunk in graph.stream(initial):
+            for node_name, delta in chunk.items():
+                yield _sse({"type": "node", "node": node_name, "delta": _to_jsonable(delta)})
+                if req.pace > 0:
+                    await asyncio.sleep(req.pace)
+
+        # 최종 산출물 요약 — 채팅 메시지 종료 시 한 번 전송
+        yield _sse({
+            "type": "done",
+            "deliverables_hint": {
+                "executive_summary_available": True,
+                "firewall_rules_available": True,
+                "hunt_hypotheses_available": True,
+                "pdf_report_path": f"/api/lg/simulate/{scenario_id}/report.pdf",
+            },
+        })
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.get("/simulate/{scenario_id}/stream")
+async def simulate_stream(
+    scenario_id: str,
+    pace: float = Query(0.0, ge=0.0, le=2.0, description="노드 간 인위적 지연 (초). 시연용 0.4~0.8 권장"),
+):
+    """SSE 스트리밍 — LangGraph 노드별 실행 진행을 실시간 전달.
+
+    프론트엔드는 EventSource 로 구독하여 노드별로 ledger / mcp_calls /
+    findings 부분 상태를 차례로 받아 화면을 점진 갱신할 수 있다.
+    """
+    seed = get_scenario(scenario_id)
+    if not seed:
+        raise HTTPException(status_code=404, detail=f"scenario_id={scenario_id} not found")
+
+    initial = ThreatHuntState(
+        ioc=seed["ioc"],
+        ioc_type=seed["ioc_type"],
+        mode="simulation",
+        scenario_id=scenario_id,
+    )
+
+    async def event_gen():
+        # 시작 이벤트 — 시나리오 메타 + 예상 노드 목록
+        yield _sse({
+            "type": "start",
+            "scenario": {
+                "id": scenario_id,
+                "title": seed["title"],
+                "ioc": seed["ioc"],
+                "ioc_type": seed["ioc_type"],
+                "before_minutes": seed["before_minutes"],
+                "estimated_after_seconds": seed["estimated_after_seconds"],
+            },
+            "expected_nodes": ["triage_step", "malware_step", "infrastructure_step", "campaign_step", "confidence_gate"],
+        })
+
+        graph = get_simulation_graph()
+        # LangGraph 0.2.x: graph.stream(state) yields {node_name: delta_dict} per super-step
+        for chunk in graph.stream(initial):
+            for node_name, delta in chunk.items():
+                yield _sse({
+                    "type": "node",
+                    "node": node_name,
+                    "delta": _to_jsonable(delta),
+                })
+                if pace > 0:
+                    await asyncio.sleep(pace)
+
+        yield _sse({"type": "done"})
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",   # nginx 버퍼링 비활성화
+        },
+    )
+
+
+def _sse(payload: dict[str, Any]) -> str:
+    return f"data: {json.dumps(payload, default=str, ensure_ascii=False)}\n\n"
+
+
+def _to_jsonable(obj: Any) -> Any:
+    """Pydantic 모델 / datetime / 기타 객체를 직렬화 가능한 형태로 변환."""
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump(mode="json")
+    if isinstance(obj, dict):
+        return {k: _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_jsonable(v) for v in obj]
+    return obj
 
 
 @router.post("/investigate")
