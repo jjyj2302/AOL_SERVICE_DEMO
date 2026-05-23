@@ -58,3 +58,31 @@ def test_simulate_unknown_returns_404(client):
     resp = client.post("/api/lg/simulate/S99")
     assert resp.status_code == 404
     assert "S99" in resp.json()["detail"]
+
+
+def test_cost_analysis_endpoint(client):
+    resp = client.get("/api/lg/cost-analysis")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body["strategies"].keys()) == {"all_strong", "mixed", "mixed_cached_batch"}
+    assert body["strategies"]["all_strong"]["total_cost_usd"] > 0
+    # Mixed 전략이 baseline 보다 저렴
+    assert body["strategies"]["mixed"]["total_cost_usd"] < body["strategies"]["all_strong"]["total_cost_usd"]
+    assert body["strategies"]["mixed"]["savings_vs_baseline_pct"] > 50  # 최소 50% 이상 절감
+    # 월간 데이터 3종 (1k/10k/50k) 노출
+    assert len(body["monthly_at_scale"]) == 3
+
+
+@pytest.mark.parametrize("sid", ["S1", "S2", "S3", "S4", "S5"])
+def test_pdf_report_endpoint(client, sid):
+    """PDF 리포트 생성: 정상 PDF 바이트 반환."""
+    resp = client.get(f"/api/lg/simulate/{sid}/report.pdf")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content[:4] == b"%PDF"
+    assert len(resp.content) > 1000  # 너무 빈약하지 않은지
+
+
+def test_pdf_report_unknown_returns_404(client):
+    resp = client.get("/api/lg/simulate/S99/report.pdf")
+    assert resp.status_code == 404

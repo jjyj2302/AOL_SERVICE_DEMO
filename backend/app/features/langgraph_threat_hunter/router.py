@@ -16,8 +16,11 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from fastapi import Response
+
 from .cost_analysis import compute_strategies
 from .graph import build_graph, get_simulation_graph
+from .pdf_report import generate_report_pdf
 from .simulations import get_scenario, list_scenarios
 from .state import IocType, ThreatHuntState
 
@@ -306,6 +309,62 @@ def _to_jsonable(obj: Any) -> Any:
     if isinstance(obj, list):
         return [_to_jsonable(v) for v in obj]
     return obj
+
+
+@router.get("/simulate/{scenario_id}/report.pdf")
+def simulate_report_pdf(scenario_id: str) -> Response:
+    """시뮬레이션 시나리오 분석 결과를 PDF 로 생성하여 반환."""
+    seed = get_scenario(scenario_id)
+    if not seed:
+        raise HTTPException(status_code=404, detail=f"scenario_id={scenario_id} not found")
+
+    # 동기 시뮬레이션 실행 (PDF 생성 시점에 1회) — 결과 페이로드는 simulate() 와 동일 형식
+    initial = ThreatHuntState(
+        ioc=seed["ioc"],
+        ioc_type=seed["ioc_type"],
+        mode="simulation",
+        scenario_id=scenario_id,
+    )
+    graph = get_simulation_graph()
+    result_state_raw = graph.invoke(initial)
+    result_state = (
+        result_state_raw
+        if isinstance(result_state_raw, ThreatHuntState)
+        else ThreatHuntState.model_validate(result_state_raw)
+    )
+
+    findings = {
+        "triage": result_state.triage.model_dump() if result_state.triage else None,
+        "malware": result_state.malware.model_dump() if result_state.malware else None,
+        "infrastructure": result_state.infrastructure.model_dump() if result_state.infrastructure else None,
+        "campaign": result_state.campaign.model_dump() if result_state.campaign else None,
+    }
+    deliverables = {
+        "firewall_rules": result_state.campaign.firewall_rules if result_state.campaign else [],
+        "hunt_hypotheses": result_state.campaign.hunt_hypotheses if result_state.campaign else [],
+        "executive_summary": result_state.campaign.executive_summary if result_state.campaign else "",
+        "before_minutes": seed["before_minutes"],
+        "estimated_after_seconds": seed["estimated_after_seconds"],
+    }
+    run_result = {
+        "scenario_id": scenario_id,
+        "title": seed["title"],
+        "automation_level": result_state.automation_level,
+        "confidence_score": result_state.confidence_score,
+        "human_approval_required": result_state.human_approval_required,
+        "elapsed_ms": result_state.elapsed_ms,
+        "audit_ledger": [e.model_dump(mode="json") for e in result_state.audit_ledger],
+        "findings": findings,
+        "deliverables": deliverables,
+    }
+
+    pdf_bytes = generate_report_pdf(scenario_id, run_result)
+    filename = f"aol-threat-hunter-{scenario_id}-{result_state.ioc_type}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
 
 
 @router.post("/investigate")

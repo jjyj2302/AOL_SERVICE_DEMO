@@ -36,7 +36,8 @@ lxml[html_clean]
 
 # PDF & Document Processing
 PyPDF2==3.0.1
-pdfplumber>=0.11.4  # CrewAI 호환성
+pdfplumber>=0.11.4
+reportlab>=4.2  # 분석 리포트 PDF 생성 (langgraph_threat_hunter.pdf_report)
 
 # Threat Intelligence
 stix2==3.0.1
