@@ -1,5 +1,13 @@
 # OSINT Multi-Agent 시스템 아키텍처 분석
 
+> ⚠️ **본 문서는 옛 모듈(`osint_profiler`, LangGraph supervisor 기반)의 아키텍처 분석본입니다.**
+> 현재 실 코드는 **CrewAI 기반**(`features/deep_analysis`, `features/crew_solo`, `features/bulk_analysis_async`)이며,
+> 본 저장소는 **금융권 네트워크 보안 AX** 전환 일환으로 **LangGraph + MCP 도구 메시 구조**로 마이그레이션 진행 중입니다.
+>
+> 최신 아키텍처와 진행 상황은 [`docs/PHASE_LOG.md`](docs/PHASE_LOG.md) 와 새로 추가된
+> [`backend/app/features/langgraph_threat_hunter/`](backend/app/features/langgraph_threat_hunter/) 모듈을 참조하세요.
+> 본 문서는 마이그레이션 패턴 참고용으로 보존됩니다.
+
 ## 개요
 
 `site111.mallmaster.top` 도메인 분석을 통해 검증된 Multi-Agent OSINT 시스템의 완전한 아키텍처 문서입니다.
