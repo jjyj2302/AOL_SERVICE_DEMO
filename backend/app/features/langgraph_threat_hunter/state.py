@@ -5,7 +5,7 @@ Investigation Ledger 와 Confidence Gating 입력으로 활용된다.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import add
 from typing import Annotated, Any, Literal
 
@@ -19,7 +19,7 @@ RunMode = Literal["live", "simulation"]
 class LedgerEntry(BaseModel):
     """Audit Ledger 단일 엔트리 — 노드 실행 단위 추적."""
     node: str
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     finished_at: datetime | None = None
     elapsed_ms: int | None = None
     summary: str = ""
@@ -94,7 +94,7 @@ class ThreatHuntState(BaseModel):
     # Annotated + add reducer 로 노드 간 누적 (LangGraph 가 노드별 update 를 concat).
     audit_ledger: Annotated[list[LedgerEntry], add] = Field(default_factory=list)
     mcp_calls: Annotated[list[McpCallRecord], add] = Field(default_factory=list)
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     finished_at: datetime | None = None
     elapsed_ms: int = 0
 

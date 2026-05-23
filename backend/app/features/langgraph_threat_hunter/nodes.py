@@ -11,7 +11,7 @@ dict (또는 부분 상태) 를 반환한다.
 from __future__ import annotations
 
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from .confidence import apply_gating
@@ -47,7 +47,7 @@ def _run_node(
     findings: dict[str, Any] = body(tmp_state, mcp)
 
     elapsed_ms = int((time.perf_counter_ns() - t0_ns) / 1_000_000)
-    entry.finished_at = datetime.utcnow()
+    entry.finished_at = datetime.now(timezone.utc)
     entry.elapsed_ms = elapsed_ms
     entry.summary = findings.pop("_summary", "")
     entry.tools_called = findings.pop("_tools_called", [])
@@ -166,10 +166,10 @@ def gate_node(state: ThreatHuntState) -> dict[str, Any]:
 
     # Pydantic v2: state 는 이미 채워진 값 (LangGraph 가 합쳐서 넘김)
     apply_gating(state)
-    finished_at = datetime.utcnow()
+    finished_at = datetime.now(timezone.utc)
     elapsed_ms = int((finished_at - state.started_at).total_seconds() * 1000)
 
-    entry.finished_at = datetime.utcnow()
+    entry.finished_at = datetime.now(timezone.utc)
     entry.elapsed_ms = int((time.perf_counter_ns() - t0_ns) / 1_000_000)
     entry.summary = (
         f"score={state.confidence_score:.3f}, "
