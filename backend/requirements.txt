@@ -5,6 +5,7 @@ pydantic==2.10.6
 
 # Database & Cache
 SQLAlchemy==2.0.36
+psycopg2-binary>=2.9.9      # PostgreSQL 드라이버 (운영 환경 권장)
 redis==5.0.1
 
 # HTTP & Networking
