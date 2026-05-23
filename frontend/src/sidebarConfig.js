@@ -5,6 +5,7 @@ import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import SecurityIcon from "@mui/icons-material/Security";
+import SmartToyIcon2 from "@mui/icons-material/SmartToy";
 
 export const mainMenuItems = [
   // IOC Tools moved to sidebar - no top menu items
@@ -45,5 +46,10 @@ export const iocToolsTabs = [
     label: "KISA IoC",
     path: "/kisa-ioc",
     icon: <SecurityIcon />,
+  },
+  {
+    label: "🤖 AI Threat Hunter",
+    path: "/threat-hunter",
+    icon: <SmartToyIcon2 />,
   },
 ];
