@@ -25,6 +25,29 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  postgres:
+    restart: always
+    # /etc/aol/.env 의 POSTGRES_PASSWORD 등을 EC2 user-data 가 SSM 에서 주입
+    env_file:
+      - path: /etc/aol/.env
+        required: false
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aol} -d ${POSTGRES_DB:-aol}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
   backend:
     restart: always
     # /etc/aol/.env 는 EC2 user-data 가 SSM Parameter Store 에서 자동 생성합니다.
@@ -48,6 +71,8 @@ services:
       start_period: 60s
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     logging:
       driver: "json-file"
