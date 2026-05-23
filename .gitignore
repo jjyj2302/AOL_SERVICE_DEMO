@@ -114,3 +114,9 @@ frontend/=*
 
 # Frontend build output
 frontend/build/
+
+# 로컬 작업용 진행 노트
+PROGRESS.md
+
+# Anthropic 벤치마크 결과 (로컬)
+benchmarks/results.json
