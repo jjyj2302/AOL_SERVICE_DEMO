@@ -33,6 +33,9 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-aol}:${POSTGRES_PASSWORD:-aol_dev_password}@postgres:5432/${POSTGRES_DB:-aol}
+      # Anthropic key for /chat/dialogue 자유 대화 — shell env 에서 pass-through
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     volumes:
       - ./backend/data:/backend/data
     depends_on:

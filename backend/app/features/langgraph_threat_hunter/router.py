@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from fastapi import Response
 
+from .conversation import has_anthropic_key, stream_claude_response
 from .cost_analysis import compute_strategies
 from .graph import build_graph, get_simulation_graph
 from .pdf_report import generate_report_pdf
@@ -36,6 +37,18 @@ class ChatRequest(BaseModel):
     """자유 텍스트 입력 → 자동 IoC 감지 + LangGraph 실행."""
     text: str = Field(..., description="사용자 입력 (IoC 그 자체, 또는 S1~S5 등 시나리오 ID)")
     pace: float = Field(0.4, ge=0.0, le=2.0, description="노드 간 인위적 지연 (시연용)")
+
+
+class DialogueMessage(BaseModel):
+    role: str = Field(..., description="user | assistant")
+    content: str
+
+
+class DialogueRequest(BaseModel):
+    """진짜 대화 — IoC 분석 OR Claude 자유 대화 + 멀티턴 히스토리."""
+    message: str
+    history: list[DialogueMessage] = Field(default_factory=list)
+    pace: float = Field(0.4, ge=0.0, le=2.0)
 
 
 class SimulationRunResult(BaseModel):
@@ -364,6 +377,77 @@ def simulate_report_pdf(scenario_id: str) -> Response:
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
+@router.post("/chat/dialogue")
+async def chat_dialogue(req: DialogueRequest):
+    """진짜 대화형 SOC 어시스턴트 — IoC 있으면 LangGraph, 없으면 Claude 자유 대화.
+
+    SSE 이벤트 타입:
+    - type=start            : 모드 결정 (analysis / dialogue) + 메타
+    - type=chat_chunk       : 자유 대화 모드의 텍스트 chunk 스트림
+    - type=node             : 분석 모드의 LangGraph 노드별 delta
+    - type=done             : 종료
+    """
+    ioc, ioc_type, scenario_id = _parse_input(req.message)
+    is_analysis = scenario_id is not None or ioc_type not in ("unknown",)
+
+    async def event_gen():
+        if is_analysis:
+            # ========== Analysis mode: LangGraph 멀티에이전트 ==========
+            use_live = has_anthropic_key() and scenario_id is None  # 임의 IoC = 라이브 / 시나리오 ID = 시뮬레이션
+            sid = scenario_id or "S1"
+            seed = get_scenario(sid) if scenario_id else {}
+            title = (seed or {}).get("title") if seed else f"라이브 분석 — {ioc}"
+            yield _sse({
+                "type": "start",
+                "mode": "analysis",
+                "submode": "live" if use_live else "simulation",
+                "parsed": {"ioc": ioc, "ioc_type": ioc_type, "scenario_id": scenario_id},
+                "title": title,
+                "before_minutes": (seed or {}).get("before_minutes"),
+                "estimated_after_seconds": (seed or {}).get("estimated_after_seconds"),
+            })
+            initial = ThreatHuntState(
+                ioc=ioc,
+                ioc_type=ioc_type,
+                mode="live" if use_live else "simulation",
+                scenario_id=scenario_id,
+            )
+            graph = build_graph(mode="live") if use_live else get_simulation_graph()
+            for chunk in graph.stream(initial):
+                for node_name, delta in chunk.items():
+                    yield _sse({"type": "node", "node": node_name, "delta": _to_jsonable(delta)})
+                    if req.pace > 0:
+                        await asyncio.sleep(req.pace)
+            yield _sse({
+                "type": "done",
+                "mode": "analysis",
+                "deliverables_hint": {
+                    "executive_summary_available": True,
+                    "firewall_rules_available": True,
+                    "hunt_hypotheses_available": True,
+                    "pdf_report_path": f"/api/lg/simulate/{sid}/report.pdf" if scenario_id else None,
+                },
+            })
+        else:
+            # ========== Dialogue mode: Claude 자유 대화 ==========
+            yield _sse({
+                "type": "start",
+                "mode": "dialogue",
+                "has_anthropic_key": has_anthropic_key(),
+            })
+            history_dicts = [m.model_dump() for m in req.history]
+            async for piece in stream_claude_response(req.message, history_dicts):
+                if piece:
+                    yield _sse({"type": "chat_chunk", "delta": piece})
+            yield _sse({"type": "done", "mode": "dialogue"})
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
     )
 
 

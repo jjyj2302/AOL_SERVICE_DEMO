@@ -14,6 +14,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
+from .agent_prompts import call_agent, has_anthropic_key, unwrap_findings
 from .confidence import apply_gating
 from .mcp_clients import McpRegistry
 from .simulations import get_scenario
@@ -93,7 +94,20 @@ def _run_node(
 def orchestrator_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
     """IoC 타입을 보고 어떤 Specialist 를 어떤 순서로 호출할지 plan 을 세운다."""
     def body(s: ThreatHuntState, m: McpRegistry) -> dict[str, Any]:
-        plan, rationale = ROUTING_RULES.get(s.ioc_type, ROUTING_DEFAULT)
+        # 라이브 모드 + Anthropic 키 있으면 LLM 으로 라우팅 결정. 그 외는 결정론적 규칙.
+        if s.mode == "live" and has_anthropic_key():
+            parsed, _meta = call_agent(
+                "orchestrator",
+                f"IoC: {s.ioc}\nType: {s.ioc_type}\n위 IoC 에 대한 효율적 route_plan 을 산출하세요.",
+                max_tokens=400,
+            )
+            findings, _ = unwrap_findings(parsed)
+            plan = findings.get("route_plan") if isinstance(findings.get("route_plan"), list) else None
+            rationale = findings.get("rationale") if findings.get("rationale") else None
+            if not plan or not rationale:
+                plan, rationale = ROUTING_RULES.get(s.ioc_type, ROUTING_DEFAULT)
+        else:
+            plan, rationale = ROUTING_RULES.get(s.ioc_type, ROUTING_DEFAULT)
         return {
             "route_plan": list(plan),
             "routing_rationale": rationale,
@@ -103,6 +117,29 @@ def orchestrator_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any
     return _run_node(state, "orchestrator", mcp, body)
 
 
+# ---- 라이브 모드 specialist 공통 헬퍼 ----
+def _live_user_prompt(state: ThreatHuntState, prior: dict[str, Any]) -> str:
+    """specialist 에게 보낼 사용자 메시지 — IoC + 이전 노드 산출물 종합."""
+    parts = [f"IoC: {state.ioc}\nType: {state.ioc_type}\n"]
+    if prior.get("triage"):
+        parts.append(f"이전 Triage 결과: {prior['triage']}")
+    if prior.get("malware"):
+        parts.append(f"이전 Malware 결과: {prior['malware']}")
+    if prior.get("infrastructure"):
+        parts.append(f"이전 Infrastructure 결과: {prior['infrastructure']}")
+    parts.append("\n위 정보를 종합하여 본 에이전트의 시스템 프롬프트에 정의된 JSON 형식으로 답변하세요.")
+    return "\n".join(parts)
+
+
+def _prior_findings(state: ThreatHuntState) -> dict[str, Any]:
+    """현재 state 에 채워진 이전 findings dict 로 dump."""
+    return {
+        "triage": state.triage.model_dump() if state.triage else None,
+        "malware": state.malware.model_dump() if state.malware else None,
+        "infrastructure": state.infrastructure.model_dump() if state.infrastructure else None,
+    }
+
+
 # ---- 노드: Triage ----
 def triage_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
     def body(s: ThreatHuntState, m: McpRegistry) -> dict[str, Any]:
@@ -110,13 +147,13 @@ def triage_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             seed = get_scenario(s.scenario_id) or {}
             triage = TriageFindings(**seed.get("triage", {})) if seed.get("triage") else TriageFindings()
             m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
+        elif has_anthropic_key():
+            m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
+            findings, _meta = call_agent("triage", _live_user_prompt(s, {}), max_tokens=900)
+            triage = TriageFindings(**_safe_findings(findings, TriageFindings))
         else:
-            vt = m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
-            triage = TriageFindings(
-                threat_level=vt.get("threat_level", "LOW"),
-                detection_ratio=vt.get("detection_ratio", ""),
-                notes="live mode triage (LLM 추론 미연결)",
-            )
+            m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
+            triage = TriageFindings(notes="(API 키 없음 — 추정 분석 불가)", chat_message="ANTHROPIC_API_KEY 미설정 — 라이브 분석 제한됨.")
         return {
             "triage": triage,
             "_summary": f"threat_level={triage.threat_level}",
@@ -132,8 +169,15 @@ def malware_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
         if s.mode == "simulation":
             seed = get_scenario(s.scenario_id) or {}
             malware = MalwareFindings(**seed.get("malware", {})) if seed.get("malware") else MalwareFindings()
+        elif has_anthropic_key():
+            findings, _meta = call_agent(
+                "malware",
+                _live_user_prompt(s, _prior_findings(s)),
+                max_tokens=1800,
+            )
+            malware = MalwareFindings(**_safe_findings(findings, MalwareFindings))
         else:
-            malware = MalwareFindings(notes="live mode malware (LLM 추론 미연결)")
+            malware = MalwareFindings(notes="(API 키 없음)", chat_message="ANTHROPIC_API_KEY 미설정.")
         return {
             "malware": malware,
             "_summary": f"family={malware.malware_family or 'N/A'}, c2={len(malware.c2_targets)}",
@@ -149,19 +193,18 @@ def infrastructure_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, A
         if s.mode == "simulation":
             seed = get_scenario(s.scenario_id) or {}
             infra = InfraFindings(**seed.get("infrastructure", {})) if seed.get("infrastructure") else InfraFindings()
-            m.dnstwist(s, s.ioc)
-            m.shodan(s, s.ioc)
-            m.osint(s, s.ioc)
-        else:
-            typosquats = m.dnstwist(s, s.ioc)
-            exposed = m.shodan(s, s.ioc)
-            related = m.osint(s, s.ioc)
-            infra = InfraFindings(
-                typosquat_domains=typosquats,
-                exposed_assets=exposed,
-                related_infra=related,
-                notes="live mode infra (LLM 클러스터링 미연결)",
+            m.dnstwist(s, s.ioc); m.shodan(s, s.ioc); m.osint(s, s.ioc)
+        elif has_anthropic_key():
+            m.dnstwist(s, s.ioc); m.shodan(s, s.ioc); m.osint(s, s.ioc)
+            findings, _meta = call_agent(
+                "infrastructure",
+                _live_user_prompt(s, _prior_findings(s)),
+                max_tokens=1800,
             )
+            infra = InfraFindings(**_safe_findings(findings, InfraFindings))
+        else:
+            m.dnstwist(s, s.ioc); m.shodan(s, s.ioc); m.osint(s, s.ioc)
+            infra = InfraFindings(notes="(API 키 없음)", chat_message="ANTHROPIC_API_KEY 미설정.")
         summary = (
             f"typosquats={len(infra.typosquat_domains)}, "
             f"exposed={len(infra.exposed_assets)}, "
@@ -184,8 +227,20 @@ def campaign_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             campaign = CampaignFindings(**seed.get("campaign", {})) if seed.get("campaign") else CampaignFindings()
             if s.ioc_type == "cve":
                 m.cve(s, s.ioc)
+        elif has_anthropic_key():
+            if s.ioc_type == "cve":
+                m.cve(s, s.ioc)
+            findings, _meta = call_agent(
+                "campaign",
+                _live_user_prompt(s, _prior_findings(s)),
+                max_tokens=2800,
+            )
+            campaign = CampaignFindings(**_safe_findings(findings, CampaignFindings))
         else:
-            campaign = CampaignFindings(executive_summary="live mode campaign (LLM 종합 미연결)")
+            campaign = CampaignFindings(
+                executive_summary="(API 키 없음 — 종합 분석 불가)",
+                chat_message="ANTHROPIC_API_KEY 미설정.",
+            )
             if s.ioc_type == "cve":
                 m.cve(s, s.ioc)
         summary = (
@@ -200,6 +255,16 @@ def campaign_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
         }
 
     return _run_node(state, "campaign", mcp, body)
+
+
+def _safe_findings(parsed: dict[str, Any], model_cls) -> dict[str, Any]:
+    """LLM 이 반환한 wrapper {findings, chat_message} 에서 Pydantic 모델에 채택 가능한 필드만 추출."""
+    findings, chat_msg = unwrap_findings(parsed)
+    valid_fields = set(model_cls.model_fields.keys())
+    safe = {k: v for k, v in findings.items() if k in valid_fields}
+    if chat_msg and "chat_message" in valid_fields:
+        safe["chat_message"] = chat_msg
+    return safe
 
 
 # ---- 노드: Confidence Gate ----

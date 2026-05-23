@@ -97,18 +97,31 @@ export default function ThreatHunterPage() {
 
   const appendMessage = (msg) => setMessages((prev) => [...prev, msg]);
 
+  // 대화 모드의 누적 어시스턴트 메시지 인덱스 (chat_chunk 가 같은 버블에 append 되도록)
+  const dialogueAssistantIdxRef = useRef(null);
+
+  // 사용자/어시스턴트 메시지 → Claude 호환 history (specialist 개별 chat_message 는 제외)
+  const buildHistory = (msgs) => {
+    return msgs
+      .filter((m) => !m.specialist) // specialist 응답은 history 미포함
+      .filter((m) => (m.text || "").trim())
+      .map((m) => ({ role: m.role, content: m.text }));
+  };
+
   const startStream = async (textOrScenario) => {
     const userText = textOrScenario;
+    const history = buildHistory(messages);
     appendMessage({ role: "user", text: userText });
     setInput("");
     setStreaming(true);
     updateRun(emptyRun());
+    dialogueAssistantIdxRef.current = null;
 
     try {
-      const resp = await fetch(`${api.defaults.baseURL || ""}/api/lg/chat/stream`, {
+      const resp = await fetch(`${api.defaults.baseURL || ""}/api/lg/chat/dialogue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: userText, pace: 0.5 }),
+        body: JSON.stringify({ message: userText, history, pace: 0.4 }),
       });
       if (!resp.ok || !resp.body) throw new Error(`stream error ${resp.status}`);
 
@@ -139,7 +152,16 @@ export default function ThreatHunterPage() {
 
   const handleEvent = (ev) => {
     if (ev.type === "start") {
-      // 라우팅 계획이 아직 없으니 일단 모든 agent idle 로
+      if (ev.mode === "dialogue") {
+        // 자유 대화 — 빈 어시스턴트 버블 1개 만들고 인덱스 기억
+        setMessages((prev) => {
+          const next = [...prev, { role: "assistant", text: "", dialogue: true }];
+          dialogueAssistantIdxRef.current = next.length - 1;
+          return next;
+        });
+        return;
+      }
+      // 분석 모드
       const initStates = {};
       AGENTS.forEach((a) => (initStates[a.id] = "idle"));
       initStates["orchestrator"] = "running";
@@ -148,6 +170,25 @@ export default function ThreatHunterPage() {
         title: ev.title,
         agentStates: initStates,
         deliverables: { before_minutes: ev.before_minutes, estimated_after_seconds: ev.estimated_after_seconds },
+        submode: ev.submode,
+      });
+      // 분석 시작 안내 메시지
+      appendMessage({
+        role: "assistant",
+        text: `🔍 **${ev.submode === "live" ? "라이브" : "시뮬레이션"} 모드**로 분석 시작 — ${ev.title || ev.parsed?.ioc || ""}`,
+        analysis_intro: true,
+      });
+      return;
+    }
+
+    if (ev.type === "chat_chunk") {
+      // 자유 대화 — 누적 어시스턴트 메시지에 텍스트 append
+      const idx = dialogueAssistantIdxRef.current;
+      if (idx == null) return;
+      setMessages((prev) => {
+        const next = [...prev];
+        if (next[idx]) next[idx] = { ...next[idx], text: (next[idx].text || "") + (ev.delta || "") };
+        return next;
       });
       return;
     }
@@ -182,8 +223,11 @@ export default function ThreatHunterPage() {
         }
 
         // 다음 노드를 running 으로 (route_plan 기반)
+        // 가드: 다음 노드가 (1) null 아니고 (2) 현재 노드와 다르고 (3) 아직 done/skipped 가 아닌 경우만
         const nextNode = pickNextNode(nodeId, routePlan, states);
-        if (nextNode) states[nextNode] = "running";
+        if (nextNode && nextNode !== nodeId && states[nextNode] !== "done" && states[nextNode] !== "skipped") {
+          states[nextNode] = "running";
+        }
 
         // findings 누적
         const findings = {
@@ -232,24 +276,26 @@ export default function ThreatHunterPage() {
         };
       });
 
-      // chat_message 가 있으면 채팅 패널에 추가
+      // chat_message 가 있으면 채팅 패널에 추가 (specialist 플래그로 history 제외)
       const chatText = extractChatMessage(nodeId, delta);
       if (chatText) {
         appendMessage({
           role: "assistant",
           agent: AGENT_META[nodeId],
           text: chatText,
+          specialist: true,
         });
       }
       return;
     }
 
     if (ev.type === "done") {
-      // 모든 idle 노드는 skipped (드물게 누락 케이스)
+      // 잔여 정리: idle → skipped, running → done (혹시 모를 잔재 방지)
       updateRun((prev) => {
         const states = { ...prev.agentStates };
         AGENTS.forEach((a) => {
           if (states[a.id] === "idle") states[a.id] = "skipped";
+          if (states[a.id] === "running") states[a.id] = "done";
         });
         return {
           ...prev,
@@ -274,8 +320,12 @@ export default function ThreatHunterPage() {
     }
   };
 
-  const pickNextNode = (currentId, routePlan, states) => {
-    // currentId 다음에 진행될 노드 결정
+  const pickNextNode = (currentId, routePlan, _states) => {
+    // currentId 다음에 진행될 노드 결정. 다음이 없으면 null.
+    if (currentId === "confidence_gate") {
+      // Gate 는 최종 노드 — 더 이상 다음 없음 (자기 자신을 다시 running 으로 두면 안 됨)
+      return null;
+    }
     if (currentId === "orchestrator") {
       const first = (routePlan && routePlan[0]) || null;
       return first ? `${first}_step` : "confidence_gate";
