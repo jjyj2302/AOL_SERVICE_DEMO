@@ -26,6 +26,7 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import AgentPipelinePanel from "./AgentPipelinePanel";
+import CostAnalysisCard from "./CostAnalysisCard";
 
 const LEVEL_COLOR = {
   L0: "default",
@@ -185,6 +186,8 @@ export default function ResultsSidebar({ run }) {
             elapsedByNode={elapsedByNode}
             toolsByNode={toolsByNode}
           />
+
+          <CostAnalysisCard />
 
           {/* Metrics */}
           {level && (
