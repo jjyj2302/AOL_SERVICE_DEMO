@@ -34,40 +34,14 @@ jobs:
         run: |
           python -m compileall -q app main.py
 
-      - name: Smoke test LangGraph Threat Hunter (시뮬레이션 모드, API 키 불필요)
+      - name: Run pytest suite (LangGraph + MCP + Simulation + Router)
         working-directory: backend
         env:
           DATABASE_URL: sqlite:///./data/test.db
+          PYTHONPATH: .
         run: |
           mkdir -p data
-          python - <<'PY'
-          import sys
-          sys.path.insert(0, '.')
-          from app.features.langgraph_threat_hunter.graph import build_graph
-          from app.features.langgraph_threat_hunter.state import ThreatHuntState
-          from app.features.langgraph_threat_hunter.simulations import list_scenarios, get_scenario
-
-          scenarios = list_scenarios()
-          assert len(scenarios) == 5, f"expected 5 scenarios, got {len(scenarios)}"
-
-          graph = build_graph(mode='simulation')
-          for sid in ['S1', 'S2', 'S3', 'S4', 'S5']:
-              seed = get_scenario(sid)
-              init = ThreatHuntState(
-                  ioc=seed['ioc'],
-                  ioc_type=seed['ioc_type'],
-                  mode='simulation',
-                  scenario_id=sid,
-              )
-              result = graph.invoke(init)
-              final = result if isinstance(result, ThreatHuntState) else ThreatHuntState.model_validate(result)
-              assert final.confidence_score >= 0.0, f"{sid} no confidence"
-              assert final.automation_level is not None, f"{sid} no automation level"
-              assert len(final.audit_ledger) == 5, f"{sid} ledger has {len(final.audit_ledger)} entries"
-              print(f"  {sid} ✅ confidence={final.confidence_score} level={final.automation_level}")
-
-          print("\nAll 5 scenarios passed.")
-          PY
+          python -m pytest tests/ -v --tb=short
 
   # ===================================================================
   # 2. 프론트엔드 빌드 검증
