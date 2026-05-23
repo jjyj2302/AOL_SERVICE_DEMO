@@ -60,46 +60,49 @@ class AgentProfile:
     uses_llm: bool = True
 
 
+# 토큰 추정치 — 2026-05-23 Anthropic API 실측 평균값으로 갱신.
+# 측정 환경: 5 agents × 3 models (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) 단발 호출.
+# 결과는 benchmarks/results.json (gitignored) 참조.
 AGENTS: list[AgentProfile] = [
     AgentProfile(
         node_id="orchestrator",
         label="🧠 Orchestrator",
         recommended_tier="mini",
-        rationale="IoC 타입 보고 route_plan 만 결정 — 라우팅 결정만 필요",
-        input_tokens=200,
-        output_tokens=100,
+        rationale="IoC 타입 보고 route_plan 만 결정 — 라우팅만 필요",
+        input_tokens=250,    # 실측 평균
+        output_tokens=200,
     ),
     AgentProfile(
         node_id="triage_step",
         label="🔍 Triage",
         recommended_tier="mini",
         rationale="VT JSON 해석 + 위협 수준 분류 — 구조화 데이터 매핑 수준",
-        input_tokens=1500,
-        output_tokens=500,
+        input_tokens=400,    # 실측 평균 (397~466)
+        output_tokens=700,
     ),
     AgentProfile(
         node_id="malware_step",
         label="👾 Malware",
         recommended_tier="medium",
         rationale="악성코드 행위 분석 + Attack chain 재구성 — 추론 필요",
-        input_tokens=3000,
-        output_tokens=1500,
+        input_tokens=440,    # 실측 평균 (426~473)
+        output_tokens=1400,  # Sonnet 1500 / Opus 1124 평균
     ),
     AgentProfile(
         node_id="infrastructure_step",
         label="🌍 Infrastructure",
         recommended_tier="medium",
         rationale="다중 MCP 출력 클러스터링 + 인프라 상관관계 — 추론 필요",
-        input_tokens=5000,
-        output_tokens=1500,
+        input_tokens=540,    # 실측 평균 (517~588)
+        output_tokens=1300,  # Sonnet 1500 / Opus 1084 평균
     ),
     AgentProfile(
         node_id="campaign_step",
         label="📈 Campaign",
         recommended_tier="medium",
         rationale="전략 종합 + 헌팅 쿼리 작성 + FW 룰 산출 — 가장 복잡한 합성",
-        input_tokens=8000,
-        output_tokens=3000,
+        input_tokens=500,    # 실측 평균 (484~556)
+        output_tokens=2500,
     ),
     AgentProfile(
         node_id="confidence_gate",

@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .cost_analysis import compute_strategies
 from .graph import build_graph, get_simulation_graph
 from .simulations import get_scenario, list_scenarios
 from .state import IocType, ThreatHuntState
@@ -61,6 +62,21 @@ def health() -> dict[str, Any]:
 def scenarios() -> dict[str, Any]:
     """5대 금융권 시뮬레이션 시나리오 요약 목록."""
     return {"scenarios": list_scenarios()}
+
+
+@router.get("/cost-analysis")
+def cost_analysis() -> dict[str, Any]:
+    """에이전트별 모델 매핑에 따른 IoC 1건당 비용 분석.
+
+    3가지 전략 비교:
+    - all_strong          : 모든 에이전트를 Opus 로 호출 (베이스라인)
+    - mixed               : 복잡도별 모델 분배 (실제 권장)
+    - mixed_cached_batch  : Mixed + Prompt Caching + Batch API 50% 할인
+
+    실측 데이터: 2026-05-23 Anthropic API (Haiku 4.5/Sonnet 4.6/Opus 4.7) 실호출.
+    benchmarks/results.json 참조.
+    """
+    return compute_strategies()
 
 
 @router.post("/simulate/{scenario_id}", response_model=SimulationRunResult)
