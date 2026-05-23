@@ -6,6 +6,19 @@ services:
       - aol-network
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    networks:
+      - aol-network
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-aol}
+      - POSTGRES_USER=${POSTGRES_USER:-aol}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-aol_dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   backend:
     networks:
       - aol-network
@@ -17,10 +30,14 @@ services:
         - aol_service_demo_backend:latest
     image: aol_service_demo_backend:latest
     container_name: backend
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-aol}:${POSTGRES_PASSWORD:-aol_dev_password}@postgres:5432/${POSTGRES_DB:-aol}
     volumes:
-      - ./data:/backend/data
+      - ./backend/data:/backend/data
     depends_on:
       - redis
+      - postgres
     restart: unless-stopped
 
   frontend:
@@ -41,3 +58,7 @@ services:
 networks:
   aol-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
