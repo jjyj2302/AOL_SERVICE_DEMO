@@ -8,18 +8,20 @@
 ## 0. 배포 아키텍처 한 눈에
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  AWS EC2 (t3.large, Amazon Linux 2023 / Ubuntu 22)   │
-│ ┌──────────┐  ┌──────────┐  ┌──────────────────┐    │
-│ │ frontend │──▶ backend  │──▶  redis           │    │
-│ │ nginx:80 │  │ fastapi  │  │  redis:7-alpine  │    │
-│ │  :4000   │  │  :8000   │  │   :6379          │    │
-│ └────┬─────┘  └────┬─────┘  └──────────────────┘    │
-│      │             │                                 │
-│      │      ┌──────▼──────┐                          │
-│      │      │ /etc/aol/.env│  ← SSM Parameter Store │
-│      │      └──────────────┘                         │
-└──────┼──────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│  AWS EC2 (t3.large, Amazon Linux 2023 / Ubuntu 22)                 │
+│ ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌─────────────────┐ │
+│ │ frontend │──▶ backend  │──▶  redis       │  │ postgres:16     │ │
+│ │ nginx:80 │  │ fastapi  │  │  redis:7     │  │ aol_data        │ │
+│ │  :4000   │  │  :8000   │  │   :6379      │  │   :5432         │ │
+│ └────┬─────┘  └────┬─────┘  └──────────────┘  └────────┬────────┘ │
+│      │             │            ▲                       ▲           │
+│      │             └────────────┴───────────────────────┘           │
+│      │                          │                                   │
+│      │              ┌───────────▼────────────┐                      │
+│      │              │ /etc/aol/.env          │ ← SSM Parameter Store│
+│      │              └────────────────────────┘                      │
+└──────┼─────────────────────────────────────────────────────────────┘
        │
    ┌───▼─────────┐
    │ User Browser│ ← http://<ec2-public-ip>:4000
@@ -58,7 +60,12 @@ EC2 인스턴스에 부여할 IAM 역할 (예: `AOL-SSM-ReadOnly`)에 다음 권
 aws ssm put-parameter --name /aol/openai_api_key      --value sk-...    --type SecureString
 aws ssm put-parameter --name /aol/virustotal_api_key  --value <vt-key>  --type SecureString
 aws ssm put-parameter --name /aol/urlscan_api_key     --value <us-key>  --type SecureString
+aws ssm put-parameter --name /aol/postgres_password   --value <pw>      --type SecureString
 ```
+
+> PostgreSQL 패스워드는 별도 SSM 항목으로 분리 관리.
+> 미등록 시 user-data 가 임시 24자 랜덤 패스워드를 생성하지만 운영 전
+> 반드시 SSM 에 등록할 것 (재부트 시 새 임시 패스워드로 갱신됨).
 
 > 시뮬레이션 모드만 운영할 거면 위 단계를 건너뛰어도 됩니다 (스크립트가 "시뮬레이션 모드"로 자동 폴백).
 
@@ -152,6 +159,7 @@ sudo bash /opt/aol/deploy/ec2-userdata.sh   # 동일 스크립트 재실행 — 
 |---|---|---|---|
 | backend | 1.5 vCPU | 4 GB | 1 GB |
 | frontend | 0.5 vCPU | 512 MB | — |
+| postgres | 1.0 vCPU | 2 GB | — |
 | redis | (제한 없음) | (시스템 의존) | — |
 
 t3.large (2 vCPU / 8 GB) 의 약 80% 까지 사용. CrewAI/LangGraph 동시 호출 시 메모리 여유 확보.
@@ -188,7 +196,8 @@ t3.large (2 vCPU / 8 GB) 의 약 80% 까지 사용. CrewAI/LangGraph 동시 호�
 
 - [ ] CloudWatch Logs 에이전트 통합
 - [ ] Application Load Balancer + TLS (Let's Encrypt) — 사외 공개 시
-- [ ] RDS PostgreSQL 분리 — SQLite → 다중 인스턴스 운영 시
+- [ ] **AWS RDS PostgreSQL 분리** — 컨테이너 내장 → 관리형 DB 로 이전 (HA + 자동 백업)
+- [ ] pgvector 확장 활성화 — RAG 도입 시
 - [ ] Blue/Green 배포 — 무중단 갱신
 
 본 문서는 단일 인스턴스 데모 기준. 운영 규모 확장 시 별도 인프라 설계 필요.
