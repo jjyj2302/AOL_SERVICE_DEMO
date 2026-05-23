@@ -41,6 +41,7 @@ from app.features.threat_intel.routers import kisa_router
 
 # LangGraph Threat Hunter (금융권 AX 신규 멀티에이전트 + MCP + Simulation Mode)
 from app.features.langgraph_threat_hunter.router import router as langgraph_threat_hunter_router
+from app.features.langgraph_threat_hunter.legacy_wrappers import legacy_router as crewai_compat_router
 
 from app.core.settings.general.models.general_settings_models import Settings
 from app.core.settings.modules.models.modules_settings_models import ModuleSettings
@@ -142,6 +143,10 @@ routers = [
 
     # LangGraph Threat Hunter (금융권 AX 전환 — 신규 멀티에이전트 + MCP + Simulation Mode)
     langgraph_threat_hunter_router,
+
+    # 레거시 호환 wrapper — 기존 frontend 페이지 (Deep Analysis / AI Agents) 가
+    # 호출하던 /api/crew-solo/* /api/threat-hunter/* 를 LangGraph 로 처리
+    crewai_compat_router,
 ]
 
 for router in routers:
