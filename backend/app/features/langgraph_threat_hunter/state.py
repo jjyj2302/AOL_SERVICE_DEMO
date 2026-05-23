@@ -42,6 +42,7 @@ class TriageFindings(BaseModel):
     mitre_tactics: list[str] = Field(default_factory=list)
     priority_pivots: list[str] = Field(default_factory=list)
     notes: str = ""
+    chat_message: str = ""              # 채팅창에 표시할 자연어 브리핑
 
 
 class MalwareFindings(BaseModel):
@@ -51,6 +52,7 @@ class MalwareFindings(BaseModel):
     c2_targets: list[str] = Field(default_factory=list)
     payload_hashes: list[str] = Field(default_factory=list)
     notes: str = ""
+    chat_message: str = ""
 
 
 class InfraFindings(BaseModel):
@@ -60,6 +62,7 @@ class InfraFindings(BaseModel):
     related_infra: list[dict[str, Any]] = Field(default_factory=list)
     campaign_cluster_id: str | None = None
     notes: str = ""
+    chat_message: str = ""
 
 
 class CampaignFindings(BaseModel):
@@ -69,6 +72,7 @@ class CampaignFindings(BaseModel):
     hunt_hypotheses: list[dict[str, Any]] = Field(default_factory=list)
     firewall_rules: list[str] = Field(default_factory=list)
     executive_summary: str = ""
+    chat_message: str = ""
 
 
 class ThreatHuntState(BaseModel):
@@ -78,6 +82,12 @@ class ThreatHuntState(BaseModel):
     ioc_type: IocType = "unknown"
     mode: RunMode = "simulation"
     scenario_id: str | None = None     # 시뮬레이션일 때만 세팅
+
+    # ---- Orchestrator 의 라우팅 결정 ----
+    # 예: ["triage", "infrastructure", "campaign"] — 도메인/IP 분석 시 malware 스킵.
+    # Orchestrator 노드가 IoC 타입을 보고 채운다.
+    route_plan: list[str] = Field(default_factory=list)
+    routing_rationale: str = ""
 
     # ---- 진행 ----
     triage: TriageFindings | None = None
@@ -89,6 +99,7 @@ class ThreatHuntState(BaseModel):
     confidence_score: float = 0.0
     automation_level: AutomationLevel | None = None
     human_approval_required: bool = False
+    gate_chat_message: str = ""        # 게이트의 자연어 브리핑 (채팅창용)
 
     # ---- 감사 / 측정 ----
     # Annotated + add reducer 로 노드 간 누적 (LangGraph 가 노드별 update 를 concat).

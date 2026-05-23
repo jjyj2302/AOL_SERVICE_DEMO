@@ -27,6 +27,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "DNS A 레코드가 알려진 피싱 호스팅 ASN 으로 가리킴",
             ],
             "notes": "고객 대상 사칭 피싱 인프라로 강하게 추정 — 즉시 격리 후보",
+            "chat_message": (
+                "VirusTotal 평판 조회 결과 28/93 벤더가 악성으로 분류했습니다. "
+                "도메인이 24시간 이내 등록됐고 알려진 피싱 호스팅 ASN (AS199524) "
+                "을 가리키네요. 위협 수준 HIGH 입니다."
+            ),
         },
         "malware": {
             "malware_family": None,
@@ -34,6 +39,7 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "c2_targets": [],
             "payload_hashes": [],
             "notes": "악성코드 배포 없음 — 정적 피싱 페이지 (자격증명 탈취)",
+            "chat_message": "악성코드 배포는 없습니다. 정적 피싱 페이지로 자격증명만 탈취하는 형태입니다.",
         },
         "infrastructure": {
             "typosquat_domains": [
@@ -50,6 +56,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             ],
             "campaign_cluster_id": "FINPHISH-KR-2026Q2-A",
             "notes": "동일 ASN/인증서 발급 패턴으로 5개 도메인 클러스터 형성",
+            "chat_message": (
+                "DNSTwist 으로 타이포스쿼트 변종을 탐색했습니다. 호모그래프(키릴 а) 1건, "
+                "하이픈 삽입 2건, 키워드 패드 2건 — 총 5개 도메인이 동일 인증서/ASN 패턴 "
+                "으로 클러스터를 이룹니다. FINPHISH-KR-2026Q2-A 캠페인으로 보입니다."
+            ),
         },
         "campaign": {
             "threat_group_hypothesis": "FIN-KR/Phisher: 국내 금융 사칭 전문 그룹 (추정)",
@@ -89,6 +100,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "5개 타이포스쿼트 도메인(클러스터 FINPHISH-KR-2026Q2-A) 즉시 차단 권고. "
                 "고객 SMS/이메일 알림 발송 및 사기방지센터(FDS) 와 공유 필요."
             ),
+            "chat_message": (
+                "FIN-KR/Phisher 그룹의 작전으로 추정합니다. 즉시 5개 도메인 차단 + 고객 SMS "
+                "알림 + 사기방지센터(FDS) 공유를 권고드립니다. 헌팅 쿼리 2건과 방화벽 차단 "
+                "규칙 6건을 산출했습니다."
+            ),
         },
     },
     "S2": {
@@ -105,6 +121,10 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "mitre_tactics": ["Command and Control (TA0011)", "Exfiltration (TA0010)"],
             "priority_pivots": ["VoIP SIP 트래픽 다수", "DNS-over-HTTPS 사용 흔적"],
             "notes": "보이스피싱 작업장 C2 의심 — 다중 피해자 동시 연결 관찰",
+            "chat_message": (
+                "VT 평판 41/93 악성 — VoIP SIP 트래픽과 DNS-over-HTTPS 흔적이 포착됐습니다. "
+                "다중 피해자가 동시에 연결 중인 게 가장 큰 신호입니다. 위협 수준 CRITICAL 입니다."
+            ),
         },
         "malware": {
             "malware_family": "FakeBankApp.Android",
@@ -112,6 +132,7 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "c2_targets": ["203.0.113.42:8443", "203.0.113.43:8443", "kr-secure-update[.]top"],
             "payload_hashes": ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
             "notes": "악성 안드로이드 앱이 사용하는 C2 인프라",
+            "chat_message": "이 C2 를 쓰는 악성 안드로이드 앱 FakeBankApp 이 별도 IoC 로 잡혀있습니다 (참고).",
         },
         "infrastructure": {
             "typosquat_domains": [],
@@ -125,6 +146,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             ],
             "campaign_cluster_id": "VOICEPHISH-CN-2026Q2-Beta",
             "notes": "동일 ASN·동일 포트 패턴·DNS 회전 — 단일 조직 인프라로 강하게 클러스터링",
+            "chat_message": (
+                "Shodan 조회 결과 동일 ASN(AS4837/CN) 에 같은 포트(8443, 5060) 를 여는 3개 IP "
+                "가 묶입니다. 도메인 2개도 같은 IP 로 회전 중 — VOICEPHISH-CN-2026Q2-Beta "
+                "클러스터입니다."
+            ),
         },
         "campaign": {
             "threat_group_hypothesis": "보이스피싱 콜센터 조직 (중국 거점, KR 타깃)",
@@ -163,6 +189,10 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "C2 ASN(AS4837/CN) 전반에 대한 지오블로킹 및 의심 SMS 사전 차단 권고. "
                 "한국인터넷진흥원(KISA)·금융보안원(FSI)·이동통신사와 공유."
             ),
+            "chat_message": (
+                "보이스피싱 콜센터 조직 (중국 거점, 한국 타깃) 으로 추정합니다. AS4837 전반 "
+                "지오블로킹 + 의심 SMS 사전 차단 + KISA·FSI·이통사 공유를 권고드립니다."
+            ),
         },
     },
     "S3": {
@@ -179,6 +209,10 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "mitre_tactics": ["Initial Access (TA0001)", "Execution (TA0002)", "Impact (TA0040)"],
             "priority_pivots": ["LockBit 4.0 변종 패턴", "한국어 랜섬노트 동봉"],
             "notes": "국내 금융권 표적 변종 의심 — 즉시 격리 필요",
+            "chat_message": (
+                "63/93 벤더 악성. LockBit 4.0 변종 패턴이고 한국어 랜섬노트가 동봉되어 "
+                "있습니다. 위협 수준 CRITICAL — 즉시 격리 필요합니다."
+            ),
         },
         "malware": {
             "malware_family": "LockBit-KR (변종)",
@@ -194,6 +228,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "55e88712fea8a8f36de82e1278abb02f",
             ],
             "notes": "한국어 랜섬노트 + KRW 비트코인 교환소 안내 — 국내 금융권 표적성 강함",
+            "chat_message": (
+                "VSS 삭제 (vssadmin), 백업 폴더 우선 암호화, AD 자격증명 수집, PsExec 측면 "
+                "이동 행위가 관찰됐습니다. Tor onion (lockbit-pay4.onion) + 러시아 staging IP "
+                "(194.x.x.21) 를 C2 로 사용합니다."
+            ),
         },
         "infrastructure": {
             "typosquat_domains": [],
@@ -204,6 +243,10 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             ],
             "campaign_cluster_id": "RANSOM-KR-2026Q2-LockBit",
             "notes": "Tor + Russia 호스팅 결합 — LockBit 운영자 인프라와 일치",
+            "chat_message": (
+                "Tor 결제 포털 + Russia 호스팅 — LockBit 운영자 인프라와 일치합니다. "
+                "RANSOM-KR-2026Q2-LockBit 클러스터로 묶입니다."
+            ),
         },
         "campaign": {
             "threat_group_hypothesis": "LockBit Affiliate (국내 금융 표적 파트너)",
@@ -239,6 +282,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "VSS 차단 그룹정책 적용, 백업 망 분리 검증, PsExec 비활성화 권고. "
                 "전자금융감독규정 §15 침해사고 보고 절차 발동 권고."
             ),
+            "chat_message": (
+                "LockBit Affiliate (국내 금융 표적 파트너) 로 추정합니다. VSS 차단 그룹정책 + "
+                "백업 망 분리 검증 + PsExec 비활성화 + 전자금융감독규정 §15 침해사고 보고 "
+                "절차 발동을 권고드립니다."
+            ),
         },
     },
     "S4": {
@@ -258,6 +306,10 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "TLS 인증서 만료 임박 자산 3건",
             ],
             "notes": "직접 침해는 없으나 컴플라이언스 위반 가능 — 조치 우선",
+            "chat_message": (
+                "본 도메인 자체는 악성 0/93 으로 깨끗합니다. 다만 자산 노출 컴플라이언스 측면 "
+                "에서 점검이 필요한 상태입니다."
+            ),
         },
         "malware": {
             "malware_family": None,
@@ -265,6 +317,7 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "c2_targets": [],
             "payload_hashes": [],
             "notes": "악성코드 무관 — 자산 노출 점검 시나리오",
+            "chat_message": "악성코드와는 무관한 자산 점검 시나리오입니다.",
         },
         "infrastructure": {
             "typosquat_domains": [],
@@ -278,6 +331,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "related_infra": [],
             "campaign_cluster_id": None,
             "notes": "외부 정찰자가 우선 시도할 5개 자산 — 컴플라이언스/패치 우선순위 즉시 권고",
+            "chat_message": (
+                "Shodan 으로 외부 노출 자산 5건 발견. Fortigate SSL VPN (CVE-2024-21762, "
+                "CRITICAL), Exim 4.94 (CVE-2023-42115, HIGH), OpenSSH 7.4, Tomcat 9 관리자 "
+                "페이지 노출, 만료 임박 인증서 1건 — 외부 정찰자가 우선 시도할 자산들입니다."
+            ),
         },
         "campaign": {
             "threat_group_hypothesis": None,
@@ -300,6 +358,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "관리자 페이지 외부 접근 차단, 만료 임박 인증서 갱신. "
                 "전자금융감독규정 §13(전자금융기반시설 보호) 통제 미달 항목으로 보고."
             ),
+            "chat_message": (
+                "Fortigate VPN (CVE-2024-21762) 즉시 패치 + 관리자 페이지 외부 차단 + 만료 "
+                "임박 인증서 갱신을 권고드립니다. 전자금융감독규정 §13 통제 미달 항목으로 "
+                "보고 가능합니다."
+            ),
         },
     },
     "S5": {
@@ -320,6 +383,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "금융권 SSL VPN 광범위 배포",
             ],
             "notes": "Fortinet FortiOS pre-auth RCE — 금융권 표적성·악용 가능성 최고치",
+            "chat_message": (
+                "CVE-2024-21762 — CISA KEV 등재(2024-02-09), EPSS 0.97 (1년 내 악용 확률 "
+                "97 퍼센타일). Fortinet FortiOS pre-auth RCE 이며, 금융권 SSL VPN 광범위 배포 "
+                "+ 활발한 익스플로잇으로 CRITICAL 입니다."
+            ),
         },
         "malware": {
             "malware_family": None,
@@ -327,6 +395,7 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "c2_targets": [],
             "payload_hashes": [],
             "notes": "CVE 분석 — 악성코드 무관",
+            "chat_message": "CVE 분석 — 악성코드 단계 무관합니다.",
         },
         "infrastructure": {
             "typosquat_domains": [],
@@ -336,6 +405,7 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
             "related_infra": [],
             "campaign_cluster_id": None,
             "notes": "사내 1대 노출 자산이 본 CVE 영향권",
+            "chat_message": "CVE 분석 — 인프라 단계 무관합니다.",
         },
         "campaign": {
             "threat_group_hypothesis": "Volt Typhoon 등 다수 위협 그룹이 활발히 활용 (CISA 공지)",
@@ -361,6 +431,11 @@ SIMULATION_SCENARIOS: dict[str, dict[str, Any]] = {
                 "CVE-2024-21762 (EPSS 0.97, KEV 등재) — 24시간 내 긴급 패치 권고. "
                 "패치 전 임시 조치: VPN 접속 IP 화이트리스트, MFA 강제. "
                 "전자금융감독규정 §13(취약점 점검) 통제 미달 우선 시정."
+            ),
+            "chat_message": (
+                "Volt Typhoon 등 다수 위협 그룹이 활용 중 (CISA 공지). 24시간 내 긴급 패치 "
+                "권고드립니다. 패치 전 임시 조치로 VPN 접속 IP 화이트리스트 + MFA 강제 + "
+                "outbound 이상 모니터링이 필요합니다."
             ),
         },
     },

@@ -28,6 +28,35 @@ from .state import (
 )
 
 
+# IoC 타입별 라우팅 규칙 — Orchestrator 가 사용
+ROUTING_RULES: dict[str, tuple[list[str], str]] = {
+    "cve": (
+        ["triage", "campaign"],
+        "CVE 분석은 평판/캠페인 종합만 필요 — Malware/Infrastructure 스킵",
+    ),
+    "hash": (
+        ["triage", "malware", "infrastructure", "campaign"],
+        "악성 해시 — 행위 분석 + C2 인프라 + 캠페인 재구성 전 단계 풀체인 실행",
+    ),
+    "ip": (
+        ["triage", "infrastructure", "campaign"],
+        "IP 평판/인프라/캠페인 — Malware 분석은 별도 EDR 트리아지 영역",
+    ),
+    "domain": (
+        ["triage", "infrastructure", "campaign"],
+        "도메인 평판/인프라/캠페인 — Malware 분석 불필요",
+    ),
+    "url": (
+        ["triage", "infrastructure", "campaign"],
+        "URL 평판/인프라/캠페인 — 동적 행위는 별도 샌드박스 영역",
+    ),
+}
+ROUTING_DEFAULT = (
+    ["triage", "malware", "infrastructure", "campaign"],
+    "타입 불명 — 안전한 전체 분석 (모든 Specialist 호출)",
+)
+
+
 def _run_node(
     state: ThreatHuntState,
     node_name: str,
@@ -58,6 +87,20 @@ def _run_node(
         "audit_ledger": [entry],
         "mcp_calls": list(tmp_state.mcp_calls),
     }
+
+
+# ---- 노드: Orchestrator (라우팅 결정) ----
+def orchestrator_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
+    """IoC 타입을 보고 어떤 Specialist 를 어떤 순서로 호출할지 plan 을 세운다."""
+    def body(s: ThreatHuntState, m: McpRegistry) -> dict[str, Any]:
+        plan, rationale = ROUTING_RULES.get(s.ioc_type, ROUTING_DEFAULT)
+        return {
+            "route_plan": list(plan),
+            "routing_rationale": rationale,
+            "_summary": f"route={'-'.join(plan)} | {rationale}",
+            "_tools_called": [],
+        }
+    return _run_node(state, "orchestrator", mcp, body)
 
 
 # ---- 노드: Triage ----
@@ -178,10 +221,30 @@ def gate_node(state: ThreatHuntState) -> dict[str, Any]:
     )
     entry.tools_called = []
 
+    # 채팅창용 자연어 브리핑 자동 생성
+    score_pct = f"{state.confidence_score * 100:.0f}%"
+    approval_part = (
+        "핵심 자산 키워드가 매칭되어 휴먼 승인 필수입니다."
+        if state.human_approval_required
+        else "휴먼 승인 없이 자동 처리 가능합니다."
+    )
+    level_meaning = {
+        "L0": "권고만 (분석가 검토 필요)",
+        "L1": "분석가 확인 후 처리",
+        "L2": "자동 케이스 생성",
+        "L3": "자동 SIEM 헌팅 트리거",
+        "L4": "자동 FW/IPS 차단",
+    }.get(state.automation_level or "L0", "권고만")
+    gate_message = (
+        f"신뢰도 {score_pct} → {state.automation_level} 등급 ({level_meaning}). "
+        f"{approval_part}"
+    )
+
     return {
         "confidence_score": state.confidence_score,
         "automation_level": state.automation_level,
         "human_approval_required": state.human_approval_required,
+        "gate_chat_message": gate_message,
         "finished_at": finished_at,
         "elapsed_ms": elapsed_ms,
         "audit_ledger": [entry],

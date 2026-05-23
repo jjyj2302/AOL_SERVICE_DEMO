@@ -1,9 +1,16 @@
-"""LangGraph StateGraph 빌더 — Hierarchical Threat Hunting flow.
+"""LangGraph StateGraph 빌더 — Orchestrator + Conditional Routing.
 
 흐름:
-    START → triage → malware → infrastructure → campaign → confidence_gate → END
+    START
+      └─→ orchestrator (IoC 타입 보고 route_plan 결정)
+            └─→ conditional → 첫 specialist (plan[0])
+                  └─→ conditional → 다음 specialist or gate
+                        ...
+                  └─→ confidence_gate → END
 
-각 노드는 `nodes.py` 의 함수를 사용하며, MCP 호출은 McpRegistry 를 통해 추상화.
+각 specialist 노드는 단일 책임을 갖고, 라우팅 결정은 Orchestrator + 조건부
+엣지에 위임. CrewAI 의 hierarchical Process 와 동일 구조를 LangGraph 의
+state machine 으로 명시적 표현.
 """
 from __future__ import annotations
 
@@ -17,40 +24,59 @@ from .nodes import (
     gate_node,
     infrastructure_node,
     malware_node,
+    orchestrator_node,
     triage_node,
 )
 from .state import ThreatHuntState
 
+SPECIALIST_NODES = ["triage_step", "malware_step", "infrastructure_step", "campaign_step"]
+ALL_BRANCHES = {n: n for n in SPECIALIST_NODES + ["confidence_gate"]}
+
+
+def _route_after_orchestrator(state: ThreatHuntState) -> str:
+    """Orchestrator 가 채운 route_plan 의 첫 노드로 분기."""
+    plan = state.route_plan or []
+    if not plan:
+        return "confidence_gate"
+    return f"{plan[0]}_step"
+
+
+def _route_after(current: str):
+    """현 specialist 이후 — plan 에서 다음 step 으로 분기 (없으면 gate)."""
+    def router(state: ThreatHuntState) -> str:
+        plan = state.route_plan or []
+        try:
+            idx = plan.index(current)
+            if idx + 1 < len(plan):
+                return f"{plan[idx + 1]}_step"
+        except ValueError:
+            pass
+        return "confidence_gate"
+    return router
+
 
 def build_graph(mode: str = "simulation") -> Any:
-    """ThreatHuntState 그래프를 컴파일하여 반환.
-
-    mode: "simulation" 또는 "live"
-    """
     mcp = McpRegistry(mode=mode)
+    g: StateGraph = StateGraph(ThreatHuntState)
 
-    graph: StateGraph = StateGraph(ThreatHuntState)
+    g.add_node("orchestrator", lambda s: orchestrator_node(s, mcp))
+    g.add_node("triage_step", lambda s: triage_node(s, mcp))
+    g.add_node("malware_step", lambda s: malware_node(s, mcp))
+    g.add_node("infrastructure_step", lambda s: infrastructure_node(s, mcp))
+    g.add_node("campaign_step", lambda s: campaign_node(s, mcp))
+    g.add_node("confidence_gate", gate_node)
 
-    # 주의: LangGraph 0.2.x 는 노드명이 state 필드명과 같으면 충돌.
-    # ThreatHuntState 에 triage/malware/infrastructure/campaign 필드가 있어
-    # 노드명에는 `_step` 접미사 부여.
-    graph.add_node("triage_step", lambda s: triage_node(s, mcp))
-    graph.add_node("malware_step", lambda s: malware_node(s, mcp))
-    graph.add_node("infrastructure_step", lambda s: infrastructure_node(s, mcp))
-    graph.add_node("campaign_step", lambda s: campaign_node(s, mcp))
-    graph.add_node("confidence_gate", gate_node)
+    g.add_edge(START, "orchestrator")
+    g.add_conditional_edges("orchestrator", _route_after_orchestrator, ALL_BRANCHES)
+    g.add_conditional_edges("triage_step", _route_after("triage"), ALL_BRANCHES)
+    g.add_conditional_edges("malware_step", _route_after("malware"), ALL_BRANCHES)
+    g.add_conditional_edges("infrastructure_step", _route_after("infrastructure"), ALL_BRANCHES)
+    g.add_conditional_edges("campaign_step", _route_after("campaign"), ALL_BRANCHES)
+    g.add_edge("confidence_gate", END)
 
-    graph.add_edge(START, "triage_step")
-    graph.add_edge("triage_step", "malware_step")
-    graph.add_edge("malware_step", "infrastructure_step")
-    graph.add_edge("infrastructure_step", "campaign_step")
-    graph.add_edge("campaign_step", "confidence_gate")
-    graph.add_edge("confidence_gate", END)
-
-    return graph.compile()
+    return g.compile()
 
 
-# 모듈 로딩 시점에 미리 컴파일된 시뮬레이션 그래프 (싱글톤 캐시 유사)
 _compiled_simulation_graph: Any | None = None
 
 
