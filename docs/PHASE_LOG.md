@@ -1,277 +1,215 @@
 # Phase Log — 금융권 네트워크 보안 AX 전환
 
 > 본 프로젝트의 **금융권 네트워크 보안 AX (AI Transformation)** 전환 진행 기록.
-> 각 Phase별로 (1) **무엇을 했는지**, (2) **무엇이 개선됐는지**, (3) **남은 작업**을 누적 기록한다.
-> Notion에 그대로 붙여넣을 수 있는 마크다운 형식.
+> 각 Phase 별로 (1) 무엇을 했는지, (2) 무엇이 개선됐는지, (3) 남은 작업을 누적 기록.
+> Notion 에 그대로 붙여넣을 수 있는 마크다운 형식.
 
 ---
 
-## 📌 전체 로드맵
+## 📌 전체 로드맵 (재정렬 v2 — 2026-05-23)
 
-| Phase | 주제 | 상태 | 기간 |
-|---|---|---|---|
-| **Phase 1** | 기반 정비 — README/문서 리포지셔닝 | ✅ 완료 | 2026-05-23 |
-| **Phase 2** | LangGraph StateGraph 신규 모듈 신설 | ✅ 완료 | 2026-05-23 |
-| **Phase 3** | MCP 5종 게이트웨이 추상화 | ✅ 완료 | 2026-05-23 |
-| **Phase 4** | Simulation Mode — 5대 금융권 시나리오 | ✅ 완료 | 2026-05-23 |
-| **Phase 5** | EC2 단일 인스턴스 배포 산출물 | ✅ 완료 | 2026-05-23 |
-| **Phase 5.5** | DB 마이그레이션 — SQLite → PostgreSQL 16 | ✅ 완료 | 2026-05-23 |
-| **Phase 6** | CI/CD 파이프라인 정리 | ✅ 완료 | 2026-05-23 |
-| **Phase 7** | pytest 슈트 + deprecation 정리 | ✅ 완료 | 2026-05-23 |
-| **Phase 8** | MCP 라이브 모드 wire-up + 프론트엔드 신규 패널 | ⚪ 대기 | — |
-
----
-
-## ✅ Phase 1 — 기반 정비 (README/문서 리포지셔닝)
-
-### 한 일
-1. **타이틀·태그라인 전환** — OSINT 침해사고 → 금융권 SOC Tier-1 자동화 Multi-Agent CTI
-2. **4단 AX 서사구조 도입** (Why → How → Impact → Deliverable)
-3. **아키텍처 다이어그램 갱신** — CrewAI → **LangGraph + MCP Tool Mesh**
-4. **L0~L4 Confidence-Gated Automation 표 추가** (망분리/금융권 안전성)
-5. **Why 섹션** — 금융권 SecOps 7대 구조적 문제 정리
-6. **Impact 정량 효과표** — 업무 시나리오 6종 + SOC KPI 종합
-7. **5대 금융권 시뮬레이션 시나리오** 명세
-8. **컴플라이언스 매핑** — 전자금융감독규정 §13/§15, FSI C-TAS, ISMS-P, DORA, MITRE ATT&CK
-9. **경쟁사 비교표** (vs. 기존 SOAR / 단일 AI 도구)
-10. **Agents × MCP Tool Mesh 매트릭스**
-11. **LLM Abstraction Layer 섹션** — sLLM 은 PoC 단계 옵션임을 명시 (과대표기 방지)
-12. **Tech Stack 배지 갱신** — CrewAI 제거, LangGraph/MCP/sLLM-Ready 추가
-
-### 무엇이 개선됐나
-| 항목 | Before | After |
+| Phase | 주제 | 상태 |
 |---|---|---|
-| **타깃 시장** | 범용 침해사고 분석 | **금융권 SOC Tier-1 자동화** |
-| **에이전트 프레임워크 (계획)** | CrewAI | **LangGraph (토큰 18% 절감)** |
-| **도구 통합 방식** | 하드코딩 API 호출 | **MCP 표준 인터페이스** |
-| **자동화 안전성** | 명시 없음 | **L0~L4 Confidence Gating** |
-| **정량 가치 제안** | 정성적 | **시나리오 6종 + KPI 5종 정량화** (≥95% 시간 감축) |
-| **컴플라이언스 서사** | 없음 | **전자금융감독규정·FSI·ISMS-P·DORA 매핑** |
-| **데모 재현성** | 라이브 API 의존 | **Simulation Mode** (시드 데이터 동일 결과 재현) |
-| **sLLM 표기** | 막연한 약속 | **PoC 옵션임을 명시, 데모는 OpenAI** |
-
-### 커밋 기록
-- `d97d132e` docs(readme): 금융권 네트워크 보안 AX 포지셔닝으로 전환
-- `8cb8629a` docs(readme): Impact/Deliverables/Simulation/Compliance/비교 섹션 추가
-- `f1c8e216` docs(phase-log): Notion 동기화용 Phase 진행 로그 신설
-- `c3c18e67` docs(readme): Tech Stack/Features/Getting Started 금융권 톤 + LLM 추상화 명확화
+| **Phase 1** | 기반 정비 — README/문서 금융권 리포지셔닝 | ✅ 완료 |
+| **Phase 2** | LangGraph 신규 모듈 — Orchestrator + 5 Specialist | ✅ 완료 |
+| **Phase 3** | MCP 5종 게이트웨이 추상화 (VT/DNSTwist/Shodan/OSINT/CVE) | ✅ 완료 |
+| **Phase 4** | 5대 금융권 시뮬레이션 시나리오 + chat_message | ✅ 완료 |
+| **Phase 5** | DB SQLite → PostgreSQL 16 마이그레이션 | ✅ 완료 |
+| **Phase 6** | EC2 단일 인스턴스 배포 산출물 (compose.prod + user-data) | ✅ 완료 |
+| **Phase 7** | CI/CD 파이프라인 정리 + pytest 슈트 44 케이스 | ✅ 완료 |
+| **Phase 8** | NotebookLM 3-패널 챗 UI + SSE 실시간 스트리밍 | ✅ 완료 |
+| **Phase 9** | CrewAI 레거시 모듈 폐기 (legacy/ 이동 + 의존성 제거) | 🟡 진행중 |
+| **Phase 10** | PDF 리포트 생성기 + `/report.pdf` 엔드포인트 | ⚪ 대기 |
+| **Phase 11** | ARCHITECTURE.md 정식 LangGraph 다이어그램 갱신 | ⚪ 대기 |
+| **Phase 12** | docker compose 실 기동 + 라이브 데모 검증 | ⚪ 대기 |
 
 ---
 
-## ✅ Phase 2 — LangGraph StateGraph 신규 모듈
+## 🤖 시스템 구조 — Hierarchical Multi-Agent (6 Agents)
 
-### 한 일
+```
+사용자 IoC 입력
+    │
+    ▼
+🧠 Investigation Orchestrator
+    │  (IoC 타입 분석 → route_plan 결정)
+    │  cve   → [triage, campaign]
+    │  hash  → [triage, malware, infra, campaign]
+    │  ip/domain/url → [triage, infra, campaign]
+    │
+    ▼  조건부 라우팅 (LangGraph add_conditional_edges)
+┌──────────────────────────────────────────────┐
+│ 🔍 Triage Specialist     (VirusTotal MCP)    │
+│ 👾 Malware Specialist    (VT + OSINT MCP)    │
+│ 🌍 Infrastructure Hunter (DNSTwist+Shodan)   │
+│ 📈 Campaign Analyst      (CVE-MCP EPSS/KEV)  │
+└──────────────────────────────────────────────┘
+    │  (각 Specialist 가 chat_message + 구조화 산출물 동시 산출)
+    ▼
+🛡️ Confidence Gate
+    │  L0~L4 자동화 등급 + 핵심 자산 휴먼 승인 강제
+    ▼
+산출물:
+  • Audit Ledger (감사 추적)
+  • 방화벽 차단 규칙
+  • 헌팅 쿼리 (SPL/KQL/Sigma)
+  • Executive Summary
+  • PDF 리포트
+```
+
+---
+
+## 🎨 UI 구조 — NotebookLM 3-패널
+
+```
+┌─ 자료실 (Left) ─┬─ 대화 (Center) ─┬─ Agent Studio (Right) ─┐
+│ 📚 샘플 시나리오 │  진짜 대화만    │  🤖 6 Agents Pipeline   │
+│  S1~S5 카드     │  user ↔ agent  │  실시간 진행 바         │
+│                 │                 │                         │
+│ 📥 분석 리포트   │  Bubble UI     │  📊 메트릭 4-카드        │
+│  PDF 보관함     │  + SSE 스트림  │  📥 PDF 다운로드        │
+│                 │                 │  🛡️ FW 규칙            │
+│                 │                 │  🔍 헌팅 쿼리           │
+│                 │                 │  🧩 MCP Tool Calls      │
+└─────────────────┴─────────────────┴────────────────────────┘
+```
+
+채팅창 = 자연어 대화만. 기술 산출물은 우측 Agent Studio 로 분리.
+
+---
+
+## ✅ Phase 1 — 기반 정비 (README/문서)
+
+- 타이틀: 금융권 SOC Tier-1 자동화 Multi-Agent CTI 플랫폼
+- 4단 AX 서사: Why → How → Impact → Deliverable
+- 임팩트 표: 99.6% 시간 감축 (시나리오 6종) + KPI 5종
+- 컴플라이언스 매핑: 전자금융감독규정 §13/§15, FSI, ISMS-P, DORA
+- 비교표: vs SOAR / 단일 AI / 폐쇄형 AI SOC
+- sLLM 톤다운: PoC 옵션임을 명시
+
+## ✅ Phase 2 — LangGraph + Orchestrator (6 Agents)
+
 - `backend/app/features/langgraph_threat_hunter/` 패키지 신설
-- **`state.py`** — `ThreatHuntState` (Pydantic) IoC·진행단계·신뢰도·Audit Ledger·MCP 호출·산출물 전역 누적 상태
-- **`confidence.py`** — L0~L4 등급 매핑 + 금융권 핵심 자산 휴먼 승인 강제 (코어뱅킹/임원PC/SWIFT 키워드)
-- **`nodes.py`** — 5개 노드 (triage/malware/infrastructure/campaign/confidence_gate) delta dict 반환 패턴
-- **`graph.py`** — StateGraph 빌더, 시뮬레이션 그래프는 모듈 로딩 시 싱글톤 컴파일
-- **`router.py`** — 4종 FastAPI 엔드포인트 (`/api/lg/...`)
-- `backend/main.py` 에 라우터 등록
+- `ThreatHuntState` Pydantic — IoC + route_plan + findings + ledger + mcp_calls
+- 6개 에이전트: 🧠 Orchestrator + 🔍 Triage + 👾 Malware + 🌍 Infra + 📈 Campaign + 🛡️ Gate
+- **동적 라우팅**: IoC 타입 (cve/hash/ip/domain/url) 별로 specialist 스킵
+- L0~L4 Confidence Gating + 핵심 자산 휴먼 승인 강제 (kakaobank, swift 등)
 
-### 무엇이 개선됐나
-| 항목 | Before | After |
-|---|---|---|
-| 다중 에이전트 오케스트레이션 | CrewAI hierarchical (블랙박스) | **LangGraph StateGraph 명시적 상태 머신** |
-| 노드별 실행 추적 | (없음) | **Audit Ledger 자동 기록** (node/elapsed_ms/tools_called) |
-| 자동화 신뢰도 게이팅 | (없음) | **L0~L4 등급 + 핵심 자산 휴먼 승인** |
-| 단위 테스트 가능성 | 어려움 (Crew 단위) | **노드 함수 단위로 단순 테스트 가능** |
+## ✅ Phase 3 — MCP 5종 게이트웨이
 
-### 커밋 기록
-- `563d7837` docs(llm): ARCHITECTURE 옛 osint_profiler 기반임을 상단 안내
-- `95a5d310` chore(api): langgraph 및 langchain-mcp-adapters 의존성 추가
-- `abeacc85` feat(llm): LangGraph 위협 헌팅 state 스키마 및 신뢰도 게이팅 신설
-- `ff9d4504` feat(llm): LangGraph StateGraph 노드 및 그래프 빌더 추가
+- `McpRegistry` 클래스 — VT / DNSTwist / Shodan / OSINT / CVE
+- simulation / live 모드 분기 (live 는 wire-up 예정)
+- McpCallRecord 자동 기록 (tool / elapsed_ms / cached / simulation)
 
----
+## ✅ Phase 4 — Simulation Mode + chat_message
 
-## ✅ Phase 3 — MCP 5종 게이트웨이 추상화
+- 5개 시드: S1 카카오뱅크 / S2 보이스피싱 / S3 랜섬웨어 / S4 노출자산 / S5 CVE
+- 각 시나리오의 각 에이전트에 한국어 chat_message 사전 정의
+- 게이트는 신뢰도·등급 기반 메시지 자동 생성
+- 정량 효과: S1 30분→4초 (99.7%↓), S2 180분→8초, S3 120분→12초 등
 
-### 한 일
-- **`mcp_clients.py`** — `McpRegistry` 클래스 신설
-- 5개 MCP 통합: VirusTotal · DNSTwist · Shodan · OSINT · CVE
-- `simulation` / `live` 모드 분기 — simulation 은 시드 데이터, live 는 `langchain-mcp-adapters` (현재는 placeholder)
-- **`McpCallRecord`** 자동 기록 — tool/input_key/elapsed_ms/cached/simulation 플래그
+## ✅ Phase 5 — PostgreSQL 마이그레이션
 
-### 무엇이 개선됐나
-| 항목 | Before | After |
-|---|---|---|
-| 외부 도구 호출 인터페이스 | 도구별로 다른 클라이언트 코드 | **MCP 표준 인터페이스 단일** |
-| 호출 기록 추적 | (없음) | **모든 MCP 호출이 McpCallRecord 로 자동 기록** |
-| 시연 재현성 | API 키 + 외부 호출 필요 | **simulation 모드로 100% 재현 가능** |
+- SQLAlchemy DATABASE_URL 환경변수 → PostgreSQL 우선, SQLite fallback
+- docker-compose 에 `postgres:16-alpine` 서비스 + named volume
+- prod 오버레이: pg_isready healthcheck, 1 vCPU / 2 GB 제한
+- EC2 user-data: `/aol/postgres_password` SSM 시크릿 + 임시 패스워드 fallback
 
-### 커밋 기록
-- `9e6adbbb` feat(llm): MCP 도구 5종 게이트웨이 추상화 신설
+## ✅ Phase 6 — EC2 배포 산출물
 
----
+- `docker-compose.prod.yaml`: healthcheck 4종 + 로그 로테이션 + 리소스 제한
+- `deploy/ec2-userdata.sh`: 멀티 OS 부트스트랩 + SSM 시크릿 + git 동기화 + compose up
+- `docs/DEPLOYMENT.md`: IAM/SG/배포/운영/트러블슈팅/비용
 
-## ✅ Phase 4 — Simulation Mode (5대 금융권 시나리오)
+## ✅ Phase 7 — CI/CD + pytest 슈트
 
-### 한 일
-- **`simulations.py`** — 5개 시나리오 시드 데이터
-  - **S1** 카카오뱅크 사칭 피싱 (DNSTwist + URLScan)
-  - **S2** 보이스피싱 C2 인프라 클러스터링 (VT + Shodan)
-  - **S3** 금융권 표적 랜섬웨어 IoC (4-Agent + VT + OSINT)
-  - **S4** 사내 외부노출 자산 점검 (Shodan, 전자금융감독규정 §13)
-  - **S5** 금융권 표적 CVE 우선순위화 (CVE-MCP EPSS/KEV/MITRE)
-- `GET /api/lg/scenarios` / `POST /api/lg/simulate/{id}` 엔드포인트
-- FastAPI TestClient 통합 테스트 5개 시나리오 모두 통과
-- Before/After 측정 자동화 (`before_minutes` ↔ `actual_elapsed_ms`)
+- `.github/workflows/ci.yml` 들여쓰기 깨진 것 재작성, 4-job 파이프라인
+- `cd.yml` 의 deprecated `actions/create-release@v1` → `softprops/action-gh-release@v2`
+- `backend/tests/` 디렉터리 신설 — 44 케이스 / 0.5초 / 100% 통과
+- datetime.utcnow() → timezone-aware now (deprecation 200+→1)
 
-### 무엇이 개선됐나
-| 시나리오 | Before (수동) | After (본 시스템) | 개선율 |
-|---|---|---|---|
-| S1 카카오뱅크 사칭 추적 | 30분 | <5초 | ≈99.7% ↓ |
-| S2 보이스피싱 C2 클러스터링 | 180분 | <10초 | ≈99.9% ↓ |
-| S3 랜섬웨어 심층 분석 | 120분 | <15초 | ≈99.8% ↓ |
-| S4 외부노출 자산 점검 | 60분 | <10초 | ≈99.7% ↓ |
-| S5 CVE 우선순위화 | 45분 | <5초 | ≈99.8% ↓ |
+## ✅ Phase 8 — NotebookLM 3-패널 챗 UI + SSE
 
-### 커밋 기록
-- `5fbba4ac` feat(llm): 5대 금융권 시뮬레이션 시나리오 시드 데이터 추가
-- `e9608053` feat(api): /api/lg 라우터 등록 및 시뮬레이션 엔드포인트 노출
+- 프론트 신규 컴포넌트:
+  - `ThreatHunterPage.jsx` — 3-패널 레이아웃 메인
+  - `SourcesPanel.jsx` — 좌측 (샘플 시나리오 + 분석 리포트)
+  - `ChatPanel.jsx` — 가운데 순수 대화 (user/assistant 버블)
+  - `ResultsSidebar.jsx` — 우측 (메트릭 + 산출물)
+  - `AgentPipelinePanel.jsx` — 6-에이전트 실시간 진행 바
+- 백엔드: `POST /api/lg/chat/stream` SSE — 노드별 delta 를 실시간 yield
+- pace 파라미터: 시연용 0.5초 노드 간 지연 (육안 확인 가능)
+- 사이드바: `🤖 AI Threat Hunter` 로 통합 (기존 `Simulation` 메뉴 폐기)
+- 챗 패널 = 자연어만, 우측 패널 = 기술 산출물 (관심사 분리)
 
----
-
-## ✅ Phase 5 — EC2 단일 인스턴스 배포 산출물
-
-### 한 일
-- **`docker-compose.prod.yaml`** — base compose 의 production overlay
-  - env_file 로 `/etc/aol/.env` 분리 (SSM 시크릿 주입 지점)
-  - healthcheck 3종 (redis / backend / frontend)
-  - 로그 로테이션 (json-file, 합산 ≤160MB)
-  - backend 외부 포트 미노출 (expose only)
-  - restart=always + 리소스 제한 (t3.large 80% 가용)
-- **`deploy/ec2-userdata.sh`** — EC2 user-data 자동 부트스트랩
-  - 멀티 OS 지원 (dnf / yum / apt)
-  - SSM Parameter Store 에서 시크릿 안전 주입
-  - Docker Compose v2 플러그인 자동 설치
-  - 재실행 멱등 (`git reset --hard origin/...`)
-- **`docs/DEPLOYMENT.md`** — IAM/SG/배포/운영/트러블슈팅/비용 추산 단일 가이드
-
-### 커밋 기록
-- `999dadd7` feat(deploy): EC2 단일 인스턴스 프로덕션 배포 산출물 추가
-
----
-
-## ✅ Phase 5.5 — DB 마이그레이션 (SQLite → PostgreSQL 16)
-
-### 한 일
-- **`backend/app/core/database.py`** — `DATABASE_URL` 환경변수 우선, SQLite fallback
-- **`backend/requirements.txt`** — `psycopg2-binary` 의존성 추가
-- **`docker-compose.yaml`** — `postgres:16-alpine` 서비스 + 명명 볼륨 `postgres_data`
-- **`docker-compose.prod.yaml`** — postgres healthcheck (`pg_isready`) + 리소스 제한 (1 vCPU / 2 GB) + log rotation
-- **`deploy/ec2-userdata.sh`** — `/aol/postgres_password` SSM 시크릿 로딩 + 미등록 시 임시 24자 랜덤 패스워드 생성
-- **`docs/DEPLOYMENT.md`** — 아키텍처 다이어그램에 postgres 추가, SSM/리소스 표 갱신, RDS 분리 + pgvector 로드맵
-
-### 무엇이 개선됐나
-| 항목 | Before (SQLite) | After (PostgreSQL 16) |
-|---|---|---|
-| 동시 쓰기 | 단일 라이터 락 | **다중 라이터 가능 — SOC 다중 분석가 동시 작업** |
-| JSON 저장 | TEXT + json.dumps | **JSONB 네이티브 — MCP 호출 기록 인덱싱 가능** |
-| LangGraph 체크포인터 | 별도 구현 필요 | **PostgresSaver 네이티브 지원** |
-| 벡터 검색 (RAG) | 미지원 | **pgvector 확장 활성화 가능** |
-| HA / 백업 | 수동 파일 복사 | **AWS RDS 분리 → 자동 백업/스냅샷** |
-| 산업 표준 정합성 | 데모 수준 | **AiSOC / OpenCTI 등 산업 표준 일치** |
-
-### 커밋 기록
-- `e1122bcf` feat(db): SQLAlchemy 엔진 PostgreSQL 우선 + SQLite fallback
-- `693e7ba9` chore(api): psycopg2-binary 의존성 추가
-- `becd180b` feat(infra): docker-compose 에 postgres 16-alpine 서비스 추가
-- `1a164e03` feat(infra): postgres 프로덕션 오버레이 healthcheck 및 리소스 제한
-- `f43cb067` feat(infra): EC2 user-data postgres 시크릿 주입 및 DATABASE_URL 생성
-- `d8d7fe7b` docs(infra): DEPLOYMENT 가이드 PostgreSQL 섹션 보강
-
----
-
-## ✅ Phase 6 — CI/CD 파이프라인 정리
-
-### 한 일
-- **`ci.yml` 전면 재작성** — 기존 파일은 모든 키가 2-space prefix 로 들여쓰여 있어 실행조차 안 되던 상태
-- 4 jobs 구성:
-  - `backend-lint`: py_compile 전체 + pytest 슈트 실행
-  - `frontend-build`: npm ci + build (cache 활성화)
-  - `compose-validate`: base + prod 오버레이 정합성 검증
-  - `docker-build`: backend/frontend 이미지 빌드 (GHA cache)
-- **`cd.yml`** — deprecated `actions/create-release@v1` → `softprops/action-gh-release@v2` 교체
-- `permissions.contents=write` 명시
-- `generate_release_notes: true` 활성화
-
-### 커밋 기록
-- `802b0299` ci(ci): CI 워크플로 YAML 들여쓰기 깨진 것 수정 및 검증 강화
-- `350b71ff` ci(ci): CD 워크플로 deprecated 액션 교체 및 권한 명시
-- `2cd7dd02` ci(ci): CI 워크플로 smoke test 를 정식 pytest 실행으로 격상
-
----
-
-## ✅ Phase 7 — pytest 슈트 신설 + deprecation 정리
-
-### 한 일
-- **`backend/tests/`** 디렉터리 신설 — 4개 테스트 모듈 / **43 테스트 케이스 / 0.5초 / 100% 통과**
-  - `test_simulations.py` (9) — 5개 시나리오 시드 정합성
-  - `test_confidence.py` (14) — L0~L4 등급 경계 + 핵심 자산 휴먼 승인
-  - `test_graph.py` (7) — LangGraph StateGraph 전체 흐름
-  - `test_router.py` (13) — FastAPI `/api/lg/*` 엔드포인트
-- `conftest.py` — PYTHONPATH + DATABASE_URL=`sqlite:///:memory:` 강제 격리
-- `requirements.txt` — `pytest>=8.0`, `httpx>=0.27` 추가
-- **datetime.utcnow() deprecation 정리** — `datetime.now(timezone.utc)` 로 4개 호출 지점 교체
-- CI 의 `backend-lint` 잡이 매 PR 마다 pytest 자동 실행 → 회귀 안전망 확보
-
-### 무엇이 개선됐나
-| 항목 | Before | After |
-|---|---|---|
-| 자동화된 회귀 테스트 | 없음 (수동 smoke 만) | **43 케이스 pytest, 0.5초** |
-| L0~L4 경계 검증 | 사람 눈으로 보던 수준 | **10개 boundary 케이스 자동 검증** |
-| 라우터 응답 형식 | 수동 호출로 확인 | **13개 엔드포인트 통합 테스트** |
-| 핵심 자산 휴먼 승인 | 정성적 명세만 | **kakaobank/SWIFT/코어뱅킹 등 키워드 단위 테스트** |
-| Deprecation 경고 | 200+ 건 | **1건** (외부 langgraph) |
-
-### 커밋 기록
-- `dbadc3b6` refactor(llm): datetime.utcnow() deprecation 정리
-- `cbec3929` test(api): pytest 슈트 신설 — LangGraph/MCP/Simulation/Router 43개 케이스
-- `c30dd2c0` chore(api): pytest 및 httpx 테스트 의존성 추가
-
----
-
-## ⚪ Phase 8 — MCP 라이브 모드 + 프론트엔드 신규 패널 (대기)
+## 🟡 Phase 9 — CrewAI 레거시 폐기 (진행중)
 
 ### 계획
-- `langchain-mcp-adapters` 의 `MultiServerMCPClient` 로 실 MCP 서버 wire-up
-  - 도커 compose 에 mcp-dnstwist, mcp-shodan, cve-mcp-server 사이드카 추가
-  - `mcp_clients.py` 의 `# TODO(live)` 부분 실 호출 구현
-- 프론트엔드 사이드바 **🎬 Simulation** 메뉴 + DNSTwist 타이포스쿼트 테이블 + Shodan 노출 자산 카드 추가
-- 시뮬레이션 결과 PDF 리포트 생성기 (jinja2 + weasyprint)
-- (선택) LangGraph PostgresSaver 체크포인터 연결 — 장시간 분석 재개 가능
+1. `backend/app/features/{deep_analysis,crew_solo,bulk_analysis_async}/` → `backend/app/legacy/` 로 이동 (git mv)
+2. `main.py` 의 CrewAI 라우터 import 제거
+3. `requirements.txt` 의 `crewai`, `crewai-tools` 제거
+4. 프론트엔드: 기존 `Agents.jsx` 의 라우트가 새 ThreatHunter 로 리다이렉트되도록 정리 (별도 작업)
+5. README 의 CrewAI 언급 모두 제거
+
+### 영향
+- 백엔드 의존성 크기 ~200MB 감축
+- 단일 멀티에이전트 path (LangGraph) 로 통합 — 유지보수 단순화
+
+## ⚪ Phase 10 — PDF 리포트 생성기
+
+### 계획
+1. `reportlab` 의존성 추가
+2. `backend/app/features/langgraph_threat_hunter/pdf_report.py` 신설
+3. 엔드포인트: `GET /api/lg/simulate/{scenario_id}/report.pdf`
+4. PDF 내용: 시나리오 제목 + Before/After + 6 에이전트 산출물 + FW 규칙 + 헌팅 쿼리 + Executive Summary
+5. 프론트 자료실의 PDF 링크 동작 검증
+
+## ⚪ Phase 11 — ARCHITECTURE.md 정식 다이어그램
+
+### 계획
+- 옛 osint_profiler 잔재 제거
+- Mermaid 다이어그램 3 종:
+  1. 6-Agent + Orchestrator + 동적 라우팅
+  2. MCP Tool Mesh
+  3. 3-패널 UI ↔ SSE ↔ LangGraph 흐름
+- 각 에이전트의 코드 위치 / 입출력 / 도구 명시
+
+## ⚪ Phase 12 — docker compose 실 기동 + 데모 검증
+
+### 계획
+1. `docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up --build -d`
+2. 헬스체크 4종 확인 (postgres / redis / backend / frontend)
+3. curl 검증:
+   - `GET /api/lg/health`
+   - `GET /api/lg/scenarios`
+   - `POST /api/lg/chat/stream` (S1)
+4. 브라우저 `http://localhost:4000/threat-hunter` 접속 → S1 카드 클릭 → 챗 + 에이전트 파이프라인 + 산출물 실시간 표시 확인
+5. 스크린샷 / GIF 캡처
 
 ---
 
-## 🧭 의사결정 기록
+## 🧭 의사결정 기록 (누적)
 
 | 일자 | 결정 | 근거 |
 |---|---|---|
-| 2026-05-23 | Path B (Full LangGraph 마이그레이션) 채택 | 금융권 AX 포트폴리오에서 산업 표준. 토큰 18% 절감 + Audit Ledger 자연 표현 |
-| 2026-05-23 | Frontend 유지 + Simulation Mode 중심 | 의사결정자 설득에 UI 필수. 신규 풀스택 대신 기존 컴포넌트 재활용 |
-| 2026-05-23 | MCP TOP 5 선정 (DNSTwist · Shodan · CVE · OSINT · VT) | DNSTwist=금융권 특화 사칭 도메인, CVE=컴플라이언스 직결, Shodan=노출자산 |
-| 2026-05-23 | LangGraph 신규 모듈을 기존 CrewAI 와 병렬 신설 | 기존 CrewAI 코드 회귀 위험 없이 새 path 검증 가능 |
-| 2026-05-23 | LangGraph 0.2.x 라인 핀 | 1.x 는 langchain-core 1.x 강제 → CrewAI 스택 충돌 |
-| 2026-05-23 | Simulation Mode 우선 구현 | API 키 없이 데모/PoC 가능, BOB·면접에서 즉시 시연 가능 |
-| 2026-05-23 | DB SQLite → PostgreSQL 16 | LangGraph PostgresSaver/JSONB/pgvector 친화, 다중 동시 분석 지원 |
-| 2026-05-23 | sLLM "PoC 옵션"으로 톤다운 | 실 구동 안 됨을 명시 (과대 포장 방지) — BOB 면접 정직성 |
-| 2026-05-23 | 커밋 ZETTY 컨벤션 strict + Co-Authored 제거 | 팀 일관성 + 사용자 요청 |
+| 2026-05-23 | Path B (Full LangGraph) 채택 | 산업 표준, 토큰 18% 절감, audit trail 자연 표현 |
+| 2026-05-23 | LangGraph 0.2.x 라인 핀 | 1.x 는 langchain-core 1.x 강제 → 기존 스택 충돌 |
+| 2026-05-23 | Simulation Mode 우선 | API 키 없이 BOB 면접/금융권 PoC 시연 가능 |
+| 2026-05-23 | DB SQLite → PostgreSQL 16 | LangGraph PostgresSaver/JSONB/pgvector 친화 |
+| 2026-05-23 | sLLM "PoC 옵션"으로 톤다운 | 실 구동 안 됨을 정직히 표기 |
+| 2026-05-23 | Orchestrator agent 추가 (5→6) | 진짜 hierarchical 멀티에이전트 — 동적 라우팅 |
+| 2026-05-23 | NotebookLM 3-패널 UI 채택 | 채팅(자연어) vs Agent Studio(기술 산출물) 분리 |
+| 2026-05-23 | SSE 스트리밍 + pace 파라미터 | 노드별 진행 실시간 시각화 — 시연 임팩트 |
+| 2026-05-23 | CrewAI 모듈 legacy 이동 | 도메인 분리 (LangGraph 가 동일 기능 커버) |
 
 ---
 
 ## 📚 레퍼런스
 
-### 산업 참조 프로젝트
-- [taylorwalton/talon](https://github.com/taylorwalton/talon) — Anonymizing MCP proxy, air-gapped Ollama
+- [taylorwalton/talon](https://github.com/taylorwalton/talon) — Anonymizing MCP proxy
 - [zhadyz/AI_SOC](https://github.com/zhadyz/AI_SOC) — L0~L4 신뢰도 게이팅
-- [FunnyWolf/agentic-soc-platform](https://github.com/FunnyWolf/agentic-soc-platform) — Webhook+Redis Stream SIEM
-- [beenuar/AiSOC](https://github.com/beenuar/AiSOC) — Investigation Ledger, MITRE ATT&CK, DORA/PCI-DSS
-
-### MCP 후보군
+- [FunnyWolf/agentic-soc-platform](https://github.com/FunnyWolf/agentic-soc-platform) — SIEM 통합
+- [beenuar/AiSOC](https://github.com/beenuar/AiSOC) — Investigation Ledger, MITRE ATT&CK
 - [BurtTheCoder/mcp-dnstwist](https://github.com/BurtTheCoder/mcp-dnstwist)
 - [ADEOSec/mcp-shodan](https://github.com/ADEOSec/mcp-shodan)
 - [mukul975/cve-mcp-server](https://github.com/mukul975/cve-mcp-server)
-- [badchars/osint-mcp-server](https://github.com/badchars/osint-mcp-server)
 - [langchain-ai/langchain-mcp-adapters](https://github.com/langchain-ai/langchain-mcp-adapters)
