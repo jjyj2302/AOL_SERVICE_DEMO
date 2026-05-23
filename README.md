@@ -222,9 +222,11 @@ graph TD
     <tr>
         <td align="center"><b>AI & Agents</b></td>
         <td>
-            <img src="https://img.shields.io/badge/CrewAI-FB542B?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" />
             <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=flat-square&logo=langchain&logoColor=white" />
+            <img src="https://img.shields.io/badge/MCP-000000?style=flat-square&logoColor=white" />
             <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" />
+            <img src="https://img.shields.io/badge/sLLM--Ready (Ollama)-000000?style=flat-square&logoColor=white" />
         </td>
     </tr>
     <tr>
@@ -235,10 +237,23 @@ graph TD
         </td>
     </tr>
     <tr>
-        <td align="center"><b>Security Tools</b></td>
+        <td align="center"><b>Security MCP Tools</b></td>
         <td>
             <img src="https://img.shields.io/badge/VirusTotal-394EFF?style=flat-square&logo=virustotal&logoColor=white" />
             <img src="https://img.shields.io/badge/URLScan.io-000000?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/DNSTwist-2563EB?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/Shodan-D81B60?style=flat-square&logo=shodan&logoColor=white" />
+            <img src="https://img.shields.io/badge/CVE/EPSS/KEV-9333EA?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/MITRE ATT%26CK-D32F2F?style=flat-square&logoColor=white" />
+        </td>
+    </tr>
+    <tr>
+        <td align="center"><b>Compliance Frame</b></td>
+        <td>
+            <img src="https://img.shields.io/badge/전자금융감독규정-1F2937?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/FSI C--TAS-0F766E?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/ISMS--P-7C2D12?style=flat-square&logoColor=white" />
+            <img src="https://img.shields.io/badge/DORA (EU)-1E3A8A?style=flat-square&logoColor=white" />
         </td>
     </tr>
     <tr>
@@ -268,65 +283,105 @@ graph TD
 
 ---
 
-## ✨ Detailed Features
+## ✨ Detailed Features — 금융권 SOC 운영 모듈
 
-본 시스템은 크게 4가지 핵심 모듈로 구성되어 있습니다.
+본 시스템은 금융권 SecOps 운영 흐름을 4개 핵심 모듈로 자동화합니다.
 
 ### 1️⃣ Core Threat Hunting (Deep Analysis)
-**침해사고 심층 분석 엔진**
-- **5-Agent System**: Triage, Malware, Infrastructure, Campaign, Orchestrator 5명의 AI 에이전트가 유기적으로 협업
-- **Dynamic Context**: 초기 분석 결과(Context)가 실시간으로 다음 단계 에이전트에게 공유되어 분석 심도 강화
-- **Strategic Reporting**: 단순 결과 나열이 아닌, 공격 시나리오와 방어 전략이 포함된 인텔리전스 리포트 생성
+**금융권 침해사고 심층 분석 엔진**
+- **4-Agent + Orchestrator**: Triage·Malware·Infrastructure·Campaign 전문가가 LangGraph state graph로 협업
+- **Dynamic Context Sharing**: 앞 에이전트 산출물 → 뒷 에이전트 입력으로 흘러가 **금융권 표적 캠페인 단위 의사결정**
+- **Confidence-Gated Output**: L0~L4 등급별 권고/자동 케이스/자동 차단 — 핵심 자산은 휴먼 승인 필수
+- **Strategic Reporting**: 분석가용 JSON + 임원·금감원 보고용 PDF (Voice Phishing Style) 동시 산출
 
 ### 2️⃣ Bulk Analysis & Streaming
-**대량 위협 정보 고속 처리**
-- **Real-time SSE Streaming**: 분석 진행 상황을 실시간으로 스트리밍하여 장시간 분석 중에도 사용자 경험 유지
-- **Batch Processing**: 수십/수백 개의 IOC를 한 번에 업로드하여 병렬 처리 및 자동 분류
-- **Selective Analysis**: 사용자가 원하는 에이전트(예: 악성코드 분석만 수행)만 선택하여 맞춤형 분석 가능
+**대량 IoC 고속 처리 (보이스피싱 캠페인 단위 분석에 최적)**
+- **Real-time SSE Streaming**: 50~수백 건 분석 진행상황 실시간 스트리밍 — SOC 화이트보드에 그대로 투영 가능
+- **Batch Parallel Processing**: 수백 건 IoC를 병렬 처리 후 자동 클러스터링 → **개별 IoC가 아닌 캠페인 단위**로 보고
+- **Selective Agent Invocation**: 분석가가 필요한 전문가만 호출 (예: 도메인만 → Triage만)
 
-### 3️⃣ KISA Data Integration
-**국내 특화 위협 인텔리전스 연동**
-- **KISA C-TAS Synchronization**: 한국인터넷진흥원(KISA)의 최신 침해사고 IoC 데이터셋 자동 동기화
-- **Firewall Simulation**: 수집된 IoC를 기반으로 방화벽 차단 규칙 생성 및 적용 시뮬레이션 지원
-- **Statistical Dashboard**: 국가별, 공격 유형별 위협 통계 시각화 및 트렌드 분석
+### 3️⃣ Threat Intel Integration (KISA C-TAS / FSI 확장)
+**국내 금융권 위협 인텔리전스 자동 연동**
+- **KISA C-TAS Sync**: 한국인터넷진흥원 IoC 자동 동기화 (시간 단위 갱신)
+- **FSI C-TAS 확장 가능**: 금융보안원 위협정보 공유체계와의 인터페이스 준비됨
+- **FW/IPS Rule Auto-Gen**: 확정 IoC → 벤더별 차단 규칙 텍스트 자동 산출
+- **Geo·ASN Statistical Dashboard**: 국가·ASN·공격유형별 추세 시각화로 정책 의사결정 지원
 
-### 4️⃣ History & Session Management
-**분석 이력 및 자산 관리**
-- **Full Audit Trail**: 모든 분석 세션, 결과, 생성된 리포트가 DB에 영구 저장되어 언제든 재열람 가능
-- **Asset Search**: 과거 분석했던 IP, URL, Hash 값에 대한 검색 및 연관 분석 세션 추적
-- **Report Export**: 분석 결과를 PDF 또는 JSON 형태로 내보내어 외부 보고서로 활용 가능
+### 4️⃣ Investigation Ledger (Audit Trail)
+**컴플라이언스 증빙 가능한 감사 추적**
+- **Full LangGraph State 보존**: 에이전트 입력·출력·도구 호출 전 단계 DB 영속화
+- **재현 가능한 조사 경로**: 동일 입력 → 동일 산출물 (감사 대응 시 재현 보고서 자동 생성)
+- **ISMS-P / 전자금융감독규정 §15 매핑 가능**: 침해사고 대응 통제의 증빙 자료로 직접 활용
+- **PDF/JSON Export**: 외부 감사·금융감독 보고용 산출물 즉시 추출
+
+---
+
+## 🔌 LLM Abstraction Layer — 망분리 환경 PoC 옵션
+
+본 시스템은 **LangChain의 `ChatModel` 추상화**를 사용하여 LLM 백엔드를 한 줄 교체로 전환할 수 있습니다. 금융권 망분리 환경에서는 운영팀이 보유한 GPU 인프라에 Ollama·vLLM 등으로 sLLM을 띄우고 본 시스템을 가리키게 하면 됩니다.
+
+| 환경 | LLM | 비고 |
+|---|---|---|
+| **현재 데모 / 본 저장소 기본** | OpenAI GPT-4 (cloud) | EC2 t3.large CPU에서 데모 가능 |
+| **금융권 망분리 PoC (예시)** | Llama-3-8B / Qwen2.5-7B (on-prem) | 사내 GPU 서버(예: NVIDIA L4 24GB) 필요 |
+| **교체 작업량** | `ChatOpenAI(...)` → `ChatOllama(model="llama3:8b", base_url=...)` | 단일 파일 1줄 변경 + endpoint 환경변수 추가 |
+
+> ⚠️ **명확화**: 본 저장소가 sLLM을 "지금 구동 중"인 것은 아닙니다. 망분리 PoC 단계에서 사내 GPU 인프라와 결합해야 실 구동 가능합니다. 본 시스템은 그 교체가 **코드 변경 최소화**로 가능한 아키텍처를 제공합니다.
+
+---
 
 ## 🛠️ Getting Started
 
 ### 1. Prerequisites
 
 - Docker & Docker Compose
-- API Keys (OpenAI, VirusTotal, URLScan.io)
+- (선택) API Keys: OpenAI · VirusTotal · URLScan.io
+- **시뮬레이션 모드만 사용 시 API Key 불필요** ✅
 
-### 2. Run with Docker (Recommended)
-
-가장 간편한 실행 방법입니다. Docker를 사용하여 백엔드, 프론트엔드, Redis를 한 번에 실행합니다.
+### 2. Local Run with Docker (개발/검증)
 
 ```bash
-# Clone the repository
+# Clone & enter
 git clone https://github.com/jyj0203/AOL_SERVICE_DEMO.git
 cd AOL_SERVICE_DEMO
 
-# Create .env file with your API keys
-# (Required for Docker to access API keys)
-# Linux/Mac:
-# echo "OPENAI_API_KEY=your_key" > .env
-# echo "VIRUSTOTAL_API_KEY=your_key" >> .env
-# echo "URLSCAN_API_KEY=your_key" >> .env
+# (Optional) .env 작성 — 시뮬레이션 모드만 쓸 거면 생략 가능
+cat > .env <<'ENV'
+OPENAI_API_KEY=sk-...
+VIRUSTOTAL_API_KEY=...
+URLSCAN_API_KEY=...
+ENV
 
-# Windows (PowerShell):
-# Set-Content .env "OPENAI_API_KEY=your_key"
-# Add-Content .env "VIRUSTOTAL_API_KEY=your_key"
-# Add-Content .env "URLSCAN_API_KEY=your_key"
-
-# Build and Run containers
+# Build & Run
 docker-compose up --build -d
 ```
 
 - **Frontend**: http://localhost:4000
 - **Backend API**: http://localhost:8000/docs
+- **시뮬레이션 시나리오**: http://localhost:4000 → 좌측 메뉴 `🎬 Simulation`
+
+### 3. Production on AWS EC2 (단일 인스턴스)
+
+t3.large(2 vCPU / 8 GB RAM) 단일 인스턴스에 전체 스택을 배포합니다. API 키는 **AWS SSM Parameter Store** 에서 안전하게 주입됩니다.
+
+```bash
+# 0) 사전 준비: SSM Parameter Store에 시크릿 등록
+aws ssm put-parameter --name /aol/openai_api_key --value sk-... --type SecureString
+aws ssm put-parameter --name /aol/virustotal_api_key --value ... --type SecureString
+aws ssm put-parameter --name /aol/urlscan_api_key --value ... --type SecureString
+
+# 1) EC2 인스턴스 생성 시 user-data 스크립트 주입
+#    (deploy/ec2-userdata.sh 가 Docker 설치 + 코드 클론 + 시크릿 주입 + compose up 까지 자동 수행)
+aws ec2 run-instances \
+  --image-id ami-... \
+  --instance-type t3.large \
+  --iam-instance-profile Name=AOL-SSM-ReadOnly \
+  --user-data file://deploy/ec2-userdata.sh \
+  --security-group-ids sg-...
+
+# 2) 인스턴스 부팅 ~3분 후 접속
+open http://<ec2-public-ip>:4000
+```
+
+상세 배포 가이드: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+프로덕션 오버레이: [`docker-compose.prod.yaml`](docker-compose.prod.yaml)
