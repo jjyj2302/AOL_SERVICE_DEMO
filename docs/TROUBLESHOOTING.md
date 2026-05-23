@@ -200,6 +200,22 @@ open .../backend/docker-compose.yaml: no such file or directory
 
 ---
 
+---
+
+## 📊 Phase 14~16 이슈 (Live LLM + Tool Use + MCP wire-up)
+
+| # | 영역 | 문제 | 원인 | 해결 |
+|---|---|---|---|---|
+| 11 | **integrity** | "MCP 5종 도구" 라고 광고했으나 사실 mock | `mcp_clients.py` 의 live 분기가 `# TODO(live)` placeholder. README/ARCHITECTURE 에 wire-up 예정만 적고 진행 안 함 — 데모에서 mock 데이터를 실 데이터로 오해 가능 | (이번 세션) `mcp_clients.py` 의 live 분기 실 HTTP 구현. VT/DNSTwist/Shodan(InternetDB)/crt.sh/NVD/EPSS/CISA-KEV 직접 호출 |
+| 12 | **frontend** | Confidence Gate 가 무한 "running" 표시 | `pickNextNode("confidence_gate")` 가 fallback 으로 자기 자신("confidence_gate") 반환 → done 직후 다시 running 으로 덮어쓰기 | (1) 함수 시작에 `if currentId === "confidence_gate" → return null` 추가 (2) 다음노드 셋팅 가드 (nextId !== currentId && status !== "done"/"skipped") (3) done 이벤트에서 running 잔재 → done 강제 |
+| 13 | **llm** | MCP 호출은 했는데 LLM 한테 전달 안 됨 | `triage_node` 등에서 `m.virustotal(s, ioc, type)` 호출만 하고 반환값 변수에 받지 않음 → LLM 사용자 메시지에 미포함. 실 데이터가 있어도 LLM 은 추정만 함 | `_live_user_prompt(state, prior, mcp_data=)` 에 mcp_data 파라미터 추가, JSON 직렬화하여 user 메시지에 포함. `triage/malware/infrastructure/campaign` 각각 mcp 결과를 변수에 받아 전달 |
+| 14 | **env** | `ANTHROPIC_API_KEY` 가 backend 컨테이너에 안 들어감 | docker-compose env passthrough 가 `${ANTHROPIC_API_KEY:-}` 라 shell env 가 비면 빈값. Bash tool 각 호출이 새 shell 라 inline `KEY=... docker compose up` 가 휘발 | docker-compose.yaml 에 명시적 추가 `- ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}`. 재시작 시 inline 으로 shell env 주입 |
+| 15 | **infra** | backend healthcheck `/health` 가 404 | 우리 시스템에는 `/api/healthcheck` (구) 또는 `/api/lg/health` (신규 LangGraph) 만 존재 | docker-compose.prod.yaml 의 healthcheck URL 을 `/api/lg/health` 로 변경 — 그래프 컴파일 + 시나리오 가용성까지 동시 검증 |
+| 16 | **anthropic** | Claude JSON 응답이 `{"findings": ..., "chat_message": ...}` 래퍼로 옴 | 시스템 프롬프트가 그렇게 지시. 코드는 `findings.get("route_plan")` 처럼 평탄 접근 — fallback 만 발동 | `unwrap_findings(parsed)` 헬퍼 추가하여 wrapper → inner findings + chat_message 분리. orchestrator/specialist 모두 이 헬퍼 사용 |
+| 17 | **frontend** | Tool Use 자유 대화 시 채팅창에 specialist 참여가 안 보임 | conversation.py 가 generator 로 텍스트 chunk 만 yield. tool_use/tool_result 이벤트 미발생 | conversation.py 를 `AsyncIterator[dict]` 로 변경, 이벤트 종류 (text/tool_use/tool_result) 분리. router 에서 SSE 타입 매핑. frontend 에 tool_use/tool_result 핸들러 추가 — 자문 요청/응답 별도 버블 + 우측 Agent Studio 의 specialist running→done 점등 |
+
+---
+
 ## 📌 재발 방지 체크리스트
 
 작업 시작 전 다음을 확인:
@@ -213,3 +229,9 @@ open .../backend/docker-compose.yaml: no such file or directory
 - [ ] venv 활성화 후 `which python` 으로 격리 확인했는지
 - [ ] 문서 (README / ARCHITECTURE) 와 코드가 정합한지
 - [ ] 커밋 메시지가 ZETTY 컨벤션 (type/scope/subject) 인지, Co-Authored 행 없는지
+- [ ] **MCP 도구는 실 호출인지 mock 인지 명확히 README 에 표기**
+- [ ] **MCP 결과가 LLM user 메시지에 실제 포함되는지 (호출만 하고 버리는 코드 금지)**
+- [ ] **LangGraph 노드 상태머신에서 종단 노드가 자기 자신을 next 로 반환하지 않는지**
+- [ ] **Claude JSON 응답이 `{findings, chat_message}` wrapper 일 가능성을 항상 unwrap 처리**
+- [ ] **docker-compose 의 healthcheck URL 이 실제 서버에 존재하는 path 인지**
+- [ ] **shell env 휘발 — backend 재시작 시 API_KEY 명시적 inline 주입**

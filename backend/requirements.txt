@@ -41,6 +41,7 @@ reportlab>=4.2  # 분석 리포트 PDF 생성 (langgraph_threat_hunter.pdf_repor
 
 # Threat Intelligence
 stix2==3.0.1
+dnstwist>=20240120        # MCP live: 도메인 타이포스쿼트 탐지 (API 키 불필요)
 
 # Testing
 pytest>=8.0,<9

@@ -118,16 +118,37 @@ def orchestrator_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any
 
 
 # ---- 라이브 모드 specialist 공통 헬퍼 ----
-def _live_user_prompt(state: ThreatHuntState, prior: dict[str, Any]) -> str:
-    """specialist 에게 보낼 사용자 메시지 — IoC + 이전 노드 산출물 종합."""
+def _live_user_prompt(state: ThreatHuntState, prior: dict[str, Any], mcp_data: dict[str, Any] | None = None) -> str:
+    """specialist 에게 보낼 사용자 메시지 — IoC + 이전 노드 산출물 + MCP 실 데이터 종합.
+
+    mcp_data: 이 노드에서 호출한 MCP 도구의 결과 (실 데이터 또는 시뮬레이션 결과)
+    """
+    import json
     parts = [f"IoC: {state.ioc}\nType: {state.ioc_type}\n"]
+
+    if mcp_data:
+        parts.append("\n## 🔧 MCP 도구 결과 (실 데이터)")
+        for tool, data in mcp_data.items():
+            if data:
+                # JSON 으로 직렬화 (한국어 깨짐 방지)
+                serialized = json.dumps(data, ensure_ascii=False, indent=2, default=str)
+                # 너무 길면 잘라냄
+                if len(serialized) > 3000:
+                    serialized = serialized[:3000] + "\n... (이하 생략)"
+                parts.append(f"### {tool}\n```json\n{serialized}\n```")
+
     if prior.get("triage"):
-        parts.append(f"이전 Triage 결과: {prior['triage']}")
+        parts.append(f"\n## 이전 Triage 결과\n{prior['triage']}")
     if prior.get("malware"):
-        parts.append(f"이전 Malware 결과: {prior['malware']}")
+        parts.append(f"\n## 이전 Malware 결과\n{prior['malware']}")
     if prior.get("infrastructure"):
-        parts.append(f"이전 Infrastructure 결과: {prior['infrastructure']}")
-    parts.append("\n위 정보를 종합하여 본 에이전트의 시스템 프롬프트에 정의된 JSON 형식으로 답변하세요.")
+        parts.append(f"\n## 이전 Infrastructure 결과\n{prior['infrastructure']}")
+
+    parts.append(
+        "\n위 정보 (특히 MCP 실 데이터) 를 종합하여 본 에이전트의 시스템 프롬프트에 정의된 "
+        "JSON 형식으로 답변하세요. 실 데이터가 있으면 그것에 기반해 정확히, 없거나 _error 가 "
+        "있으면 추정/일반론 기반으로 답변하고 chat_message 에 데이터 출처를 명시하세요."
+    )
     return "\n".join(parts)
 
 
@@ -148,8 +169,12 @@ def triage_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             triage = TriageFindings(**seed.get("triage", {})) if seed.get("triage") else TriageFindings()
             m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
         elif has_anthropic_key():
-            m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
-            findings, _meta = call_agent("triage", _live_user_prompt(s, {}), max_tokens=900)
+            vt_result = m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
+            findings, _meta = call_agent(
+                "triage",
+                _live_user_prompt(s, {}, mcp_data={"virustotal": vt_result}),
+                max_tokens=900,
+            )
             triage = TriageFindings(**_safe_findings(findings, TriageFindings))
         else:
             m.virustotal(s, s.ioc, s.ioc_type if s.ioc_type != "unknown" else "domain")
@@ -170,9 +195,12 @@ def malware_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             seed = get_scenario(s.scenario_id) or {}
             malware = MalwareFindings(**seed.get("malware", {})) if seed.get("malware") else MalwareFindings()
         elif has_anthropic_key():
+            # Malware 는 hash 시 VT 재조회 (행위 분석용 추가 메타)
+            vt_result = m.virustotal(s, s.ioc, s.ioc_type) if s.ioc_type == "hash" else None
+            mcp_data = {"virustotal": vt_result} if vt_result else None
             findings, _meta = call_agent(
                 "malware",
-                _live_user_prompt(s, _prior_findings(s)),
+                _live_user_prompt(s, _prior_findings(s), mcp_data=mcp_data),
                 max_tokens=1800,
             )
             malware = MalwareFindings(**_safe_findings(findings, MalwareFindings))
@@ -195,11 +223,17 @@ def infrastructure_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, A
             infra = InfraFindings(**seed.get("infrastructure", {})) if seed.get("infrastructure") else InfraFindings()
             m.dnstwist(s, s.ioc); m.shodan(s, s.ioc); m.osint(s, s.ioc)
         elif has_anthropic_key():
-            m.dnstwist(s, s.ioc); m.shodan(s, s.ioc); m.osint(s, s.ioc)
+            dt_result = m.dnstwist(s, s.ioc)
+            sh_result = m.shodan(s, s.ioc)
+            os_result = m.osint(s, s.ioc)
             findings, _meta = call_agent(
                 "infrastructure",
-                _live_user_prompt(s, _prior_findings(s)),
-                max_tokens=1800,
+                _live_user_prompt(s, _prior_findings(s), mcp_data={
+                    "dnstwist": dt_result,
+                    "shodan": sh_result,
+                    "osint_crtsh": os_result,
+                }),
+                max_tokens=2000,
             )
             infra = InfraFindings(**_safe_findings(findings, InfraFindings))
         else:
@@ -228,11 +262,12 @@ def campaign_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             if s.ioc_type == "cve":
                 m.cve(s, s.ioc)
         elif has_anthropic_key():
+            mcp_data: dict[str, Any] = {}
             if s.ioc_type == "cve":
-                m.cve(s, s.ioc)
+                mcp_data["cve"] = m.cve(s, s.ioc)
             findings, _meta = call_agent(
                 "campaign",
-                _live_user_prompt(s, _prior_findings(s)),
+                _live_user_prompt(s, _prior_findings(s), mcp_data=mcp_data or None),
                 max_tokens=2800,
             )
             campaign = CampaignFindings(**_safe_findings(findings, CampaignFindings))
