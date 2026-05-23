@@ -268,7 +268,7 @@ def campaign_node(state: ThreatHuntState, mcp: McpRegistry) -> dict[str, Any]:
             findings, _meta = call_agent(
                 "campaign",
                 _live_user_prompt(s, _prior_findings(s), mcp_data=mcp_data or None),
-                max_tokens=1800,  # 종합 단계 — 헌팅 쿼리·FW 룰 포함이지만 충분
+                max_tokens=2400,  # 종합 단계 — 헌팅 쿼리 2건 + FW 5건 + exec summary 까지 잘림 방지
             )
             campaign = CampaignFindings(**_safe_findings(findings, CampaignFindings))
         else:
