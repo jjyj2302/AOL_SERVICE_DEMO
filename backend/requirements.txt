@@ -12,9 +12,7 @@ redis==5.0.1
 aiohttp==3.11.0
 Requests==2.32.3
 
-# AI/ML - CrewAI & LangChain (legacy CrewAI 모듈용)
-crewai
-crewai-tools
+# AI/ML - LangChain (LangGraph 모듈의 도구 추상화 + 외부 LLM 클라이언트)
 langchain
 langchain-community==0.3.20
 langchain_core==0.3.49
@@ -22,6 +20,7 @@ langchain_openai==0.3.11
 langchain-anthropic==0.3.10
 langchain-google-genai==2.1.2
 openai==1.68.2
+anthropic>=0.40,<1
 
 # AI/ML - LangGraph 기반 신규 멀티에이전트 (금융권 AX 전환)
 # langchain-core 0.3.x 와 호환되는 마지막 메이저 라인 (1.x 는 langchain-core 1.x 강제 → CrewAI 충돌)
