@@ -193,6 +193,66 @@ export default function ThreatHunterPage() {
       return;
     }
 
+    if (ev.type === "tool_use") {
+      // Claude 가 specialist 호출 — 채팅창에 배지 + 새로운 어시스턴트 버블 시작 준비
+      const toolMap = {
+        consult_triage: { id: "triage_step", label: "Triage Specialist" },
+        consult_malware: { id: "malware_step", label: "Malware Specialist" },
+        consult_infrastructure: { id: "infrastructure_step", label: "Infrastructure Hunter" },
+        consult_campaign: { id: "campaign_step", label: "Campaign Analyst" },
+      };
+      const t = toolMap[ev.tool] || { id: null, label: ev.tool };
+      appendMessage({
+        role: "assistant",
+        text: `🔧 **${t.label}** 에게 자문 요청\n\n> ${ev.question}`,
+        specialist: true,
+        agent: t.id ? AGENT_META[t.id] : null,
+        tool_use: true,
+      });
+      // 우측 패널: 해당 specialist 를 'running' 으로 표시
+      if (t.id) {
+        updateRun((prev) => ({
+          ...prev,
+          agentStates: { ...prev.agentStates, [t.id]: "running" },
+        }));
+      }
+      // 다음 chat_chunk 들은 새 버블에 누적
+      dialogueAssistantIdxRef.current = null;
+      return;
+    }
+
+    if (ev.type === "tool_result") {
+      const toolMap = {
+        consult_triage: { id: "triage_step", label: "Triage Specialist" },
+        consult_malware: { id: "malware_step", label: "Malware Specialist" },
+        consult_infrastructure: { id: "infrastructure_step", label: "Infrastructure Hunter" },
+        consult_campaign: { id: "campaign_step", label: "Campaign Analyst" },
+      };
+      const t = toolMap[ev.tool] || { id: null, label: ev.tool };
+      const summary = ev.summary && ev.summary !== "(no chat_message)" ? ev.summary : "구조화 자문 결과 수신";
+      appendMessage({
+        role: "assistant",
+        text: `✅ **${t.label}** 자문 응답 (${ev.elapsed_ms ?? "?"}ms)\n\n${summary}`,
+        specialist: true,
+        agent: t.id ? AGENT_META[t.id] : null,
+        tool_result: true,
+      });
+      if (t.id) {
+        updateRun((prev) => ({
+          ...prev,
+          agentStates: { ...prev.agentStates, [t.id]: "done" },
+          elapsedByNode: { ...prev.elapsedByNode, [t.id]: ev.elapsed_ms },
+        }));
+      }
+      // Claude 가 이어서 종합하는 텍스트는 새 어시스턴트 버블로
+      setMessages((prev) => {
+        const next = [...prev, { role: "assistant", text: "", dialogue: true }];
+        dialogueAssistantIdxRef.current = next.length - 1;
+        return next;
+      });
+      return;
+    }
+
     if (ev.type === "node") {
       const nodeId = ev.node;
       const delta = ev.delta || {};

@@ -1,13 +1,16 @@
-"""대화형 SOC 어시스턴트 — Anthropic Claude 직접 호출.
+"""대화형 SOC 어시스턴트 — Anthropic Claude 직접 호출 + Tool Use 멀티에이전트.
 
 `/api/lg/chat/dialogue` 엔드포인트가 이 모듈을 사용한다.
-- IoC 패턴 입력 시: 기존 LangGraph 분석 흐름으로 위임
-- 자유 텍스트 시: Claude 가 보안 분석가 페르소나로 멀티턴 대화
+- IoC 패턴 입력 시: LangGraph 6-Agent 분석 (router.py 에서 분기)
+- 자유 텍스트 시: Claude 가 진행자 역할 → 필요하면 specialist tool 호출
+  · consult_triage / consult_malware / consult_infrastructure / consult_campaign
+  · 일반 질문 (정책·절차) 은 tool 없이 직접 답변
 
 ANTHROPIC_API_KEY 환경변수 필요. 없으면 fallback 메시지 반환.
 """
 from __future__ import annotations
 
+import json
 import os
 from typing import AsyncIterator
 
@@ -17,36 +20,112 @@ try:
 except ImportError:
     HAS_ANTHROPIC = False
 
+from .agent_prompts import call_agent
+
 
 # ---- 보안 분석가 페르소나 시스템 프롬프트 ----
-SECURITY_ANALYST_SYSTEM = """당신은 한국 금융권 SOC 의 시니어 보안 분석가입니다.
+SECURITY_ANALYST_SYSTEM = """당신은 한국 금융권 SOC 의 시니어 보안 분석가이자 멀티에이전트 시스템의 진행자입니다.
 
-사용자는 SOC 운영자, 보안 담당자, 또는 보안 의사결정자입니다.
-침해사고·위협 인텔리전스·대응방안·컴플라이언스에 대해 한국어로 명확하고
-실행 가능한 답변을 제공합니다.
+사용자(SOC 운영자/의사결정자)와 대화하면서, 깊은 전문 분석이 필요할 때 specialist
+에이전트를 도구로 호출하세요. 일반적 IR 절차·정책·명령어는 직접 답변.
 
-도움을 줄 수 있는 영역:
-- 침해사고 대응 절차 (IR 플레이북)
-- 한국 컴플라이언스 (전자금융감독규정 §13/§15, ISMS-P, FSI C-TAS, 개인정보보호법)
-- 위협 인텔리전스 분석 / 위협 그룹 추정
-- 보안 솔루션 / 아키텍처 조언 (Zero Trust, 망분리 등)
-- 사고 후 복구 · 고객 통지 · 금융감독원 보고 절차
-- 랜섬웨어·보이스피싱·피싱·공급망·CVE 우선순위 대응
-- MITRE ATT&CK / Sigma · YARA 룰 / SPL · KQL 헌팅 쿼리
+도구 호출 가이드 (꼭 필요할 때만):
+- 사용자가 악성코드 행위·C2 통신·랜섬웨어 변종 정밀 분석을 물을 때 → consult_malware
+- 사용자가 사칭 도메인·인프라 클러스터링·노출 자산 점검을 물을 때 → consult_infrastructure
+- 사용자가 위협 그룹 attribution·캠페인 종합·헌팅 쿼리·FW 룰을 물을 때 → consult_campaign
+- 사용자가 IoC 의 초기 평가가 필요할 때 → consult_triage
+
+도구 호출이 불필요한 경우 (직접 답변):
+- 일반 IR 절차 (격리·증거보존 등 표준 플레이북)
+- Windows/Linux 명령어, PowerShell, netsh 등 구체 도구 사용법
+- 컴플라이언스 절차 (전자금융감독규정 §13/§15, ISMS-P 매핑)
+- 보안 아키텍처 조언 (Zero Trust, 망분리)
+- 사용자가 단순 질문이나 후속 명확화 요청을 할 때
 
 응답 스타일:
-- 너무 길지 않게 — 핵심만 명확하게
-- 가능하면 번호 매긴 단계 (1, 2, 3) 또는 우선순위
-- 마지막에 후속 질문 1개 또는 다음 액션 제안
+- 한국어, 핵심 명확, 너무 길지 않게
+- 번호 단계 (1, 2, 3) 또는 우선순위
+- 도구 호출 후엔 specialist 결과를 자연스럽게 종합 (raw JSON 노출 X)
+- 후속 질문 1개 또는 다음 액션 제안
 
-⚠️ IoC (도메인/IP/해시/CVE/URL) 가 포함된 분석 요청은 별도 LangGraph 멀티에이전트
-파이프라인이 자동 처리합니다. 사용자가 IoC 자체를 입력하면 우측 Agent Studio 에
-실시간 분석 진행이 표시됩니다. 본 대화 응답은 IoC 가 없는 자유 질문 / 사고 대응
-의논 / 정책·아키텍처 자문에 집중하세요.
-
-도구 안내가 필요할 때만:
-- "좌측 자료실의 S1~S5 카드 또는 IoC 를 직접 입력하시면 LangGraph 가 분석합니다"
+⚠️ IoC (도메인/IP/해시/CVE/URL) 가 메시지에 직접 포함되면 본 대화가 아닌 별도
+LangGraph 분석 모드로 자동 라우팅됩니다. 본 대화는 IoC 없는 절차·정책·아키텍처
+자문에 집중하세요.
 """
+
+
+# ---- Specialist tool 정의 (Anthropic Tool Use spec) ----
+SPECIALIST_TOOLS = [
+    {
+        "name": "consult_triage",
+        "description": "초기 위협 평가가 필요할 때 Triage Specialist (Haiku 4.5) 에이전트에 자문 요청. "
+                       "위협 수준(LOW~CRITICAL), 우선순위 단서, MITRE ATT&CK 전술 매핑을 받습니다.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Triage 에이전트에게 물어볼 구체적 질문 (한국어). 예: '익명 Tor 노드 IP 의 초기 위협 평가'"
+                }
+            },
+            "required": ["question"],
+        },
+    },
+    {
+        "name": "consult_malware",
+        "description": "악성코드 행위·C2 통신·페이로드 분석이 필요할 때 Malware Specialist (Sonnet) 자문. "
+                       "Attack chain, MITRE TTP, malware family 추정을 받습니다.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Malware 에이전트에게 물어볼 구체적 질문. 예: 'LockBit 4.0 변종의 VSS 무력화 행위'"
+                }
+            },
+            "required": ["question"],
+        },
+    },
+    {
+        "name": "consult_infrastructure",
+        "description": "공격자 인프라·사칭 도메인·캠페인 클러스터링이 필요할 때 Infrastructure Hunter (Sonnet) 자문. "
+                       "타이포스쿼트 후보, 노출 자산, 인프라 상관관계를 받습니다.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Infrastructure 에이전트 질문. 예: '카카오뱅크 사칭 인프라 클러스터 패턴'"
+                }
+            },
+            "required": ["question"],
+        },
+    },
+    {
+        "name": "consult_campaign",
+        "description": "위협 그룹 attribution·캠페인 종합·헌팅 쿼리·FW 규칙 작성이 필요할 때 "
+                       "Campaign Analyst (Sonnet) 자문. 전략 인텔리전스를 받습니다.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Campaign 에이전트 질문. 예: '한국 금융권 랜섬웨어 헌팅 쿼리 작성'"
+                }
+            },
+            "required": ["question"],
+        },
+    },
+]
+
+
+# ---- Tool 이름 → agent_prompts 의 에이전트 이름 매핑 ----
+TOOL_AGENT_MAP = {
+    "consult_triage": "triage",
+    "consult_malware": "malware",
+    "consult_infrastructure": "infrastructure",
+    "consult_campaign": "campaign",
+}
 
 
 def has_anthropic_key() -> bool:
@@ -70,20 +149,22 @@ async def stream_claude_response(
     history: list[dict],
     *,
     model: str = "claude-sonnet-4-5",
-    max_tokens: int = 1200,
-) -> AsyncIterator[str]:
-    """Claude 응답을 chunk 단위 yield.
+    max_tokens: int = 1500,
+) -> AsyncIterator[dict]:
+    """Claude 응답을 이벤트 dict 단위 yield (Tool Use 멀티에이전트 지원).
 
-    history: [{"role": "user"|"assistant", "content": "..."}]
+    yield 이벤트:
+    - {"kind": "text", "delta": "..."}         — Claude 텍스트 chunk
+    - {"kind": "tool_use", "tool": "consult_malware", "question": "..."} — 자문 요청
+    - {"kind": "tool_result", "tool": "consult_malware", "summary": "..."} — 자문 응답
     """
     if not has_anthropic_key():
-        yield _fallback_response(message)
+        yield {"kind": "text", "delta": _fallback_response(message)}
         return
 
     client = anthropic.Anthropic()
 
-    # 히스토리 정합화: user/assistant 가 strict 하게 alternate 해야 함.
-    # 연속된 assistant 메시지는 하나로 합침, role 누락은 제거.
+    # 히스토리 정합화
     msgs: list[dict] = []
     last_role = None
     for m in history:
@@ -96,21 +177,66 @@ async def stream_claude_response(
         else:
             msgs.append({"role": role, "content": content})
             last_role = role
-    # 마지막 사용자 메시지 추가
     if not msgs or msgs[-1]["role"] != "user":
         msgs.append({"role": "user", "content": message})
     else:
-        # 직전이 user 이면 합치지 말고 별도 turn (드물지만)
         msgs[-1]["content"] += "\n\n" + message
 
-    try:
-        with client.messages.stream(
-            model=model,
-            max_tokens=max_tokens,
-            system=SECURITY_ANALYST_SYSTEM,
-            messages=msgs,
-        ) as stream:
-            for chunk in stream.text_stream:
-                yield chunk
-    except Exception as e:  # noqa: BLE001
-        yield f"\n\n(⚠️ Claude 호출 실패: {type(e).__name__}: {e})"
+    # Tool Use 루프 (최대 3회 — 무한 도구 호출 방지)
+    max_tool_rounds = 3
+    for round_idx in range(max_tool_rounds + 1):
+        try:
+            with client.messages.stream(
+                model=model,
+                max_tokens=max_tokens,
+                system=SECURITY_ANALYST_SYSTEM,
+                tools=SPECIALIST_TOOLS,
+                messages=msgs,
+            ) as stream:
+                for chunk in stream.text_stream:
+                    yield {"kind": "text", "delta": chunk}
+                final = stream.get_final_message()
+        except Exception as e:  # noqa: BLE001
+            yield {"kind": "text", "delta": f"\n\n(⚠️ Claude 호출 실패: {type(e).__name__}: {e})"}
+            return
+
+        if final.stop_reason != "tool_use" or round_idx == max_tool_rounds:
+            return  # 텍스트로 끝남
+
+        # tool_use 블록들 수집 + specialist 자문 실행
+        tool_uses = [c for c in final.content if getattr(c, "type", None) == "tool_use"]
+        tool_results: list[dict] = []
+        for tu in tool_uses:
+            tool_name = tu.name
+            tool_input = tu.input or {}
+            question = tool_input.get("question") or "분석 요청"
+            yield {"kind": "tool_use", "tool": tool_name, "question": question}
+
+            agent_name = TOOL_AGENT_MAP.get(tool_name)
+            if not agent_name:
+                tool_results.append({
+                    "type": "tool_result", "tool_use_id": tu.id,
+                    "content": json.dumps({"error": f"unknown tool {tool_name}"}, ensure_ascii=False),
+                })
+                continue
+
+            parsed, meta = call_agent(agent_name, question, max_tokens=1500)
+            findings = parsed.get("findings", parsed) if isinstance(parsed, dict) else {}
+            chat_msg = parsed.get("chat_message", "") if isinstance(parsed, dict) else ""
+            result_payload = {"findings": findings, "chat_message": chat_msg}
+            yield {
+                "kind": "tool_result",
+                "tool": tool_name,
+                "summary": chat_msg or "(no chat_message)",
+                "elapsed_ms": meta.get("elapsed_ms"),
+                "model": meta.get("model"),
+            }
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tu.id,
+                "content": json.dumps(result_payload, ensure_ascii=False),
+            })
+
+        # 다음 round 위한 메시지 누적
+        msgs.append({"role": "assistant", "content": final.content})
+        msgs.append({"role": "user", "content": tool_results})

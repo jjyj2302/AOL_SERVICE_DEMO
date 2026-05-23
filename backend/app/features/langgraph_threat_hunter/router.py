@@ -432,16 +432,30 @@ async def chat_dialogue(req: DialogueRequest):
                 },
             })
         else:
-            # ========== Dialogue mode: Claude 자유 대화 ==========
+            # ========== Dialogue mode: Claude 자유 대화 + Tool Use 멀티에이전트 ==========
             yield _sse({
                 "type": "start",
                 "mode": "dialogue",
                 "has_anthropic_key": has_anthropic_key(),
             })
             history_dicts = [m.model_dump() for m in req.history]
-            async for piece in stream_claude_response(req.message, history_dicts):
-                if piece:
-                    yield _sse({"type": "chat_chunk", "delta": piece})
+            async for ev in stream_claude_response(req.message, history_dicts):
+                if ev.get("kind") == "text":
+                    yield _sse({"type": "chat_chunk", "delta": ev["delta"]})
+                elif ev.get("kind") == "tool_use":
+                    yield _sse({
+                        "type": "tool_use",
+                        "tool": ev["tool"],
+                        "question": ev["question"],
+                    })
+                elif ev.get("kind") == "tool_result":
+                    yield _sse({
+                        "type": "tool_result",
+                        "tool": ev["tool"],
+                        "summary": ev["summary"],
+                        "elapsed_ms": ev.get("elapsed_ms"),
+                        "model": ev.get("model"),
+                    })
             yield _sse({"type": "done", "mode": "dialogue"})
 
     return StreamingResponse(
