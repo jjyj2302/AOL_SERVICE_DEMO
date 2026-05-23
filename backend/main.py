@@ -44,6 +44,9 @@ from app.features.history.models import AnalysisSession, IocAnalysis, Aggregatio
 from app.features.threat_intel.models import KISAIoC, KISASyncHistory
 from app.features.threat_intel.routers import kisa_router
 
+# LangGraph Threat Hunter (금융권 AX 신규 멀티에이전트 + MCP + Simulation Mode)
+from app.features.langgraph_threat_hunter.router import router as langgraph_threat_hunter_router
+
 from app.core.settings.general.models.general_settings_models import Settings
 from app.core.settings.modules.models.modules_settings_models import ModuleSettings
 
@@ -147,6 +150,9 @@ routers = [
 
     # KISA IoC (한국인터넷진흥원 침해사고 공격 IoC 지표)
     kisa_router,
+
+    # LangGraph Threat Hunter (금융권 AX 전환 — 신규 멀티에이전트 + MCP + Simulation Mode)
+    langgraph_threat_hunter_router,
 ]
 
 for router in routers:
