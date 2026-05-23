@@ -287,18 +287,20 @@ graph TD
 
 본 시스템은 금융권 SecOps 운영 흐름을 4개 핵심 모듈로 자동화합니다.
 
-### 1️⃣ Core Threat Hunting (Deep Analysis)
-**금융권 침해사고 심층 분석 엔진**
-- **4-Agent + Orchestrator**: Triage·Malware·Infrastructure·Campaign 전문가가 LangGraph state graph로 협업
-- **Dynamic Context Sharing**: 앞 에이전트 산출물 → 뒷 에이전트 입력으로 흘러가 **금융권 표적 캠페인 단위 의사결정**
+### 1️⃣ AI Threat Hunter — NotebookLM 3-패널 챗 UI
+**대화형 멀티에이전트 위협 분석 (메인 진입점)**
+- **6-Agent Hierarchical**: 🧠 Orchestrator + 🔍 Triage + 👾 Malware + 🌍 Infrastructure + 📈 Campaign + 🛡️ Confidence Gate 가 LangGraph state graph 로 협업
+- **동적 라우팅 (Conditional Edges)**: IoC 타입별로 specialist 스킵 — CVE → Triage+Campaign만 / Hash → 전체 풀체인
+- **SSE 실시간 스트리밍**: 노드별 진행이 실시간으로 채팅창 + Agent Studio 에 동시 갱신
+- **NotebookLM 3-패널**: 좌(자료실: 시나리오·리포트) | 가운데(자연어 대화) | 우(Agent Studio: 파이프라인·메트릭·산출물)
 - **Confidence-Gated Output**: L0~L4 등급별 권고/자동 케이스/자동 차단 — 핵심 자산은 휴먼 승인 필수
-- **Strategic Reporting**: 분석가용 JSON + 임원·금감원 보고용 PDF (Voice Phishing Style) 동시 산출
 
-### 2️⃣ Bulk Analysis & Streaming
-**대량 IoC 고속 처리 (보이스피싱 캠페인 단위 분석에 최적)**
-- **Real-time SSE Streaming**: 50~수백 건 분석 진행상황 실시간 스트리밍 — SOC 화이트보드에 그대로 투영 가능
-- **Batch Parallel Processing**: 수백 건 IoC를 병렬 처리 후 자동 클러스터링 → **개별 IoC가 아닌 캠페인 단위**로 보고
-- **Selective Agent Invocation**: 분석가가 필요한 전문가만 호출 (예: 도메인만 → Triage만)
+### 2️⃣ 비용 최적화 — 에이전트별 모델 매핑
+**Anthropic API 실측 기반 91.8% 비용 절감**
+- **티어 분배**: Orchestrator/Triage = Haiku (mini), Malware/Infra/Campaign = Sonnet (medium)
+- **All-Opus 대비 절감률**: Mixed 82.9% / Mixed+Cache+Batch 91.8%
+- **금융권 SOC 10k IoCs/day**: $146K/월 → $12K/월 = **$134K 절감**
+- **실측 검증**: `benchmarks/run_model_comparison.py` 로 15 (agent×model) 조합 실호출 검증 (예산 $7 한도)
 
 ### 3️⃣ Threat Intel Integration (KISA C-TAS / FSI 확장)
 **국내 금융권 위협 인텔리전스 자동 연동**

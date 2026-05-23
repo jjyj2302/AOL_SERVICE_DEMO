@@ -64,7 +64,8 @@ services:
     expose:
       - "8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      # 신규 LangGraph 모듈의 health — 그래프 컴파일 상태까지 검증
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/lg/health', timeout=3)"]
       interval: 30s
       timeout: 10s
       retries: 5
