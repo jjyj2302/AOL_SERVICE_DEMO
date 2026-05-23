@@ -37,6 +37,10 @@ def test_scenarios_lists_five(client):
     assert ids == {"S1", "S2", "S3", "S4", "S5"}
 
 
+# Orchestrator 동적 라우팅 → 시나리오별 노드 수가 다름
+EXPECTED_LEDGER_COUNT = {"S1": 5, "S2": 5, "S3": 6, "S4": 5, "S5": 4}
+
+
 @pytest.mark.parametrize("sid", ["S1", "S2", "S3", "S4", "S5"])
 def test_simulate_each_scenario(client, sid):
     resp = client.post(f"/api/lg/simulate/{sid}")
@@ -44,7 +48,7 @@ def test_simulate_each_scenario(client, sid):
     body = resp.json()
     assert body["scenario_id"] == sid
     assert body["automation_level"] in {"L0", "L1", "L2", "L3", "L4"}
-    assert len(body["audit_ledger"]) == 5
+    assert len(body["audit_ledger"]) == EXPECTED_LEDGER_COUNT[sid]
     # before/after 메타 노출 확인 (정량 효과 시연용)
     assert body["deliverables"]["before_minutes"] > 0
     assert body["deliverables"]["estimated_after_seconds"] > 0
