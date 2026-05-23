@@ -88,9 +88,15 @@ fetch_secret() {
 OPENAI_KEY=$(fetch_secret "/aol/openai_api_key")
 VT_KEY=$(fetch_secret "/aol/virustotal_api_key")
 URLSCAN_KEY=$(fetch_secret "/aol/urlscan_api_key")
+PG_PASSWORD=$(fetch_secret "/aol/postgres_password")
 
 if [ -z "$OPENAI_KEY" ]; then
     echo "⚠️  /aol/openai_api_key 가 SSM 에 없음 — 시뮬레이션 모드로만 동작합니다."
+fi
+if [ -z "$PG_PASSWORD" ]; then
+    # 미등록 시 1회용 강한 패스워드 자동 생성 후 SSM 에 역등록 권고 로그 출력
+    PG_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
+    echo "⚠️  /aol/postgres_password 가 SSM 에 없음 — 임시 패스워드 생성. 운영 전 SSM 에 등록 권장."
 fi
 
 cat > "$ENV_DIR/.env" <<ENVEOF
@@ -98,6 +104,10 @@ cat > "$ENV_DIR/.env" <<ENVEOF
 OPENAI_API_KEY=${OPENAI_KEY}
 VIRUSTOTAL_API_KEY=${VT_KEY}
 URLSCAN_API_KEY=${URLSCAN_KEY}
+POSTGRES_DB=aol
+POSTGRES_USER=aol
+POSTGRES_PASSWORD=${PG_PASSWORD}
+DATABASE_URL=postgresql+psycopg2://aol:${PG_PASSWORD}@postgres:5432/aol
 AOL_ENV=production
 AOL_SIMULATION_MODE=enabled
 ENVEOF
