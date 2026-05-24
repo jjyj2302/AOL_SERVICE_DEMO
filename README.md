@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL_16-336791?style=flat-square&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" />
   <img src="https://img.shields.io/badge/pytest-51_passing-3DDC84?style=flat-square&logo=pytest&logoColor=white" />
-  <img src="https://img.shields.io/badge/cost_91.8%25↓-success?style=flat-square" />
+  <img src="https://img.shields.io/badge/cost_59.1%25↓_(vs_Sonnet)-success?style=flat-square" />
 </p>
 
 <div align="center">
@@ -28,7 +28,7 @@
 - 🤖 **6 Agents** — Orchestrator + Triage + Malware + Infrastructure + Campaign + Confidence Gate
 - 🧩 **5 MCP Tools** — VirusTotal · DNSTwist · Shodan · crt.sh · NVD+EPSS+KEV (모두 실 HTTP 호출)
 - 💬 **대화형 + Tool Use** — Claude 가 진행자 역할, 필요 시 specialist 자문
-- 💰 **비용 91.8% 절감 (실측)** — Anthropic Haiku/Sonnet 티어드 매핑 + Prompt Caching + Batch
+- 💰 **비용 59.1% 절감** vs Sonnet 단독 (현실 baseline) · 91.8% vs Opus 단독 (naive) — Haiku/Sonnet 티어드 매핑 + Prompt Caching + Batch
 - 🏦 **금융권 컴플라이언스** — 전자금융감독규정 §13·§15, ISMS-P, FSI C-TAS, DORA 매핑
 
 ---
@@ -357,23 +357,34 @@ findings, _ = call_agent("infrastructure", prompt, max_tokens=1300)
 | 📈 Campaign | 전략 종합 + 헌팅 쿼리 + FW 룰 | **Sonnet 4.5** (medium) | 500 / 2500 |
 | 🛡️ Gate | 결정론적 규칙 | (LLM 무관) | 0 / 0 |
 
-### 3가지 전략 IoC 1건당 비용 비교 (2026-05-23 실측)
+### 5가지 전략 IoC 1건당 비용 비교 (2026-05-23 실측)
 
-| 전략 | 모델 매핑 | 비용/IoC | vs. Baseline |
+**baseline 두 가지로 측정** — 정직성 위해 옛 91.8% 헤드라인이 어떤 가정에서
+나왔는지 명시:
+
+| 전략 | 모델 매핑 | 비용/IoC | vs **Sonnet (현실)** | vs Opus (naive) |
+|---|---|---|---|---|
+| All-Opus (naive baseline) | 5 에이전트 모두 Opus 4.7 | $0.489 | +400% | 0% (옛 기준선) |
+| **All-Sonnet (★ 현실 baseline)** | 5 에이전트 모두 Sonnet 4.5 | **$0.098** | 0% (★ 기준선) | −80.0% |
+| All-Haiku (저비용 하한) | 5 에이전트 모두 Haiku 4.5 | $0.008 | −91.7% (품질↓) | −98.3% |
+| **Mixed (권장)** | Haiku/Sonnet 티어드 분배 | $0.084 | **−14.5%** | −82.9% |
+| **Mixed + Cache + Batch (최적)** | + Prompt Caching 90% off + Batch 50% off | **$0.040** | **−59.1%** | −91.8% |
+
+> 옛 헤드라인 **`-91.8%`** 은 "5 에이전트를 모두 Opus 로 돌리는" naive
+> baseline 기준. 실무에서 그런 팀은 없음 — 디폴트는 Sonnet 단독이라
+> **`-59.1% (vs Sonnet)` 가 정직한 헤드라인**. 그래도 절반 이상 절감 = 의미 있음.
+
+### 금융권 SOC 규모별 월간 비용 (10k IoCs/일 기준)
+
+| 전략 | 월간 비용 | 절감 vs Sonnet (현실) | 절감 vs Opus (옛 기준) |
 |---|---|---|---|
-| **All-Opus 베이스라인** | 모두 Claude Opus 4.7 | **$0.489** | 0% (기준선) |
-| **Mixed (권장)** | Haiku/Sonnet 티어드 분배 | **$0.084** | **−82.9%** |
-| **Mixed + Cache + Batch** | + Prompt Caching 90% off input + Batch API 50% off | **$0.040** | **−91.8%** |
+| All-Opus | $146,835 | — | — |
+| **All-Sonnet (현실)** | **$29,367** | (기준선) | $117,468 ↓ |
+| Mixed | $25,118 | $4,249 ↓ | $121,717 ↓ |
+| **Mixed + Cache + Batch** | **$12,000** | **$17,367 ↓** | **$134,835 ↓** |
 
-### 금융권 SOC 규모별 월간 절감액 (10k IoCs/일 기준)
-
-| 전략 | 월간 비용 | 월간 절감액 |
-|---|---|---|
-| All-Opus | $146,835 | — |
-| Mixed | $25,110 | **$121,725 ↓** |
-| Mixed + Cache + Batch | **$12,000** | **$134,835 ↓** |
-
-→ 연간 약 **$1.6M (≈ 22억원)** 절감. 5명 분석가 인건비 추가 절감 효과까지 합치면 더 큰 ROI.
+→ 현실 baseline(Sonnet) 대비 연간 약 **$208K (≈ 2.7억원)** 절감.
+   Opus 단독 대비라면 연간 $1.6M (옛 헤드라인 수치) — 같은 시스템, 다른 비교 기준.
 
 ### 검증 방법 — 실제 Anthropic API 호출 벤치마크
 
@@ -701,10 +712,11 @@ graph TD
 - **Confidence-Gated Output**: L0~L4 등급별 권고/자동 케이스/자동 차단 — 핵심 자산은 휴먼 승인 필수
 
 ### 2️⃣ 비용 최적화 — 에이전트별 모델 매핑
-**Anthropic API 실측 기반 91.8% 비용 절감**
+**Anthropic API 실측 기반 비용 절감 (두 baseline 모두 측정)**
 - **티어 분배**: Orchestrator/Triage = Haiku (mini), Malware/Infra/Campaign = Sonnet (medium)
-- **All-Opus 대비 절감률**: Mixed 82.9% / Mixed+Cache+Batch 91.8%
-- **금융권 SOC 10k IoCs/day**: $146K/월 → $12K/월 = **$134K 절감**
+- **vs Sonnet 단독 (현실 baseline)**: Mixed 14.5% / Mixed+Cache+Batch **59.1%** ← 정직한 헤드라인
+- **vs Opus 단독 (naive baseline)**: Mixed 82.9% / Mixed+Cache+Batch 91.8% ← 옛 헤드라인 (실무에선 Opus 단독 안 씀)
+- **금융권 SOC 10k IoCs/day**: Sonnet 단독 $29K/월 → 본 시스템 $12K/월 = **$17K/월 = 연 $208K (≈2.7억원) 절감**
 - **실측 검증**: `benchmarks/run_model_comparison.py` 로 15 (agent×model) 조합 실호출 검증 (예산 $7 한도)
 
 ### 3️⃣ Threat Intel Integration (KISA C-TAS / FSI 확장)

@@ -84,12 +84,16 @@ export default function CostAnalysisCard() {
   if (!data) return null;
 
   const s = data.strategies;
-  const baseline = s.all_strong.total_cost_usd;
+  // realistic baseline = all_sonnet (실무 디폴트). all_opus 는 naive baseline 으로 보조 표시
+  const realistic = s.all_sonnet?.total_cost_usd ?? s.all_strong?.total_cost_usd ?? 0;
   const mixed = s.mixed.total_cost_usd;
   const cached = s.mixed_cached_batch.total_cost_usd;
 
   const monthly10k = (data.monthly_at_scale || []).find((v) => v.daily_iocs === 10000);
-  const savings10k = monthly10k?.monthly_savings_vs_baseline_usd || 0;
+  const savings10k =
+    monthly10k?.monthly_savings_vs_realistic_usd ??
+    monthly10k?.monthly_savings_vs_baseline_usd ??
+    0;
 
   return (
     <Paper
@@ -110,17 +114,20 @@ export default function CostAnalysisCard() {
       </Stack>
 
       <Stack spacing={0.5}>
-        <StrategyRow label="All-Opus" cost={baseline} color="default" baseline />
+        <StrategyRow label="All-Sonnet (실무)" cost={realistic} color="default" baseline />
         <StrategyRow
           label="Mixed (권장)"
           cost={mixed}
-          savings={s.mixed.savings_vs_baseline_pct}
+          savings={s.mixed.savings_vs_realistic_pct ?? s.mixed.savings_vs_baseline_pct}
           color="primary"
         />
         <StrategyRow
           label="+ Cache + Batch"
           cost={cached}
-          savings={s.mixed_cached_batch.savings_vs_baseline_pct}
+          savings={
+            s.mixed_cached_batch.savings_vs_realistic_pct ??
+            s.mixed_cached_batch.savings_vs_baseline_pct
+          }
           color="success"
         />
       </Stack>
@@ -128,7 +135,7 @@ export default function CostAnalysisCard() {
       {monthly10k && (
         <Box sx={{ mt: 1.5, pt: 1.5, borderTop: 1, borderColor: "divider" }}>
           <Typography variant="caption" color="text.secondary">
-            금융권 SOC 규모 10,000 IoCs/일 기준 월간 절감
+            10,000 IoCs/일 기준 월간 절감 (vs All-Sonnet)
           </Typography>
           <Typography variant="h6" fontWeight={800} color="success.main">
             $ {savings10k.toLocaleString()}{" "}

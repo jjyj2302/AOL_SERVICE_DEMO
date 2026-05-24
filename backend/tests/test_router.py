@@ -64,13 +64,34 @@ def test_cost_analysis_endpoint(client):
     resp = client.get("/api/lg/cost-analysis")
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body["strategies"].keys()) == {"all_strong", "mixed", "mixed_cached_batch"}
-    assert body["strategies"]["all_strong"]["total_cost_usd"] > 0
-    # Mixed 전략이 baseline 보다 저렴
-    assert body["strategies"]["mixed"]["total_cost_usd"] < body["strategies"]["all_strong"]["total_cost_usd"]
-    assert body["strategies"]["mixed"]["savings_vs_baseline_pct"] > 50  # 최소 50% 이상 절감
-    # 월간 데이터 3종 (1k/10k/50k) 노출
+    # 5 전략: all_opus(naive), all_sonnet(realistic), all_haiku(lower), mixed, mixed_cached_batch
+    assert set(body["strategies"].keys()) == {
+        "all_opus", "all_sonnet", "all_haiku", "mixed", "mixed_cached_batch",
+    }
+    # 가격 순서: opus > sonnet > mixed > cached > haiku
+    s = body["strategies"]
+    assert s["all_opus"]["total_cost_usd"] > s["all_sonnet"]["total_cost_usd"]
+    assert s["all_sonnet"]["total_cost_usd"] > s["mixed"]["total_cost_usd"]
+    assert s["mixed"]["total_cost_usd"] > s["mixed_cached_batch"]["total_cost_usd"]
+
+    # 정직한 헤드라인: realistic Sonnet 대비 mixed_cached_batch 가 의미 있는 절감
+    headline = body["headline_savings"]
+    assert headline["realistic_vs_sonnet_pct"] > 40  # 캐싱+배치로 최소 40%+
+    assert headline["realistic_vs_sonnet_pct"] < 80  # 정직성 — 90%+ 는 과대표기 신호
+    # 호환: 옛 91.8% (naive vs opus) 헤드라인도 보존
+    assert headline["naive_vs_opus_pct"] > 85
+    assert headline["best_strategy"] == "mixed_cached_batch"
+
+    # 두 baseline 모두 대비 절감률 노출
+    assert "savings_vs_realistic_pct" in s["mixed_cached_batch"]
+    assert "savings_vs_naive_pct" in s["mixed_cached_batch"]
+
+    # 월간 데이터 3종 (1k/10k/50k) 노출 + 두 baseline 모두 비용 표시
     assert len(body["monthly_at_scale"]) == 3
+    monthly = body["monthly_at_scale"][0]
+    assert "monthly_realistic_sonnet_usd" in monthly
+    assert "monthly_naive_opus_usd" in monthly
+    assert "monthly_savings_vs_realistic_usd" in monthly
 
 
 @pytest.mark.parametrize("sid", ["S1", "S2", "S3", "S4", "S5"])

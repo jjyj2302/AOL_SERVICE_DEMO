@@ -20,7 +20,7 @@
 
 | 문서 | 내용 |
 |---|---|
-| [`cost/README.md`](cost/README.md) | **LLM 차등 적용 비용 분석** — Anthropic 실측 91.8% 절감, 모델 매핑, 월간 절감액 |
+| [`cost/README.md`](cost/README.md) | **LLM 차등 적용 비용 분석** — Anthropic 실측 59.1%↓ vs Sonnet (현실 baseline) / 91.8%↓ vs Opus (naive), 모델 매핑, 월간 절감액 |
 
 ---
 

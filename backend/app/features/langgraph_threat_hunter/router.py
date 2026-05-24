@@ -84,10 +84,16 @@ def scenarios() -> dict[str, Any]:
 def cost_analysis() -> dict[str, Any]:
     """에이전트별 모델 매핑에 따른 IoC 1건당 비용 분석.
 
-    3가지 전략 비교:
-    - all_strong          : 모든 에이전트를 Opus 로 호출 (베이스라인)
-    - mixed               : 복잡도별 모델 분배 (실제 권장)
-    - mixed_cached_batch  : Mixed + Prompt Caching + Batch API 50% 할인
+    5가지 전략 비교 (두 baseline):
+    - all_opus            : 5 에이전트 모두 Opus (naive — 실무에선 안 함)
+    - all_sonnet          : 5 에이전트 모두 Sonnet (★ realistic baseline)
+    - all_haiku           : 5 에이전트 모두 Haiku (저비용 하한)
+    - mixed               : 복잡도별 분배 (본 시스템 채택)
+    - mixed_cached_batch  : Mixed + Prompt Caching + Batch API 50% 할인 (★ 최적)
+
+    headline_savings 에 두 절감률 모두 노출:
+    - realistic_vs_sonnet_pct (정직한 비교, ~59%)
+    - naive_vs_opus_pct       (옛 91.8% 호환)
 
     실측 데이터: 2026-05-23 Anthropic API (Haiku 4.5/Sonnet 4.6/Opus 4.7) 실호출.
     benchmarks/results.json 참조.
