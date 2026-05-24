@@ -1,0 +1,438 @@
+{
+  "schema": "mcp_comparison.v3",
+  "generated_at": 1779590924,
+  "single_registry": true,
+  "cases": [
+    [
+      "dnstwist",
+      [
+        "shinhan-secure-banking.kr"
+      ]
+    ],
+    [
+      "dnstwist",
+      [
+        "kakaobank-secure-login.com"
+      ]
+    ],
+    [
+      "cve",
+      [
+        "CVE-2024-21762"
+      ]
+    ],
+    [
+      "cve",
+      [
+        "CVE-2023-44487"
+      ]
+    ],
+    [
+      "osint",
+      [
+        "shinhan.com"
+      ]
+    ]
+  ],
+  "modes": [
+    {
+      "mode": "direct",
+      "repeats_per_case": 3,
+      "cases": 5,
+      "errors": 0,
+      "single_registry": true,
+      "measurements": [
+        {
+          "tool": "dnstwist",
+          "input": "shinhan-secure-banking.kr",
+          "cold_ms": 2026.6,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            2026.6,
+            0.1,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "?",
+          "result_bytes": 2407,
+          "llm_tokens_est": 601
+        },
+        {
+          "tool": "dnstwist",
+          "input": "kakaobank-secure-login.com",
+          "cold_ms": 1988.7,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            1988.7,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "?",
+          "result_bytes": 2436,
+          "llm_tokens_est": 609
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2024-21762",
+          "cold_ms": 8934.9,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            8934.9,
+            0.1,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 519,
+          "llm_tokens_est": 129
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2023-44487",
+          "cold_ms": 8699.2,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            8699.2,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 405,
+          "llm_tokens_est": 101
+        },
+        {
+          "tool": "osint",
+          "input": "shinhan.com",
+          "cold_ms": 16002.8,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            16002.8,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 1,
+          "result_source": "osint_live",
+          "result_bytes": 123,
+          "llm_tokens_est": 30
+        }
+      ],
+      "concurrent": {
+        "tool": "dnstwist",
+        "input": "kakaobank-secure-login.com",
+        "n": 5,
+        "parallel": {
+          "per_call_ms": [
+            3.8,
+            1.4,
+            1.2,
+            0.8,
+            0.7
+          ],
+          "wall_ms": 4.5,
+          "per_call_avg_ms": 1.6,
+          "qps": 1120.17
+        },
+        "sequential": {
+          "per_call_ms": [
+            0.6,
+            0.4,
+            0.3,
+            0.8,
+            0.6
+          ],
+          "wall_ms": 3.2,
+          "per_call_avg_ms": 0.6,
+          "qps": 1560.75
+        }
+      },
+      "container_stats": [
+        {
+          "name": "backend",
+          "memory_mb": 118.2,
+          "memory_use_raw": "118.2MiB / 7.472GiB",
+          "cpu_pct": "0.29%",
+          "memory_pct": "1.54%"
+        }
+      ],
+      "image_sizes": [
+        {
+          "repo": "aol_service_demo_backend",
+          "size_raw": "949MB",
+          "size_mb": 949.0
+        }
+      ]
+    },
+    {
+      "mode": "self_mcp",
+      "repeats_per_case": 3,
+      "cases": 5,
+      "errors": 0,
+      "single_registry": true,
+      "measurements": [
+        {
+          "tool": "dnstwist",
+          "input": "shinhan-secure-banking.kr",
+          "cold_ms": 660.5,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            660.5,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "?",
+          "result_bytes": 2407,
+          "llm_tokens_est": 601
+        },
+        {
+          "tool": "dnstwist",
+          "input": "kakaobank-secure-login.com",
+          "cold_ms": 46.9,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            46.9,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "?",
+          "result_bytes": 2436,
+          "llm_tokens_est": 609
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2024-21762",
+          "cold_ms": 41.3,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            41.3,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 519,
+          "llm_tokens_est": 129
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2023-44487",
+          "cold_ms": 34.5,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            34.5,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 405,
+          "llm_tokens_est": 101
+        },
+        {
+          "tool": "osint",
+          "input": "shinhan.com",
+          "cold_ms": 37.2,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            37.2,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 1,
+          "result_source": "osint_live",
+          "result_bytes": 123,
+          "llm_tokens_est": 30
+        }
+      ],
+      "concurrent": {
+        "tool": "dnstwist",
+        "input": "kakaobank-secure-login.com",
+        "n": 5,
+        "parallel": {
+          "per_call_ms": [
+            1.9,
+            1.1,
+            1.1,
+            0.7,
+            0.6
+          ],
+          "wall_ms": 2.0,
+          "per_call_avg_ms": 1.1,
+          "qps": 2503.63
+        },
+        "sequential": {
+          "per_call_ms": [
+            0.8,
+            0.4,
+            0.5,
+            0.2,
+            0.3
+          ],
+          "wall_ms": 2.4,
+          "per_call_avg_ms": 0.4,
+          "qps": 2049.26
+        }
+      },
+      "container_stats": [
+        {
+          "name": "aol-mcp",
+          "memory_mb": 62.7,
+          "memory_use_raw": "62.67MiB / 7.472GiB",
+          "cpu_pct": "0.40%",
+          "memory_pct": "0.82%"
+        }
+      ],
+      "image_sizes": [
+        {
+          "repo": "aol_mcp_server",
+          "size_raw": "180MB",
+          "size_mb": 180.0
+        }
+      ]
+    },
+    {
+      "mode": "external_mcp",
+      "repeats_per_case": 3,
+      "cases": 5,
+      "errors": 0,
+      "single_registry": true,
+      "measurements": [
+        {
+          "tool": "dnstwist",
+          "input": "shinhan-secure-banking.kr",
+          "cold_ms": 612.8,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            612.8,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "external_node_mcp",
+          "result_bytes": 3828,
+          "llm_tokens_est": 957
+        },
+        {
+          "tool": "dnstwist",
+          "input": "kakaobank-secure-login.com",
+          "cold_ms": 35.7,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            35.7,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 29,
+          "result_source": "external_node_mcp",
+          "result_bytes": 3857,
+          "llm_tokens_est": 964
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2024-21762",
+          "cold_ms": 37.7,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            37.7,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 519,
+          "llm_tokens_est": 129
+        },
+        {
+          "tool": "cve",
+          "input": "CVE-2023-44487",
+          "cold_ms": 43.3,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            43.3,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 9,
+          "result_source": "live",
+          "result_bytes": 405,
+          "llm_tokens_est": 101
+        },
+        {
+          "tool": "osint",
+          "input": "shinhan.com",
+          "cold_ms": 41.2,
+          "warm_avg_ms": 0.0,
+          "samples_ms": [
+            41.2,
+            0.0,
+            0.0
+          ],
+          "result_count_or_fields": 1,
+          "result_source": "osint_live",
+          "result_bytes": 123,
+          "llm_tokens_est": 30
+        }
+      ],
+      "concurrent": {
+        "tool": "dnstwist",
+        "input": "kakaobank-secure-login.com",
+        "n": 5,
+        "parallel": {
+          "per_call_ms": [
+            1.5,
+            0.9,
+            0.8,
+            0.7,
+            0.6
+          ],
+          "wall_ms": 2.1,
+          "per_call_avg_ms": 0.9,
+          "qps": 2353.56
+        },
+        "sequential": {
+          "per_call_ms": [
+            0.4,
+            0.3,
+            0.5,
+            0.2,
+            0.2
+          ],
+          "wall_ms": 1.8,
+          "per_call_avg_ms": 0.3,
+          "qps": 2823.75
+        }
+      },
+      "container_stats": [
+        {
+          "name": "aol-mcp",
+          "memory_mb": 61.7,
+          "memory_use_raw": "61.69MiB / 7.472GiB",
+          "cpu_pct": "0.39%",
+          "memory_pct": "0.81%"
+        },
+        {
+          "name": "ext-mcp-dnstwist",
+          "memory_mb": 31.5,
+          "memory_use_raw": "31.53MiB / 7.472GiB",
+          "cpu_pct": "0.00%",
+          "memory_pct": "0.41%"
+        }
+      ],
+      "image_sizes": [
+        {
+          "repo": "aol_mcp_server",
+          "size_raw": "180MB",
+          "size_mb": 180.0
+        },
+        {
+          "repo": "aol_ext_mcp_dnstwist",
+          "size_raw": "309MB",
+          "size_mb": 309.0
+        }
+      ]
+    }
+  ]
+}

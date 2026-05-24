@@ -82,8 +82,14 @@ def _tokens_est(result: Any) -> int:
         return -1
 
 
-def _run_inside(mode: str) -> dict[str, Any]:
-    """현재 프로세스(backend 컨테이너 내부) 에서 측정."""
+def _run_inside(mode: str, *, single_registry: bool = False) -> dict[str, Any]:
+    """현재 프로세스(backend 컨테이너 내부) 에서 측정.
+
+    Phase 21-3: single_registry=True 면 케이스당 McpRegistry 1회 생성으로
+    in-process 캐시를 측정 사이에 살려둠 (운영 환경 = 단일 backend process
+    여러 도구 호출 시나리오 재현). 기존 (default) 은 매 호출마다 새 registry
+    라 캐시가 무력화돼서 direct 모드 warm latency 가 0 으로만 측정됐던 문제 해결.
+    """
     os.environ["AOL_LIVE_MCP_MODE"] = mode
     from app.features.langgraph_threat_hunter.mcp_clients import McpRegistry  # noqa: E402
     from app.features.langgraph_threat_hunter.state import ThreatHuntState  # noqa: E402
@@ -93,8 +99,9 @@ def _run_inside(mode: str) -> dict[str, Any]:
     for tool, args in CASES:
         latencies_ms: list[float] = []
         result_first: Any = None
+        shared_reg = McpRegistry(mode="live") if single_registry else None
         for i in range(REPEATS):
-            reg = McpRegistry(mode="live")  # __post_init__ 가 env 로 모드 해석
+            reg = shared_reg if shared_reg is not None else McpRegistry(mode="live")
             state = ThreatHuntState(ioc=str(args[0]), ioc_type="domain", mode="live")
             t0 = time.perf_counter_ns()
             try:
@@ -144,6 +151,7 @@ def _run_inside(mode: str) -> dict[str, Any]:
         "repeats_per_case": REPEATS,
         "cases": len(CASES),
         "errors": err_count,
+        "single_registry": single_registry,
         "measurements": measurements,
         "concurrent": concurrent_block,
     }
@@ -293,7 +301,7 @@ def _parse_image_size(s: str) -> float:
     return -1.0
 
 
-def _run_external(mode: str) -> dict[str, Any]:
+def _run_external(mode: str, *, single_registry: bool = False) -> dict[str, Any]:
     """host 에서 docker exec 로 backend 안에서 측정.
 
     이 파일 자체를 stdin 으로 backend 의 python 에 파이프해서 실행 — backend
@@ -306,6 +314,8 @@ def _run_external(mode: str) -> dict[str, Any]:
         "backend",
         "python", "-", "--mode", mode, "--inside",
     ]
+    if single_registry:
+        cmd.append("--single-registry")
     proc = subprocess.run(cmd, input=script, capture_output=True, text=True, timeout=600)
     if proc.returncode != 0:
         sys.stderr.write(f"[{mode}] FAILED: {proc.stderr}\n")
@@ -388,13 +398,18 @@ def main() -> None:
     parser.add_argument("--mode", choices=["direct", "self_mcp", "external_mcp"])
     parser.add_argument("--all", action="store_true", help="3 모드 모두 측정 (host 모드)")
     parser.add_argument("--inside", action="store_true", help="backend 컨테이너 내부 실행")
+    parser.add_argument(
+        "--single-registry",
+        action="store_true",
+        help="케이스당 McpRegistry 1회 재사용 — direct 모드 warm latency 실측 가능 (Phase 21-3)",
+    )
     parser.add_argument("--out", default=str(OUT_PATH))
     args = parser.parse_args()
 
     if args.inside:
         if not args.mode:
             sys.exit("--mode required with --inside")
-        report = _run_inside(args.mode)
+        report = _run_inside(args.mode, single_registry=args.single_registry)
         json.dump(report, sys.stdout)
         return
 
@@ -404,15 +419,16 @@ def main() -> None:
 
     mode_blocks: list[dict[str, Any]] = []
     for m in modes:
-        block = _run_external(m)
+        block = _run_external(m, single_registry=args.single_registry)
         # 모드별 컨테이너 자원/이미지 측정 (host 에서 docker stats/images)
         block["container_stats"] = [_docker_stats(n) for n in MODE_CONTAINERS.get(m, [])]
         block["image_sizes"] = [_docker_image_size(r) for r in MODE_IMAGES.get(m, [])]
         mode_blocks.append(block)
 
     report = {
-        "schema": "mcp_comparison.v2",
+        "schema": "mcp_comparison.v3",
         "generated_at": int(time.time()),
+        "single_registry": args.single_registry,
         "cases": [(t, a) for t, a in CASES],
         "modes": mode_blocks,
     }

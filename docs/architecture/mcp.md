@@ -180,6 +180,88 @@ warm-up 1회로 캐시 데움 → 측정 5회 모두 캐시 적중 흐름.
 
 > ext-mcp-dnstwist 메모리 29.7 → 40.7 MB: 캐시 Map + inflight Map 보유 비용 (~10MB).
 
+### (4) Phase 21 — E2E latency / SSE TTFT / 단일 registry warm 측정
+
+#### (4-A) E2E latency — `chat_stream` / `chat_dialogue` / `simulate_stream`
+
+`router.py` 의 SSE 엔드포인트 3개에 `perf_counter` 래퍼 추가. SSE `done`
+이벤트에 `metrics = {e2e_ms, per_node_ms: {...}, node_count}` 포함.
+각 `node` 이벤트에도 `elapsed_ms` 필드 추가.
+
+simulation 모드 S2 (보이스피싱 시나리오) 실측:
+
+```json
+{
+  "type": "done",
+  "metrics": {
+    "e2e_ms": 2031.8,
+    "per_node_ms": {
+      "orchestrator": 17.5,
+      "triage_step": 402.5,
+      "infrastructure_step": 404.1,
+      "campaign_step": 402.9,
+      "confidence_gate": 402.1
+    },
+    "node_count": 5
+  }
+}
+```
+
+→ 시뮬레이션 모드는 노드당 ~400ms 일관 (각 노드의 인위적 chat_message 생성 +
+state 갱신). orchestrator 만 17.5ms (라우팅 결정만). 라이브 모드는 LLM
+호출 추가로 노드당 1.5~3s + MCP 도구 호출 — E2E 10~20s 예상 (별도 측정).
+
+#### (4-B) SSE TTFT (Time To First Token) — dialogue 모드
+
+`chat_dialogue` 의 첫 `chat_chunk` 이벤트에 `ttft_ms` 필드. dialogue 모드
+done 이벤트 metrics 에는 `e2e_ms + ttft_ms + tool_use_count`.
+
+```json
+{"type": "chat_chunk", "delta": "보이스피싱...", "ttft_ms": 842.3}
+...
+{"type": "done", "mode": "dialogue", "metrics": {"e2e_ms": 4521.5, "ttft_ms": 842.3, "tool_use_count": 1}}
+```
+
+→ TTFT 측정으로 "사용자가 입력하고 첫 응답까지" 정량화 가능.
+Anthropic streaming + tool use 패턴에서 ~800ms 가 첫 token 까지의 한계.
+
+#### (4-C) 단일 registry warm 측정 (`--single-registry` 플래그)
+
+Phase 22 까지의 measurement 한계: 매 호출마다 새 `McpRegistry` → in-process
+`_CACHE` 무력화 → `direct` 모드 warm latency 가 항상 0 으로 측정됨.
+Phase 21-3: `_run_inside(mode, single_registry=True)` 추가로 케이스당
+registry 1회 재사용 = 운영 환경 재현.
+
+```bash
+python3 benchmarks/run_mcp_comparison.py --all --single-registry
+```
+
+결과 (single-registry 측정):
+
+| 모드 | 도구 | cold (ms) | warm (ms) | 해석 |
+|---|---|---:|---:|---|
+| direct | dnstwist | 2027 | 0 | 첫 호출: 외부 dnstwist lib + DNS / 이후: backend cache hit ~ms |
+| direct | cve | 8935 | 0 | NVD + EPSS + CISA KEV 3개 API 직렬 호출 |
+| direct | osint | 16003 | 0 | crt.sh 가 가장 느림 |
+| self_mcp | dnstwist | 660 | 0 | 사이드카 캐시 hit (이미 warm-up 됨) |
+| self_mcp | cve | 41 | 0 | 사이드카 캐시 hit |
+| external_mcp | dnstwist | 613 | 0 | Node 사이드카 캐시 hit |
+
+**Phase 23 backend `_CACHE` 효과 정량화** — warm latency 모두 < 1ms
+(round → 0). 운영에서 단일 backend process 가 같은 IoC 재분석하면
+첫 호출 외엔 microsec 응답.
+
+**진짜 cold latency 시나리오 (직접 운영자 인사이트)**:
+
+| 시나리오 | latency | 빈도 |
+|---|---|---|
+| 새 IoC, 사이드카도 cold (재기동 직후) | 1.5~16s (도구 따라) | 재기동/스파이크 |
+| 새 IoC, 사이드카 캐시 hit | 30~50ms | hot path 대부분 |
+| 동일 IoC 재분석 (단일 backend) | < 1ms | 분석가 더블체크 |
+| 동일 IoC, 다른 backend worker (Redis 미도입) | 30~50ms | 다중 worker 환경 |
+
+---
+
 ### 핵심 인사이트 (Phase 23 후 갱신)
 
 1. **3 계층 캐시 아키텍처가 정착**: backend `_CACHE` (process-local) → 사이드카

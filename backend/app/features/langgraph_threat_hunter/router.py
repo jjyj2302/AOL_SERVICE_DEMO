@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -222,6 +223,7 @@ async def chat_stream(req: ChatRequest):
     )
 
     async def event_gen():
+        t_start_ns = time.perf_counter_ns()
         yield _sse({
             "type": "start",
             "parsed": {"ioc": ioc, "ioc_type": ioc_type, "scenario_id": scenario_id},
@@ -230,16 +232,34 @@ async def chat_stream(req: ChatRequest):
             "estimated_after_seconds": seed.get("estimated_after_seconds"),
         })
 
+        # Phase 21: 노드별 elapsed_ms 측정
+        per_node_ms: dict[str, float] = {}
+        t_prev_ns = time.perf_counter_ns()
         graph = get_simulation_graph()
         for chunk in graph.stream(initial):
             for node_name, delta in chunk.items():
-                yield _sse({"type": "node", "node": node_name, "delta": _to_jsonable(delta)})
+                t_now_ns = time.perf_counter_ns()
+                node_elapsed_ms = round((t_now_ns - t_prev_ns) / 1_000_000, 1)
+                per_node_ms[node_name] = node_elapsed_ms
+                yield _sse({
+                    "type": "node",
+                    "node": node_name,
+                    "delta": _to_jsonable(delta),
+                    "elapsed_ms": node_elapsed_ms,
+                })
+                t_prev_ns = time.perf_counter_ns()
                 if req.pace > 0:
                     await asyncio.sleep(req.pace)
 
-        # 최종 산출물 요약 — 채팅 메시지 종료 시 한 번 전송
+        # 최종 산출물 요약 + Phase 21 metrics — 채팅 메시지 종료 시 한 번 전송
+        e2e_ms = round((time.perf_counter_ns() - t_start_ns) / 1_000_000, 1)
         yield _sse({
             "type": "done",
+            "metrics": {
+                "e2e_ms": e2e_ms,
+                "per_node_ms": per_node_ms,
+                "node_count": len(per_node_ms),
+            },
             "deliverables_hint": {
                 "executive_summary_available": True,
                 "firewall_rules_available": True,
@@ -277,6 +297,7 @@ async def simulate_stream(
     )
 
     async def event_gen():
+        t_start_ns = time.perf_counter_ns()
         # 시작 이벤트 — 시나리오 메타 + 예상 노드 목록
         yield _sse({
             "type": "start",
@@ -291,19 +312,34 @@ async def simulate_stream(
             "expected_nodes": ["triage_step", "malware_step", "infrastructure_step", "campaign_step", "confidence_gate"],
         })
 
+        per_node_ms: dict[str, float] = {}
+        t_prev_ns = time.perf_counter_ns()
         graph = get_simulation_graph()
         # LangGraph 0.2.x: graph.stream(state) yields {node_name: delta_dict} per super-step
         for chunk in graph.stream(initial):
             for node_name, delta in chunk.items():
+                t_now_ns = time.perf_counter_ns()
+                node_elapsed_ms = round((t_now_ns - t_prev_ns) / 1_000_000, 1)
+                per_node_ms[node_name] = node_elapsed_ms
                 yield _sse({
                     "type": "node",
                     "node": node_name,
                     "delta": _to_jsonable(delta),
+                    "elapsed_ms": node_elapsed_ms,
                 })
+                t_prev_ns = time.perf_counter_ns()
                 if pace > 0:
                     await asyncio.sleep(pace)
 
-        yield _sse({"type": "done"})
+        e2e_ms = round((time.perf_counter_ns() - t_start_ns) / 1_000_000, 1)
+        yield _sse({
+            "type": "done",
+            "metrics": {
+                "e2e_ms": e2e_ms,
+                "per_node_ms": per_node_ms,
+                "node_count": len(per_node_ms),
+            },
+        })
 
     return StreamingResponse(
         event_gen(),
@@ -400,6 +436,9 @@ async def chat_dialogue(req: DialogueRequest):
     is_analysis = scenario_id is not None or ioc_type not in ("unknown",)
 
     async def event_gen():
+        # Phase 21: E2E latency / TTFT 측정
+        t_start_ns = time.perf_counter_ns()
+
         if is_analysis:
             # ========== Analysis mode: LangGraph 멀티에이전트 ==========
             use_live = has_anthropic_key() and scenario_id is None  # 임의 IoC = 라이브 / 시나리오 ID = 시뮬레이션
@@ -422,14 +461,35 @@ async def chat_dialogue(req: DialogueRequest):
                 scenario_id=scenario_id,
             )
             graph = build_graph(mode="live") if use_live else get_simulation_graph()
+
+            # Phase 21: 노드별 elapsed_ms 측정 (graph.stream() iteration 간 wall-clock)
+            per_node_ms: dict[str, float] = {}
+            t_prev_ns = time.perf_counter_ns()
             for chunk in graph.stream(initial):
                 for node_name, delta in chunk.items():
-                    yield _sse({"type": "node", "node": node_name, "delta": _to_jsonable(delta)})
+                    t_now_ns = time.perf_counter_ns()
+                    node_elapsed_ms = round((t_now_ns - t_prev_ns) / 1_000_000, 1)
+                    per_node_ms[node_name] = node_elapsed_ms
+                    yield _sse({
+                        "type": "node",
+                        "node": node_name,
+                        "delta": _to_jsonable(delta),
+                        "elapsed_ms": node_elapsed_ms,
+                    })
+                    t_prev_ns = time.perf_counter_ns()
                     if req.pace > 0:
                         await asyncio.sleep(req.pace)
+
+            e2e_ms = round((time.perf_counter_ns() - t_start_ns) / 1_000_000, 1)
             yield _sse({
                 "type": "done",
                 "mode": "analysis",
+                "metrics": {
+                    "e2e_ms": e2e_ms,
+                    "per_node_ms": per_node_ms,
+                    "node_count": len(per_node_ms),
+                    "submode": "live" if use_live else "simulation",
+                },
                 "deliverables_hint": {
                     "executive_summary_available": True,
                     "firewall_rules_available": True,
@@ -445,10 +505,22 @@ async def chat_dialogue(req: DialogueRequest):
                 "has_anthropic_key": has_anthropic_key(),
             })
             history_dicts = [m.model_dump() for m in req.history]
+
+            # Phase 21: TTFT = start 이후 첫 chat_chunk 까지의 latency
+            first_chunk_seen = False
+            ttft_ms: float | None = None
+            tool_use_count = 0
+
             async for ev in stream_claude_response(req.message, history_dicts):
                 if ev.get("kind") == "text":
-                    yield _sse({"type": "chat_chunk", "delta": ev["delta"]})
+                    chunk_event: dict[str, Any] = {"type": "chat_chunk", "delta": ev["delta"]}
+                    if not first_chunk_seen:
+                        ttft_ms = round((time.perf_counter_ns() - t_start_ns) / 1_000_000, 1)
+                        chunk_event["ttft_ms"] = ttft_ms
+                        first_chunk_seen = True
+                    yield _sse(chunk_event)
                 elif ev.get("kind") == "tool_use":
+                    tool_use_count += 1
                     yield _sse({
                         "type": "tool_use",
                         "tool": ev["tool"],
@@ -462,7 +534,17 @@ async def chat_dialogue(req: DialogueRequest):
                         "elapsed_ms": ev.get("elapsed_ms"),
                         "model": ev.get("model"),
                     })
-            yield _sse({"type": "done", "mode": "dialogue"})
+
+            e2e_ms = round((time.perf_counter_ns() - t_start_ns) / 1_000_000, 1)
+            yield _sse({
+                "type": "done",
+                "mode": "dialogue",
+                "metrics": {
+                    "e2e_ms": e2e_ms,
+                    "ttft_ms": ttft_ms,
+                    "tool_use_count": tool_use_count,
+                },
+            })
 
     return StreamingResponse(
         event_gen(),
