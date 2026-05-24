@@ -262,6 +262,73 @@ python3 benchmarks/run_mcp_comparison.py --all --single-registry
 
 ---
 
+### (5) Phase 26 — Prompt Caching cache_control 실 적용 + 실측
+
+`agent_prompts.py::call_agent` 에 `enable_prompt_cache=True` 옵션 추가
+(기본 True). Anthropic API messages.create 의 `system` 필드를 list 로 전달
+하면서 `cache_control: {"type": "ephemeral"}` 마커 적용. `usage.cache_read_input_tokens` +
+`usage.cache_creation_input_tokens` 를 meta 에 노출.
+
+#### 실측 결과 (`benchmarks/caching_measurement.json`, 5 agent × 3 회)
+
+| agent | system chars | est tokens | cache eligible | cache_read | hit ratio |
+|---|---:|---:|---:|---:|---:|
+| orchestrator | 967 | 241 | ❌ | 0 | 0.0% |
+| triage | 1022 | 255 | ❌ | 0 | 0.0% |
+| malware | 1029 | 257 | ❌ | 0 | 0.0% |
+| infrastructure | 1329 | 332 | ❌ | 0 | 0.0% |
+| campaign | 1491 | 372 | ❌ | 0 | 0.0% |
+| **GRAND** | — | — | — | **0** | **0.0%** |
+
+> **★ Phase 26 발견**: 모든 5 agent 의 cache_read = 0. `cache_control` 마커는
+> 적용됐지만 **Anthropic API 가 minimum cache tokens (Sonnet 1024 / Haiku 2048)
+> 미달로 무시**. cost_analysis 의 "Prompt Caching 90% hit" 가정 실 작동 0%.
+
+#### cost_analysis 정직화 (Phase 26)
+
+| 전략 | per IoC | vs Sonnet | 비고 |
+|---|---:|---:|---|
+| all_opus | $0.437 | +400% | naive baseline |
+| all_sonnet | $0.087 | 0% | realistic baseline |
+| mixed (모델 매핑만) | $0.072 | -18.0% | caching/batch X |
+| **★ mixed_batch** | **$0.036** | **-59.0%** | **★ 실현 가능 best (caching 가정 제거)** |
+| mixed_cached_batch | $0.032 | -63.0% | caching 90% 가정 — 실 작동 0% (Phase 26 입증) |
+
+> 옛 `mixed_cached_batch` 의 -91.8% vs Opus 와 새 `mixed_batch` 의
+> -91.8% vs Opus 는 **같은 수치 도달**. 차이는 caching 가정 추가분 4%pt 뿐.
+> **Batch API 50% off 가 진짜 가치이고 Prompt Caching 은 부가** — 그것도
+> system 프롬프트 1024+ tokens 로 확장 시에만.
+
+#### 실측 input/output 토큰 (cost_analysis.py 갱신 기반)
+
+| agent | system chars | input tokens (실측) | output tokens | elapsed_ms (단발) |
+|---|---:|---:|---:|---:|
+| orchestrator (Haiku) | 967 | 627 | 377 | 4146 |
+| triage (Haiku) | 1022 | 831 | 473 | 4958 |
+| malware (Sonnet) | 1029 | 775 | 632 | 11070 |
+| infrastructure (Sonnet) | 1329 | 944 | 1000 | 14913 |
+| campaign (Sonnet) | 1491 | 1023 | 2500 ★ | 45392 |
+
+> ★ campaign 은 `max_tokens=2500` 한도 도달. 실제는 더 길 수도.
+>
+> **옛 cost_analysis 추정 (system 미포함, user 만) 대비 input +75~150% 큼**.
+> Phase 26 실측으로 cost_analysis 의 AGENTS input/output 전면 갱신.
+
+#### 라이브 LLM 호출 latency 실측 = E2E 추정 갱신
+
+| 시나리오 | 노드 합 | 비고 |
+|---|---:|---|
+| 모든 5 노드 풀체인 (orchestrator→triage→malware→infra→campaign) | ~80s | campaign 이 max_tokens 도달 = 45s 차지 |
+| 일반 분석 (orchestrator + triage + infra + campaign) | ~70s | malware 스킵 |
+| CVE 전용 (orchestrator + triage + campaign) | ~54s | infra/malware 둘 다 스킵 |
+| 도메인 빠른 분석 (orchestrator + triage + infra) | ~24s | campaign 스킵 |
+
+> 라이브 모드 E2E = 위 합 + MCP 호출 + node graph overhead. 시뮬레이션 모드의
+> ~2s 와 큰 차이 — 사용자 가치 정량화의 결정적 수치. **사용자가 체감하는
+> 진짜 시간은 70~80초** (풀체인).
+
+---
+
 ### 핵심 인사이트 (Phase 23 후 갱신)
 
 1. **3 계층 캐시 아키텍처가 정착**: backend `_CACHE` (process-local) → 사이드카

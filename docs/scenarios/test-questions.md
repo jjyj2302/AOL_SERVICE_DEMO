@@ -126,7 +126,7 @@ chat_message 는 시드에 사전 정의 (Anthropic API 실측 토큰 분석으�
 
 ### Q3: "기존 SOC 솔루션과 차별점?"
 A: **(1) 6-Agent 동적 라우팅** — Splunk SOAR 처럼 사전 정의 플레이북이 아니라 IoC 타입별 자동 라우팅.
-**(2) 비용 모델** — 에이전트별 mini/medium/strong 분배 + Prompt Caching + Batch API. Sonnet 단독 대비 59.1% 절감 (Opus naive 대비라면 91.8%).
+**(2) 비용 모델** — Phase 26 실 Anthropic API 호출 측정으로 Prompt Caching 가정 (90%) 부정확 입증 (실 cache hit 0%). 정직 헤드라인 = Mixed + Batch API 50% off **vs Sonnet -59% / vs Opus -91.8%** (caching 가정 제거).
 **(3) 컴플라이언스 매핑** — 전자금융감독규정 §13/§15, ISMS-P, DORA, FSI 직결.
 **(4) Audit Ledger** — 모든 LLM·MCP 호출이 PostgreSQL 영속화 — 감사 증빙.
 

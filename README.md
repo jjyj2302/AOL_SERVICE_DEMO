@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL_16-336791?style=flat-square&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" />
   <img src="https://img.shields.io/badge/pytest-51_passing-3DDC84?style=flat-square&logo=pytest&logoColor=white" />
-  <img src="https://img.shields.io/badge/cost_59.1%25↓_(vs_Sonnet)-success?style=flat-square" />
+  <img src="https://img.shields.io/badge/cost_59%25↓_(vs_Sonnet,_실측)-success?style=flat-square" />
 </p>
 
 <div align="center">
@@ -28,7 +28,7 @@
 - 🤖 **6 Agents** — Orchestrator + Triage + Malware + Infrastructure + Campaign + Confidence Gate
 - 🧩 **5 MCP Tools** — VirusTotal · DNSTwist · Shodan · crt.sh · NVD+EPSS+KEV (모두 실 HTTP 호출)
 - 💬 **대화형 + Tool Use** — Claude 가 진행자 역할, 필요 시 specialist 자문
-- 💰 **비용 59.1% 절감** vs Sonnet 단독 (현실 baseline) · 91.8% vs Opus 단독 (naive) — Haiku/Sonnet 티어드 매핑 + Prompt Caching + Batch
+- 💰 **비용 59% 절감 (실측)** vs Sonnet 단독 — Haiku/Sonnet 티어드 매핑 + Batch API 50% off. Phase 26 Anthropic API 실측: Prompt Caching 가정값(90%)은 system 프롬프트 길이 미달로 실 0% — `mixed_batch` 가 진짜 실현 가능 best
 - 🏦 **금융권 컴플라이언스** — 전자금융감독규정 §13·§15, ISMS-P, FSI C-TAS, DORA 매핑
 
 ---
@@ -357,34 +357,40 @@ findings, _ = call_agent("infrastructure", prompt, max_tokens=1300)
 | 📈 Campaign | 전략 종합 + 헌팅 쿼리 + FW 룰 | **Sonnet 4.5** (medium) | 500 / 2500 |
 | 🛡️ Gate | 결정론적 규칙 | (LLM 무관) | 0 / 0 |
 
-### 5가지 전략 IoC 1건당 비용 비교 (2026-05-23 실측)
+### 6가지 전략 IoC 1건당 비용 비교 (Phase 26 — 2026-05-24 실 API 실측)
 
-**baseline 두 가지로 측정** — 정직성 위해 옛 91.8% 헤드라인이 어떤 가정에서
-나왔는지 명시:
+**Phase 26 핵심 발견**: 옛 cost_analysis 의 "Prompt Caching 90% hit" 가정이
+**실측 0%** — system 프롬프트 (chars 967~1491, est tokens 241~372) 가
+Anthropic minimum cache tokens (Sonnet 1024 / Haiku 2048) **미달**.
+caching 가정 제거한 `mixed_batch` 가 진짜 실현 가능 best.
 
 | 전략 | 모델 매핑 | 비용/IoC | vs **Sonnet (현실)** | vs Opus (naive) |
 |---|---|---|---|---|
-| All-Opus (naive baseline) | 5 에이전트 모두 Opus 4.7 | $0.489 | +400% | 0% (옛 기준선) |
-| **All-Sonnet (★ 현실 baseline)** | 5 에이전트 모두 Sonnet 4.5 | **$0.098** | 0% (★ 기준선) | −80.0% |
-| All-Haiku (저비용 하한) | 5 에이전트 모두 Haiku 4.5 | $0.008 | −91.7% (품질↓) | −98.3% |
-| **Mixed (권장)** | Haiku/Sonnet 티어드 분배 | $0.084 | **−14.5%** | −82.9% |
-| **Mixed + Cache + Batch (최적)** | + Prompt Caching 90% off + Batch 50% off | **$0.040** | **−59.1%** | −91.8% |
+| All-Opus (naive baseline) | 5 에이전트 모두 Opus 4.7 | $0.437 | +400% | 0% (옛 기준선) |
+| **All-Sonnet (★ 현실 baseline)** | 5 에이전트 모두 Sonnet 4.5 | **$0.087** | 0% (★ 기준선) | −80.0% |
+| All-Haiku (저비용 하한) | 5 에이전트 모두 Haiku 4.5 | $0.007 | −91.7% (품질↓) | −98.3% |
+| Mixed (모델 매핑만) | Haiku/Sonnet 티어드 | $0.072 | **−18.0%** | −83.6% |
+| **★ Mixed + Batch (실현 가능 best)** | + Anthropic Batch API 50% off | **$0.036** | **−59.0%** | **−91.8%** |
+| Mixed + Cache + Batch (가정값) | + Caching 90% off (실 작동 안 함) | $0.032 | −63.0% | −92.6% |
 
-> 옛 헤드라인 **`-91.8%`** 은 "5 에이전트를 모두 Opus 로 돌리는" naive
-> baseline 기준. 실무에서 그런 팀은 없음 — 디폴트는 Sonnet 단독이라
-> **`-59.1% (vs Sonnet)` 가 정직한 헤드라인**. 그래도 절반 이상 절감 = 의미 있음.
+> Phase 26 정직 헤드라인 (caching 가정 제거): **`-59% (vs Sonnet)` 또는 `-91.8% (vs Opus)`**.
+>
+> 옛 mixed_cached_batch 의 -91.8% 도 같은 수치로 수렴 — 차이는 caching 가정 +4%pt 뿐.
+> 즉 **Batch API 50% off 가 진짜 가치고, Prompt Caching 가정은 미미한 부가** (그것도
+> 시스템 프롬프트 1024+ tokens 로 확장 시에만 실 작동).
 
-### 금융권 SOC 규모별 월간 비용 (10k IoCs/일 기준)
+### 금융권 SOC 규모별 월간 비용 (10k IoCs/일 기준, Phase 26 실측)
 
 | 전략 | 월간 비용 | 절감 vs Sonnet (현실) | 절감 vs Opus (옛 기준) |
 |---|---|---|---|
-| All-Opus | $146,835 | — | — |
-| **All-Sonnet (현실)** | **$29,367** | (기준선) | $117,468 ↓ |
-| Mixed | $25,118 | $4,249 ↓ | $121,717 ↓ |
-| **Mixed + Cache + Batch** | **$12,000** | **$17,367 ↓** | **$134,835 ↓** |
+| All-Opus | $130,995 | — | — |
+| **All-Sonnet (현실)** | **$26,199** | (기준선) | $104,796 ↓ |
+| Mixed | $21,490 | $4,709 ↓ | $109,505 ↓ |
+| **★ Mixed + Batch (실현)** | **$10,745** | **$15,454 ↓** | **$120,250 ↓** |
+| Mixed + Cache + Batch (가정) | $9,701 | $16,498 ↓ | $121,294 ↓ |
 
-→ 현실 baseline(Sonnet) 대비 연간 약 **$208K (≈ 2.7억원)** 절감.
-   Opus 단독 대비라면 연간 $1.6M (옛 헤드라인 수치) — 같은 시스템, 다른 비교 기준.
+→ 실현 가능 best (Sonnet baseline) 대비 연간 약 **$185K (≈ 2.4억원)** 절감
+   (caching 가정 제거 — Phase 26 실측 기반). Opus naive 대비라면 연간 $1.44M.
 
 ### 검증 방법 — 실제 Anthropic API 호출 벤치마크
 
@@ -711,13 +717,14 @@ graph TD
 - **NotebookLM 3-패널**: 좌(자료실: 시나리오·리포트) | 가운데(자연어 대화) | 우(Agent Studio: 파이프라인·메트릭·산출물)
 - **Confidence-Gated Output**: L0~L4 등급별 권고/자동 케이스/자동 차단 — 핵심 자산은 휴먼 승인 필수
 
-### 2️⃣ 비용 최적화 — 에이전트별 모델 매핑
-**Anthropic API 실측 기반 비용 절감 (두 baseline 모두 측정)**
+### 2️⃣ 비용 최적화 — 에이전트별 모델 매핑 + 정직한 baseline (Phase 26 실측)
+**Anthropic API 실측 기반 비용 절감 (caching 가정 제거)**
 - **티어 분배**: Orchestrator/Triage = Haiku (mini), Malware/Infra/Campaign = Sonnet (medium)
-- **vs Sonnet 단독 (현실 baseline)**: Mixed 14.5% / Mixed+Cache+Batch **59.1%** ← 정직한 헤드라인
-- **vs Opus 단독 (naive baseline)**: Mixed 82.9% / Mixed+Cache+Batch 91.8% ← 옛 헤드라인 (실무에선 Opus 단독 안 씀)
-- **금융권 SOC 10k IoCs/day**: Sonnet 단독 $29K/월 → 본 시스템 $12K/월 = **$17K/월 = 연 $208K (≈2.7억원) 절감**
-- **실측 검증**: `benchmarks/run_model_comparison.py` 로 15 (agent×model) 조합 실호출 검증 (예산 $7 한도)
+- **vs Sonnet 단독 (현실 baseline, 실현 가능 best)**: Mixed -18.0% / **Mixed+Batch -59.0%** ← 정직 헤드라인
+- **vs Opus 단독 (naive baseline)**: Mixed -83.6% / **Mixed+Batch -91.8%** ← 옛 헤드라인과 동일 수치 도달
+- **금융권 SOC 10k IoCs/day**: Sonnet 단독 $26K/월 → Mixed+Batch $11K/월 = **$15.5K/월 = 연 $185K (≈2.4억원) 절감**
+- **★ Phase 26 정직성**: `cost_analysis.py` 옛 가정 "Prompt Caching 90% hit" 가 Anthropic API 실측 0% (system 프롬프트 길이 미달). caching 적용분은 가정값 ±4%pt 만, **Batch API 50% off 가 진짜 핵심**.
+- **실측 검증**: `benchmarks/run_caching_measurement.py` (Phase 26) + `benchmarks/run_model_comparison.py` (15 조합 실호출 $0.57)
 
 ### 3️⃣ Threat Intel Integration (KISA C-TAS / FSI 확장)
 **국내 금융권 위협 인텔리전스 자동 연동**

@@ -79,20 +79,23 @@
 
 ---
 
-### 📝 단락 B — 정직한 측정 / 엔지니어링 윤리
+### 📝 단락 B — 정직한 측정 / 엔지니어링 윤리 (2단계 정직화)
 
-> 비용 분석 모듈에 "Anthropic Claude 모델 매핑으로 91.8% 비용 절감" 이라는
-> 헤드라인을 처음 적었으나, baseline 이 "5 에이전트 모두 Opus 4.7"이라는
+> 비용 분석 모듈에 "Anthropic Claude 모델 매핑으로 **91.8% 비용 절감**" 이라는
+> 헤드라인을 처음 적었으나, baseline 이 "5 에이전트 모두 Opus 4.7" 이라는
 > **실무에선 누구도 쓰지 않는 비현실적 기준** 이라는 점을 회고에서 본인이
-> 짚었습니다. 실무 디폴트인 `all_sonnet` 을 새 baseline 으로 잡고
-> 5 전략 비교 (`all_opus` / `all_sonnet` / `all_haiku` / `mixed` /
-> `mixed_cached_batch`)로 재계산해 "vs Sonnet **-59.1%** 가 정직한 헤드라인,
-> vs Opus -91.8% 는 호환을 위한 옛 수치" 라는 두 측정값을 응답 JSON 의
-> `headline_savings` 에 동시 노출 했습니다. 더 나아가 pytest 어설션 `assert
-> realistic_vs_sonnet_pct < 80` 으로 **정직성을 코드 레벨에 박아** 미래의
-> 본인이 다시 과대표기 못 하도록 막았습니다. 4축 (latency / payload bytes /
-> LLM 토큰 / QPS) 벤치마크로 외부 MCP 결과 페이로드가 +39% 토큰을 더
-> 만들어내 LLM 비용에 직결됨도 정량 입증했습니다.
+> 짚었습니다 (Phase 19). 실무 디폴트인 `all_sonnet` 을 새 baseline 으로 잡고
+> 5 전략 비교로 재계산해 "vs Sonnet **-59.1%** 가 정직한 헤드라인, vs Opus
+> -91.8% 는 호환" 두 측정값을 동시 노출했고, pytest assertion `assert
+> realistic_vs_sonnet_pct < 80` 으로 **정직성을 코드 레벨에 박았습니다**.
+> Phase 26 에서 한 단계 더 — `cost_analysis` 의 "Prompt Caching 90% hit"
+> 가정도 **실 Anthropic API 호출 실측 (5 agent × 3 회) 로 검증**한 결과
+> **실 cache hit ratio 0.0%**. system 프롬프트 (chars 967~1491, est 241~372
+> tokens) 가 minimum cache tokens (Sonnet 1024 / Haiku 2048) 미달이라
+> `cache_control` 마커를 Anthropic API 가 무시. caching 가정 제거한
+> `mixed_batch` 전략을 새 best 로 정의해 정직 헤드라인 **vs Sonnet -59.0%
+> (caching 가정 없이 batch 만으로)** 로 갱신. **"가정 → 실측" 두 번 반복으로
+> 마케팅 수치 → 정직 수치 → 코드/문서 동시 동기화** 사이클을 정착시켰습니다.
 
 ---
 
@@ -270,14 +273,18 @@
 > Sonnet 채택. Opus 는 "어려운 reasoning 필요시만" 권장. 즉 단일 모델 운영
 > 디폴트는 Sonnet 이 압도적.
 
-**Q5.** Mixed (Haiku + Sonnet) 가 all_sonnet 대비 -14.5% 뿐이면, 캐싱+배치 없이는
-모델 매핑 의미 크지 않은데?
-> A: 정확한 지적. 분해해보면: Mixed 단독 -14.5% vs Mixed+Cache+Batch -59.1%.
-> 즉 캐싱+배치가 진짜 가치고, 모델 매핑은 boost (가성비 좋은 마지막 14.5%).
-> 다만 모델 매핑은 zero cost (코드만 바꿈), 캐싱+배치는 Anthropic 가격표
-> 가정 (90% cache hit, 50% batch discount). Phase 26 (prompt caching 실 적용 + 실측)
-> 가 다음 단계로 명시되어 있음. 실측 안 한 가정값은 "가격표 기반 추정" 으로
-> 라벨링.
+**Q5.** Mixed (Haiku + Sonnet) 가 all_sonnet 대비 -18% 뿐이면, 캐싱+배치 없이는
+모델 매핑 의미 크지 않은데? 그리고 caching 적용분은 진짜 얼마인가?
+> A: 정확한 지적. Phase 26 실측 분해:
+> - Mixed 단독 (모델 매핑만): -18.0% vs Sonnet
+> - Mixed + Batch API 50% off: **-59.0% vs Sonnet** (실현 가능 best)
+> - Mixed + Caching 90% + Batch (가정값): -63.0% vs Sonnet
+>
+> **즉 Batch API 50% off 가 진짜 가치 (40%pt 가산), Caching 가정 추가분은 4%pt만**.
+> 그것마저 Phase 26 실측 결과 system 프롬프트 길이 미달로 작동 안 함 (cache_read 0).
+> 옛 cost_analysis 의 "caching 90% hit" 가정은 운영 reality 와 어긋남. 정직한
+> 헤드라인은 **-59% (mixed_batch vs Sonnet)** — caching 가정 없이도 옛 마케팅
+> 수치와 큰 차이 없음.
 
 ---
 
@@ -498,7 +505,7 @@ docs/
 | 한계 | 어떻게 답할까 |
 |---|---|
 | **라이브 모드 LLM 호출 실측 안 함** | "Anthropic 가격표 기반 추정 — Phase 26 후보로 명시. 실 API 비용 발생이라 다음 단계로 분리" |
-| **prompt caching cache_control 실 적용 안 함** | "가격표의 90% 캐시 적중 가정 — 실 cache_read_input_tokens / cache_creation_input_tokens 측정은 Phase 26 후보" |
+| ~~**prompt caching cache_control 실 적용 안 함**~~ | ✅ Phase 26 완료 — 실 Anthropic API 호출로 cache_read 0% 측정. 가정값(90%) 부정확 입증. cost_analysis 가 `mixed_batch` (caching 가정 제거) 를 새 best 로 갱신 |
 | **token estimation chars/4** | "Claude/GPT 토크나이저 미사용 — 모드 간 비교에는 충분, 절대값은 ±20% 오차. 정확 측정은 anthropic SDK count_tokens 사용 시 가능" |
 | **단일 worker (uvicorn -w 1) 운영 가정** | "backend `_CACHE` 가 process-local — 다중 worker 시 Redis shared cache 필요 (Phase 24 후보). EC2 배포 시 인스턴스 사이즈 보고 결정" |
 | **외부 MCP 1개만 통합** | "BurtTheCoder/mcp-dnstwist 등 4개 검토했으나 Docker-in-Docker / 미dockerized 패턴 등 운영 부담. 1개로도 언어 무관성 입증 충분" |
@@ -513,8 +520,10 @@ docs/
 ```
 "금융권 SOC IoC 트리아지를 LangGraph 6-Agent + MCP 5도구로 자동화하면서,
  본인이 직접 '비용 91.8% 절감' 헤드라인의 baseline 이 비현실적이라는 점을
- 발견·정직화해 59.1% 로 갱신하고 pytest assert 로 정직성을 코드에 박은
- 프로젝트입니다."
+ 발견·정직화해 59% 로 갱신했고, 그 다음 'Prompt Caching 90% hit' 가정도
+ Anthropic API 실 호출 측정 (cache_read 0%) 으로 검증해 caching 가정 없이
+ batch 만으로 같은 -59% 달성하는 정직 헤드라인으로 두 번 정직화한 프로젝트
+ 입니다."
 ```
 
 이 한 문장에:

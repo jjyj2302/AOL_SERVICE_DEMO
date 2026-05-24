@@ -84,13 +84,14 @@ export default function CostAnalysisCard() {
   if (!data) return null;
 
   const s = data.strategies;
-  // realistic baseline = all_sonnet (실무 디폴트). all_opus 는 naive baseline 으로 보조 표시
+  // realistic baseline = all_sonnet. realized best = mixed_batch (caching 가정 X, Phase 26)
   const realistic = s.all_sonnet?.total_cost_usd ?? s.all_strong?.total_cost_usd ?? 0;
   const mixed = s.mixed.total_cost_usd;
-  const cached = s.mixed_cached_batch.total_cost_usd;
+  const realized = s.mixed_batch?.total_cost_usd ?? s.mixed_cached_batch.total_cost_usd;
 
   const monthly10k = (data.monthly_at_scale || []).find((v) => v.daily_iocs === 10000);
   const savings10k =
+    monthly10k?.monthly_savings_vs_realistic_realized_usd ??
     monthly10k?.monthly_savings_vs_realistic_usd ??
     monthly10k?.monthly_savings_vs_baseline_usd ??
     0;
@@ -116,17 +117,17 @@ export default function CostAnalysisCard() {
       <Stack spacing={0.5}>
         <StrategyRow label="All-Sonnet (실무)" cost={realistic} color="default" baseline />
         <StrategyRow
-          label="Mixed (권장)"
+          label="Mixed (모델 매핑만)"
           cost={mixed}
           savings={s.mixed.savings_vs_realistic_pct ?? s.mixed.savings_vs_baseline_pct}
           color="primary"
         />
         <StrategyRow
-          label="+ Cache + Batch"
-          cost={cached}
+          label="+ Batch API 50% (실현)"
+          cost={realized}
           savings={
-            s.mixed_cached_batch.savings_vs_realistic_pct ??
-            s.mixed_cached_batch.savings_vs_baseline_pct
+            (s.mixed_batch ?? s.mixed_cached_batch).savings_vs_realistic_pct ??
+            (s.mixed_batch ?? s.mixed_cached_batch).savings_vs_baseline_pct
           }
           color="success"
         />
@@ -135,7 +136,7 @@ export default function CostAnalysisCard() {
       {monthly10k && (
         <Box sx={{ mt: 1.5, pt: 1.5, borderTop: 1, borderColor: "divider" }}>
           <Typography variant="caption" color="text.secondary">
-            10,000 IoCs/일 기준 월간 절감 (vs All-Sonnet)
+            10,000 IoCs/일 기준 월간 절감 (vs All-Sonnet, Phase 26 실측)
           </Typography>
           <Typography variant="h6" fontWeight={800} color="success.main">
             $ {savings10k.toLocaleString()}{" "}

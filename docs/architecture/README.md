@@ -217,23 +217,32 @@ mcp_calls, findings, deliverables) — **관심사 분리**.
 
 ---
 
-## 6. 비용 모델 (실측 기반, 두 baseline)
+## 6. 비용 모델 (Phase 26 실측 — caching 가정 제거)
 
-2026-05-23 Anthropic API 실측 결과 ([`benchmarks/run_model_comparison.py`](../../benchmarks/run_model_comparison.py)):
+2026-05-24 Anthropic API 실측 ([`benchmarks/caching_measurement.json`](../../benchmarks/caching_measurement.json) +
+[`benchmarks/run_model_comparison.py`](../../benchmarks/run_model_comparison.py)):
 
 | 전략 | IoC 1건 비용 | vs Sonnet (현실) | vs Opus (naive) | 월간 10k IoCs |
 |---|---|---|---|---|
-| **All-Opus** (naive baseline) | $0.49 | +400% | 0% | $146,835 |
-| **All-Sonnet** (★ 현실 baseline) | $0.098 | 0% | -80% | $29,367 |
-| All-Haiku | $0.008 | -91.7% (품질 trade-off) | -98.3% | $2,447 |
-| **Mixed 권장** (mini/medium 분배) | $0.084 | **-14.5%** | -82.9% | $25,118 |
-| **Mixed + Cache + Batch** (최적) | $0.040 | **-59.1%** | -91.8% | $12,000 |
+| **All-Opus** (naive baseline) | $0.437 | +400% | 0% | $130,995 |
+| **All-Sonnet** (★ 현실 baseline) | $0.087 | 0% | -80% | $26,199 |
+| All-Haiku | $0.007 | -91.7% (품질 trade-off) | -98.3% | $2,183 |
+| Mixed (모델 매핑만) | $0.072 | **-18.0%** | -83.6% | $21,490 |
+| **★ Mixed + Batch (실현)** | **$0.036** | **-59.0%** | **-91.8%** | **$10,745** |
+| Mixed + Cache + Batch (가정) | $0.032 | -63.0% | -92.6% | $9,701 |
 
-> **All-Sonnet 을 정직한 baseline 으로 사용**. 실무에서 단일 모델 운영의 디폴트는 Sonnet.
-> 옛 -91.8% 헤드라인은 "5 에이전트 모두 Opus 로 돌리는" 비현실적 baseline 대비.
-> 같은 시스템에서 측정 기준만 바꾼 것.
+> **★ Phase 26 발견**: 옛 cost_analysis 의 "Prompt Caching 90% hit" 가정이
+> Anthropic API 실측 0% — system 프롬프트 (chars 967~1491, est tokens
+> 241~372) 가 minimum cache tokens (Sonnet 1024 / Haiku 2048) 미달.
+> caching 적용분은 가정값 +4%pt 만 (mixed_cached_batch -63% vs mixed_batch -59%),
+> **Batch API 50% off 가 진짜 가치**. caching 가정 제거한 `mixed_batch` 가
+> 실현 가능 best.
+>
+> 옛 -91.8% 헤드라인은 mixed_cached_batch vs Opus 기준. **새 mixed_batch
+> vs Opus 도 -91.8%** — 같은 수치 도달, 그러나 caching 가정 없는 정직한 길.
 
-엔드포인트: `GET /api/lg/cost-analysis` — 실시간 계산 결과 + 두 baseline 모두 절감률 반환.
+엔드포인트: `GET /api/lg/cost-analysis` — `headline_savings.realized_*`
+(실측) + `assumed_*` (caching 가정) 둘 다 반환.
 
 ---
 
