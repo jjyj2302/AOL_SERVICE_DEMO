@@ -29,6 +29,9 @@ langgraph-checkpoint>=2.0.0,<3
 
 # MCP - Model Context Protocol 도구 메시 (langchain-core 0.3.x 호환 라인)
 langchain-mcp-adapters>=0.0.6,<0.1
+# MCP SDK — 진짜 MCP 프로토콜 (JSON-RPC over sse/stdio) 클라이언트
+# self_mcp / external_mcp 모드에서 사이드카 컨테이너에 sse 로 접근
+mcp>=1.2,<2
 
 # Utilities
 regex>=2024.0.0

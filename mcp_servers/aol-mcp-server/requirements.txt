@@ -1,0 +1,6 @@
+# FastMCP server (Anthropic MCP SDK)
+mcp>=1.2,<2
+
+# Same threat intel libs the backend uses
+requests>=2.32,<3
+dnstwist>=20240120

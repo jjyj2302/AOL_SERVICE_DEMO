@@ -19,6 +19,50 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # ===========================================================
+  # MCP 사이드카 — 자체 FastMCP (5 도구를 진짜 MCP 프로토콜로 노출)
+  # backend 가 langchain-mcp-adapters MultiServerMCPClient 로
+  # sse://aol-mcp:8765/sse 로 접근한다.
+  # ===========================================================
+  aol-mcp:
+    networks:
+      - aol-network
+    build:
+      context: ./mcp_servers/aol-mcp-server
+      dockerfile: Dockerfile
+    image: aol_mcp_server:latest
+    container_name: aol-mcp
+    environment:
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8765
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY:-}
+      - SHODAN_API_KEY=${SHODAN_API_KEY:-}
+      - LOG_LEVEL=INFO
+    expose:
+      - "8765"
+    restart: unless-stopped
+
+  # ===========================================================
+  # 외부 MCP 사이드카 — Node.js + dnstwist CLI
+  # Phase B: 다른 언어/SDK MCP 서버와의 호환성을 입증한다.
+  # 백엔드는 external_mcp 모드에서 sse://ext-mcp-dnstwist:8766/sse 로 접근.
+  # ===========================================================
+  ext-mcp-dnstwist:
+    networks:
+      - aol-network
+    build:
+      context: ./mcp_servers/external-mcp-dnstwist
+      dockerfile: Dockerfile
+    image: aol_ext_mcp_dnstwist:latest
+    container_name: ext-mcp-dnstwist
+    environment:
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8766
+    expose:
+      - "8766"
+    restart: unless-stopped
+
   backend:
     networks:
       - aol-network
@@ -36,11 +80,17 @@ services:
       # Anthropic key for /chat/dialogue 자유 대화 — shell env 에서 pass-through
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # MCP 사이드카 — Phase A 자체 FastMCP + Phase B 외부 Node.js MCP
+      - AOL_MCP_SELF_URL=http://aol-mcp:8765/sse
+      - AOL_MCP_EXT_DNSTWIST_URL=http://ext-mcp-dnstwist:8766/sse
+      - AOL_MCP_EXT_DNSTWIST_TOOL=dnstwist
     volumes:
       - ./backend/data:/backend/data
     depends_on:
       - redis
       - postgres
+      - aol-mcp
+      - ext-mcp-dnstwist
     restart: unless-stopped
 
   frontend:

@@ -1,21 +1,21 @@
-"""MCP 도구 게이트웨이 — 시뮬레이션 모드 / 라이브 모드 분기.
+"""MCP 도구 게이트웨이 — 시뮬레이션 / 직접 호출 / 진짜 MCP 프로토콜 분기.
 
-simulation 모드: 시드 데이터 반환 (외부 호출 0회 — 데모/PoC/테스트용).
-live 모드: 실제 외부 API / Python 라이브러리 직접 호출.
-  - VirusTotal HTTP API (VIRUSTOTAL_API_KEY 필요, 무료 4 req/min)
-  - DNSTwist Python 라이브러리 (API 키 불필요)
-  - Shodan HTTP API (SHODAN_API_KEY 필요, 유료 — 없으면 InternetDB 무료 fallback)
-  - OSINT: crt.sh (Certificate Transparency, 공개), 무료 ASN/BGP API
-  - CVE: NVD API + EPSS (FIRST) + CISA KEV — 모두 공개 무료
+modes:
+  - simulation    : 시드 데이터 반환 (외부 호출 0회 — 데모/PoC/테스트).
+  - live          : 별칭. AOL_LIVE_MCP_MODE 환경변수로 실제 모드 결정 (기본 direct).
+  - direct (=live): 백엔드 프로세스가 외부 API/Python lib 를 직접 호출 (기존 동작).
+  - self_mcp      : 자체 FastMCP 사이드카(aol-mcp) 에 SSE+JSON-RPC 로 접근.
+  - external_mcp  : 외부 MCP 서버(예: dnstwist-mcp) 와 자체 FastMCP 혼합.
 
-운영 환경 도입 시 API 키만 환경변수로 주입하면 즉시 실 데이터.
+self_mcp / external_mcp 는 mcp_live_client.McpLiveClient 를 거쳐
+진짜 MCP 프로토콜 (JSON-RPC over SSE) 로 통신한다.
 """
 from __future__ import annotations
 
 import logging
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
@@ -45,12 +45,52 @@ def _cache_set(key: str, val: Any) -> None:
     _CACHE[key] = (time.time(), val)
 
 
+_LIVE_MODE_ALIASES = {"live": None}  # 'live' 는 환경변수로 풀림 (아래 _resolve_live_mode)
+
+
+def _resolve_live_mode(raw: str) -> str:
+    """'live' 같은 alias 를 실제 분기 키로 풀어낸다.
+
+    AOL_LIVE_MCP_MODE 환경변수가 ('direct' | 'self_mcp' | 'external_mcp') 중 하나면 그 값.
+    미설정이면 'direct' (기존 동작 = 백엔드가 직접 외부 API 호출).
+    """
+    if raw == "live":
+        env = (os.getenv("AOL_LIVE_MCP_MODE", "direct") or "direct").strip().lower()
+        if env in ("direct", "self_mcp", "external_mcp"):
+            return env
+        return "direct"
+    return raw
+
+
 @dataclass
 class McpRegistry:
-    """5 MCP 도구 호출 추상화. simulation / live 분기 + 호출 기록."""
+    """5 MCP 도구 호출 추상화. mode 별 분기 + 호출 기록.
+
+    mode 값 (string):
+      simulation    : 시드 데이터
+      direct        : 백엔드가 외부 API 직접 호출 (기존 'live' 동작)
+      self_mcp      : aol-mcp 사이드카 (FastMCP) sse 호출
+      external_mcp  : 외부 MCP 서버 (+ fallback self_mcp)
+      live          : AOL_LIVE_MCP_MODE 환경변수로 실제 모드 풀이
+    """
 
     mode: str = "simulation"
     _scenario_id: str | None = None
+    _live_client: Any = field(default=None, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.mode = _resolve_live_mode(self.mode)
+        if self.mode in ("self_mcp", "external_mcp"):
+            try:
+                from .mcp_live_client import build_client
+
+                self._live_client = build_client(self.mode)
+                if self._live_client is None:
+                    logger.warning("MCP live client 생성 실패, direct 모드로 fallback (mode=%s)", self.mode)
+                    self.mode = "direct"
+            except Exception as e:  # noqa: BLE001
+                logger.warning("MCP live client 임포트 실패 (%s), direct 로 fallback", e)
+                self.mode = "direct"
 
     def attach_scenario(self, scenario_id: str | None) -> None:
         self._scenario_id = scenario_id
@@ -71,6 +111,16 @@ class McpRegistry:
     def _sim(self) -> dict[str, Any] | None:
         return get_scenario(self._scenario_id) if self._scenario_id else None
 
+    def _via_mcp(self, tool_alias: str, arguments: dict[str, Any]) -> Any:
+        """진짜 MCP 프로토콜로 도구 호출. 실패 시 None 반환 (호출부가 폴백 결정)."""
+        if self._live_client is None:
+            return None
+        try:
+            return self._live_client.call(tool_alias, arguments)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("MCP call '%s' 실패: %s", tool_alias, e)
+            return None
+
     # ============================================================
     # 1. VirusTotal — 평판 조회 (실 HTTP)
     # ============================================================
@@ -90,7 +140,14 @@ class McpRegistry:
             self._record(state, "virustotal", f"{ioc_type}={ioc}", t0)
             return payload
 
-        # ---- 라이브 ----
+        if self.mode in ("self_mcp", "external_mcp"):
+            payload = self._via_mcp("virustotal", {"ioc": ioc, "ioc_type": ioc_type})
+            if payload is not None:
+                self._record(state, "virustotal", f"{ioc_type}={ioc}", t0)
+                return payload  # type: ignore[return-value]
+            # fallback: direct
+
+        # ---- direct 라이브 ----
         cached = _cache_get(cache_key)
         if cached is not None:
             self._record(state, "virustotal", f"{ioc_type}={ioc}", t0, cached=True)
@@ -155,7 +212,14 @@ class McpRegistry:
             self._record(state, "dnstwist", f"domain={domain}", t0)
             return result
 
-        # ---- 라이브 ----
+        if self.mode in ("self_mcp", "external_mcp"):
+            result = self._via_mcp("dnstwist", {"domain": domain})
+            if result is not None:
+                self._record(state, "dnstwist", f"domain={domain}", t0)
+                return result if isinstance(result, list) else [result]
+            # fallback: direct
+
+        # ---- direct 라이브 ----
         cached = _cache_get(cache_key)
         if cached is not None:
             self._record(state, "dnstwist", f"domain={domain}", t0, cached=True)
@@ -199,6 +263,12 @@ class McpRegistry:
             result = list(seed.get("infrastructure", {}).get("exposed_assets", []))
             self._record(state, "shodan", f"target={target}", t0)
             return result
+
+        if self.mode in ("self_mcp", "external_mcp"):
+            result = self._via_mcp("shodan", {"target": target})
+            if result is not None:
+                self._record(state, "shodan", f"target={target}", t0)
+                return result if isinstance(result, list) else [result]
 
         cached = _cache_get(cache_key)
         if cached is not None:
@@ -267,6 +337,12 @@ class McpRegistry:
             self._record(state, "osint", f"target={target}", t0)
             return result
 
+        if self.mode in ("self_mcp", "external_mcp"):
+            result = self._via_mcp("osint", {"target": target})
+            if result is not None:
+                self._record(state, "osint", f"target={target}", t0)
+                return result if isinstance(result, list) else [result]
+
         cached = _cache_get(cache_key)
         if cached is not None:
             self._record(state, "osint", f"target={target}", t0, cached=True)
@@ -322,6 +398,12 @@ class McpRegistry:
             }
             self._record(state, "cve", f"cve_id={cve_id}", t0)
             return payload
+
+        if self.mode in ("self_mcp", "external_mcp"):
+            payload = self._via_mcp("cve", {"cve_id": cve_id})
+            if payload is not None:
+                self._record(state, "cve", f"cve_id={cve_id}", t0)
+                return payload  # type: ignore[return-value]
 
         cached = _cache_get(cache_key)
         if cached is not None:
