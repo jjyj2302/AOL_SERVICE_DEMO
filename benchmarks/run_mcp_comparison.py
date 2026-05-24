@@ -150,16 +150,21 @@ def _run_inside(mode: str) -> dict[str, Any]:
 
 
 def _measure_concurrent(mode: str) -> dict[str, Any]:
-    """asyncio 로 dnstwist N 회 병렬 호출 → QPS 계산.
+    """동시/순차 두 가지 throughput 측정.
 
-    동기 메서드를 thread pool 로 감싸서 동시 실행한다.
+    1) parallel_qps : asyncio.gather 로 N 병렬 호출 — client 측 SSE 세션
+       동시 셋업 능력 + 서버 측 동시성을 함께 본다 (현실에서 multi-request 상황).
+    2) sequential_qps : 한 client 가 N 회 순차 호출 — 같은 client 가 캐시 적중
+       흐름에서 낼 수 있는 effective throughput.
+
+    동기 dnstwist 호출을 thread pool 로 감싸서 동시 실행한다.
     """
     from app.features.langgraph_threat_hunter.mcp_clients import McpRegistry  # noqa: E402
     from app.features.langgraph_threat_hunter.state import ThreatHuntState  # noqa: E402
 
     domain = "kakaobank-secure-login.com"
 
-    # warm-up 1회 (캐시 상태 균일화 — self_mcp 사이드카 캐시 적중 후 측정)
+    # warm-up 1회 (캐시 상태 균일화 — 사이드카 캐시 적중 후 측정)
     warm = McpRegistry(mode="live")
     warm_state = ThreatHuntState(ioc=domain, ioc_type="domain", mode="live")
     try:
@@ -167,7 +172,7 @@ def _measure_concurrent(mode: str) -> dict[str, Any]:
     except Exception:  # noqa: BLE001
         pass
 
-    async def one_call(idx: int) -> float:
+    async def one_call() -> float:
         reg = McpRegistry(mode="live")
         s = ThreatHuntState(ioc=domain, ioc_type="domain", mode="live")
         loop = asyncio.get_running_loop()
@@ -178,29 +183,51 @@ def _measure_concurrent(mode: str) -> dict[str, Any]:
             return -1.0
         return (time.perf_counter_ns() - t0) / 1_000_000
 
-    async def runner():
+    async def parallel_runner():
         t0 = time.perf_counter_ns()
-        results = await asyncio.gather(*[one_call(i) for i in range(CONCURRENT_N)])
+        results = await asyncio.gather(*[one_call() for _ in range(CONCURRENT_N)])
         total_ms = (time.perf_counter_ns() - t0) / 1_000_000
         return results, total_ms
 
-    try:
-        per_call_ms, wall_ms = asyncio.run(runner())
-    except Exception as e:  # noqa: BLE001
-        return {"error": str(e)}
+    async def sequential_runner():
+        results: list[float] = []
+        t0 = time.perf_counter_ns()
+        for _ in range(CONCURRENT_N):
+            results.append(await one_call())
+        total_ms = (time.perf_counter_ns() - t0) / 1_000_000
+        return results, total_ms
 
-    ok = [v for v in per_call_ms if v >= 0]
-    if not ok:
-        return {"error": "all_failed", "samples_ms": per_call_ms}
-    return {
+    out: dict[str, Any] = {
         "tool": "dnstwist",
         "input": domain,
-        "n_parallel": CONCURRENT_N,
-        "per_call_ms": [round(v, 1) for v in per_call_ms],
-        "wall_ms": round(wall_ms, 1),
-        "per_call_avg_ms": round(statistics.mean(ok), 1),
-        "qps": round(len(ok) * 1000.0 / wall_ms, 2) if wall_ms > 0 else 0.0,
+        "n": CONCURRENT_N,
     }
+
+    try:
+        par_per_call, par_wall = asyncio.run(parallel_runner())
+        ok = [v for v in par_per_call if v >= 0]
+        out["parallel"] = {
+            "per_call_ms": [round(v, 1) for v in par_per_call],
+            "wall_ms": round(par_wall, 1),
+            "per_call_avg_ms": round(statistics.mean(ok), 1) if ok else -1,
+            "qps": round(len(ok) * 1000.0 / par_wall, 2) if par_wall > 0 else 0.0,
+        }
+    except Exception as e:  # noqa: BLE001
+        out["parallel"] = {"error": str(e)}
+
+    try:
+        seq_per_call, seq_wall = asyncio.run(sequential_runner())
+        ok = [v for v in seq_per_call if v >= 0]
+        out["sequential"] = {
+            "per_call_ms": [round(v, 1) for v in seq_per_call],
+            "wall_ms": round(seq_wall, 1),
+            "per_call_avg_ms": round(statistics.mean(ok), 1) if ok else -1,
+            "qps": round(len(ok) * 1000.0 / seq_wall, 2) if seq_wall > 0 else 0.0,
+        }
+    except Exception as e:  # noqa: BLE001
+        out["sequential"] = {"error": str(e)}
+
+    return out
 
 
 def _docker_stats(name: str) -> dict[str, Any]:
@@ -310,22 +337,31 @@ def _summarize(report: dict[str, Any]) -> str:
                 f"{m['result_count_or_fields']:>5} | {m['result_source']}"
             )
 
-    # 2) 동시 호출 QPS
+    # 2) Throughput (parallel vs sequential)
     lines.append("")
     lines.append("=" * 135)
-    lines.append("[ 동시 호출 (dnstwist x N 병렬) ]")
-    lines.append(f"{'mode':<14} | {'N':>3} | {'per-call avg ms':>15} | {'wall ms':>8} | {'QPS':>6}")
-    lines.append("-" * 60)
+    lines.append("[ Throughput (dnstwist x N) — parallel vs sequential ]")
+    lines.append(
+        f"{'mode':<14} | {'N':>3} | "
+        f"{'PAR per-call ms':>15} | {'PAR wall':>9} | {'PAR QPS':>8} | "
+        f"{'SEQ per-call ms':>15} | {'SEQ wall':>9} | {'SEQ QPS':>8}"
+    )
+    lines.append("-" * 110)
     for mode_block in report["modes"]:
-        c = mode_block.get("concurrent", {})
-        if c.get("error"):
-            lines.append(f"{mode_block['mode']:<14} | ERROR: {c['error']}")
-        else:
-            lines.append(
-                f"{mode_block['mode']:<14} | {c.get('n_parallel', 0):>3} | "
-                f"{c.get('per_call_avg_ms', 0):>15.0f} | {c.get('wall_ms', 0):>8.0f} | "
-                f"{c.get('qps', 0):>6.2f}"
-            )
+        c = mode_block.get("concurrent", {}) or {}
+        par = c.get("parallel", {}) or {}
+        seq = c.get("sequential", {}) or {}
+        n = c.get("n", 0)
+        if par.get("error") and seq.get("error"):
+            lines.append(f"{mode_block['mode']:<14} | ERROR: parallel={par['error']} seq={seq['error']}")
+            continue
+        lines.append(
+            f"{mode_block['mode']:<14} | {n:>3} | "
+            f"{par.get('per_call_avg_ms', -1):>15.0f} | {par.get('wall_ms', -1):>9.0f} | "
+            f"{par.get('qps', 0):>8.2f} | "
+            f"{seq.get('per_call_avg_ms', -1):>15.0f} | {seq.get('wall_ms', -1):>9.0f} | "
+            f"{seq.get('qps', 0):>8.2f}"
+        )
 
     # 3) 컨테이너 메모리 / 이미지
     lines.append("")

@@ -103,66 +103,78 @@ flowchart LR
 컨테이너 내부에서 측정. 측정 지표 = **latency / payload bytes / LLM
 토큰 / 결과 수 / 출처 / 동시 호출 QPS / 컨테이너 메모리 / 이미지 크기**.
 
-### (1) 도구별 호출 측정
+### (1) 도구별 호출 측정 (Phase 22 — external_mcp 캐시 추가 후)
 
 | 모드 | 도구 | 입력 | cold (ms) | warm (ms) | bytes | tokens | 출처 |
 |---|---|---|---:|---:|---:|---:|---|
-| direct | dnstwist | shinhan-secure-banking.kr | 1879 | — | 2407 | 601 | dnstwist lib |
-| direct | dnstwist | kakaobank-secure-login.com | 1801 | — | 2436 | 609 | dnstwist lib |
-| direct | cve | CVE-2024-21762 | 4634 | — | 519 | 129 | NVD live |
-| direct | cve | CVE-2023-44487 | 4778 | — | 405 | 101 | NVD live |
-| direct | osint | shinhan.com | 1210 | — | 123 | 30 | crt.sh |
-| **self_mcp** | dnstwist | shinhan-secure-banking.kr | 2514 | **37** | 2407 | 601 | aol-mcp |
-| **self_mcp** | dnstwist | kakaobank-secure-login.com | 36 | **44** | 2436 | 609 | aol-mcp |
-| **self_mcp** | cve | CVE-2024-21762 | 33 | **34** | 519 | 129 | aol-mcp |
-| **self_mcp** | cve | CVE-2023-44487 | 32 | **35** | 405 | 101 | aol-mcp |
-| **self_mcp** | osint | shinhan.com | 34 | **36** | 123 | 30 | aol-mcp |
-| external_mcp | dnstwist | shinhan-secure-banking.kr | 3577 | 2888 | **3335** | **833** | external_node_mcp |
-| external_mcp | dnstwist | kakaobank-secure-login.com | 2629 | 2573 | **3364** | **841** | external_node_mcp |
-| external_mcp | cve | CVE-2024-21762 | 46 | 38 | 519 | 129 | aol-mcp (fallback) |
-| external_mcp | cve | CVE-2023-44487 | 32 | 38 | 405 | 101 | aol-mcp (fallback) |
-| external_mcp | osint | shinhan.com | 38 | 37 | 123 | 30 | aol-mcp (fallback) |
+| direct | dnstwist | shinhan-secure-banking.kr | 2009 | — | 2407 | 601 | dnstwist lib |
+| direct | dnstwist | kakaobank-secure-login.com | 1904 | — | 2436 | 609 | dnstwist lib |
+| direct | cve | CVE-2024-21762 | 11878 | — | 519 | 129 | NVD live |
+| direct | osint | shinhan.com | 1251 | — | 123 | 30 | crt.sh |
+| **self_mcp** | dnstwist | shinhan-secure-banking.kr | 680 | **46** | 2407 | 601 | aol-mcp |
+| **self_mcp** | dnstwist | kakaobank-secure-login.com | 41 | **40** | 2436 | 609 | aol-mcp |
+| **self_mcp** | cve | CVE-2024-21762 | 42 | **38** | 519 | 129 | aol-mcp |
+| **self_mcp** | cve | CVE-2023-44487 | 32 | **38** | 405 | 101 | aol-mcp |
+| **self_mcp** | osint | shinhan.com | 38 | **37** | 123 | 30 | aol-mcp |
+| external_mcp | dnstwist | shinhan-secure-banking.kr | 3588 | **38** ↓ | 3335 | 833 | external_node_mcp |
+| external_mcp | dnstwist | kakaobank-secure-login.com | 33 | **30** ↓ | 3857 | 964 | external_node_mcp |
+| external_mcp | cve | CVE-2024-21762 | 35 | 52 | 519 | 129 | aol-mcp (fallback) |
+| external_mcp | cve | CVE-2023-44487 | 45 | 48 | 405 | 101 | aol-mcp (fallback) |
+| external_mcp | osint | shinhan.com | 39 | 45 | 123 | 30 | aol-mcp (fallback) |
 
+> **Phase 22 변경**: external_mcp dnstwist warm latency 2573~2888ms → **30~38ms (80배 개선)**.
+> ext-mcp-dnstwist 의 server.js 에 in-process Map 캐시 (TTL 10분) + singleflight
+> 패턴 (같은 key 동시 호출 시 in-flight Promise 공유) 추가 적용.
+>
 > `direct` 의 warm avg 가 `—` 인 이유: 측정 스크립트가 반복마다 새
-> `McpRegistry` 를 생성해서 in-process 캐시가 무력화됨. 실제 운영에서는
-> 단일 registry 재사용이라 캐시 적중함. self_mcp 는 사이드카 안에 캐시가
-> 살아있어 측정 방식과 무관하게 warm 적중.
+> `McpRegistry` 를 생성해서 in-process 캐시가 무력화됨. self_mcp /
+> external_mcp 는 사이드카 안에 캐시가 살아있어 측정 방식과 무관하게 warm 적중.
 
-### (2) 동시 호출 QPS (dnstwist 5 병렬)
+### (2) Throughput — parallel vs sequential (dnstwist x 5)
 
-| 모드 | per-call avg (ms) | wall (ms) | QPS |
-|---|---:|---:|---:|
-| direct | 2 | 5 | **963.80** |
-| self_mcp | 144 | 149 | 33.61 |
-| external_mcp | 9466 | 9822 | **0.51** |
+같은 backend 가 N=5 회 호출. parallel = `asyncio.gather`, sequential = 한 번에 한 호출.
+warm-up 1회로 캐시 데움 → 측정 5회 모두 캐시 적중 흐름.
 
-> `direct` 의 QPS 가 압도적인 이유: warm-up 후 backend in-process 캐시가
-> 살아있어서 5 병렬이 모두 캐시 적중. 실제 분석 흐름(매번 다른 IoC)에서는
-> 이 수치가 재현되지 않는다. **external_mcp 의 0.51 QPS 는 Node 서버에
-> 캐시가 없어 매 호출마다 python spawn 직렬 처리 → 운영 부적합**.
+| 모드 | PAR per-call ms | PAR wall ms | **PAR QPS** | SEQ per-call ms | SEQ wall ms | **SEQ QPS** |
+|---|---:|---:|---:|---:|---:|---:|
+| direct | 2 | 6 | **867** | 1 | 7 | **695** |
+| self_mcp | 166 | 170 | **29.3** | 44 | 219 | **22.8** |
+| external_mcp | 9744 | 9942 | **0.50** | 618 | 3093 | **1.62** ↑ |
+
+> **Phase 22 변경**: external_mcp **sequential QPS 0.51 → 1.62 (3배 개선)**.
+> 캐시 적중 자체는 30ms 인데 **client side SSE 세션 셋업이 +600ms** 가 새 병목.
+> 자체 Python FastMCP 는 세션 셋업 ~50ms, 외부 Node Express+MCP SDK 는
+> ~600ms. **parallel 0.50 그대로**: 5 SSE 세션 동시 셋업이 Node 서버에서
+> 직렬화 (server.connect race). 운영 throughput 추가 개선은 client side
+> session pool 필요 (다음 Phase 후보).
 
 ### (3) 사이드카 컨테이너 자원
 
 | 모드 | 컨테이너 | 메모리 (MB) | 이미지 (MB) |
 |---|---|---:|---:|
-| direct | backend (자체) | 116.7 | 949 |
-| self_mcp | aol-mcp | **57.6** | **180** |
-| external_mcp | aol-mcp + ext-mcp-dnstwist | 57.6 + 29.7 = 87.3 | 180 + 309 = 489 |
+| direct | backend (자체) | 117.8 | 949 |
+| self_mcp | aol-mcp | **58.7** | **180** |
+| external_mcp | aol-mcp + ext-mcp-dnstwist | 58.7 + 40.7 = 99.4 | 180 + 309 = 489 |
+
+> ext-mcp-dnstwist 메모리 29.7 → 40.7 MB: 캐시 Map + inflight Map 보유 비용 (~10MB).
 
 ### 핵심 인사이트
 
 1. **self_mcp가 운영 권장**: warm 30~50ms 일관 응답 + 캐시 적중률 100% +
-   사이드카 메모리 57MB만 추가. backend 이미지(949MB)에 도구 추가 없이도
-   기능 확장 가능.
-2. **external_mcp는 정직한 학술 가치**: 다른 언어/SDK MCP 서버와의 호환성을
-   입증하지만, 결과 페이로드가 **+39% (601→833 tokens)** 증가 → 그대로
-   LLM 비용으로 직결. 캐시 미구현으로 QPS 0.51 → 운영 부적합.
+   사이드카 메모리 58MB만 추가. SEQ QPS 22.8 / PAR QPS 29.3 — 단일 backend
+   에서 충분한 throughput. backend 이미지(949MB)에 도구 추가 없이도 기능 확장.
+2. **external_mcp 는 캐시 추가로 latency 해결, throughput 은 client 병목**:
+   warm latency 는 self_mcp 와 동급 (30~50ms) 까지 끌어내렸으나, SSE 세션
+   셋업 600ms 라는 client side 비용으로 SEQ QPS 1.62. **운영 throughput 을
+   self_mcp 수준으로 끌어올리려면 MCP client side session pool 필요**.
 3. **direct cold latency 가 가장 짧지 않음** — backend 프로세스에 무거운
    라이브러리(dnstwist, requests) 로드 비용 + 매 호출마다 외부 API 왕복.
    사이드카 분리 후 캐시 적중 시 self_mcp 가 압도적.
-4. **MCP 오버헤드(SSE 세션 셋업)** ≈ 30~50ms — warm 호출의 self_mcp 가
-   캐시 적중 + MCP overhead 만으로 측정됨. 무시할 수준.
-5. **외부 MCP의 +39% 토큰은 비용 직결**: 같은 도구라도 결과 포맷이 풍부할수록
+4. **MCP overhead 의 두 층**:
+   (a) **서버 측 SSE 세션 처리** — Python FastMCP 50ms vs Node Express 600ms.
+       구현 품질이 latency 에 직결. (b) **클라이언트 측 새 세션 생성** —
+       매 호출 새 sse_client 컨텍스트가 round-trip 1회 추가.
+5. **외부 MCP 의 +39% 토큰은 비용 직결**: 같은 도구라도 결과 포맷이 풍부할수록
    LLM 비용이 비례 증가. 91.8% 비용 절감 분석과 같은 결의 정직한 수치.
 
 ---
@@ -283,7 +295,9 @@ Specialist Claude (Sonnet 4.5) 의 system prompt 에 "MCP 도구 결과가 실
 - dnstwist 도구만 노출 (의도적으로 단순)
 - `spawn("python3", ["-c", PY_FUZZER_SNIPPET, ...])` 로 dnstwist Fuzzer
   직접 호출 (DNS 미수행, self_mcp 와 공정 비교)
-- 캐시 없음 — 측정에 노이즈 없도록 의도
+- **in-process 캐시** (Phase 22 추가): `Map<key, {ts,value}>` TTL 10분 +
+  `inflight: Map<key, Promise>` singleflight — 같은 key 동시 호출 시
+  첫 호출만 spawn, 나머지는 같은 Promise await
 - 컨테이너: `aol_ext_mcp_dnstwist:latest`
 
 ---

@@ -23,6 +23,27 @@ import {
 const HOST = process.env.MCP_HOST || "0.0.0.0";
 const PORT = parseInt(process.env.MCP_PORT || "8766", 10);
 
+// in-process 캐시 + singleflight (Phase 22 — QPS 0.51 → 30+ 개선용).
+// 자체 FastMCP(aol-mcp) 와 동일하게 TTL 10분. 같은 (domain,limit) 동시 호출 시
+// 첫 호출만 python spawn 하고 나머지는 같은 Promise 를 await — 중복 spawn 차단.
+const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 10 * 60 * 1000);
+const cache = new Map(); // key → { ts: number, value: any }
+const inflight = new Map(); // key → Promise
+
+function cacheGet(key) {
+  const hit = cache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function cacheSet(key, value) {
+  cache.set(key, { ts: Date.now(), value });
+}
+
 const server = new Server(
   { name: "external-dnstwist", version: "0.1.0" },
   { capabilities: { tools: {} } },
@@ -107,8 +128,30 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   if (!domain) {
     return { isError: true, content: [{ type: "text", text: "domain is required" }] };
   }
+  const cacheKey = `dnstwist:${domain}:${limit}`;
+
+  // (1) cache hit
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    return {
+      content: cached.map((v) => ({ type: "text", text: JSON.stringify({ ...v, _cached: true }) })),
+    };
+  }
+
+  // (2) in-flight singleflight — 같은 key 가 이미 실행 중이면 같은 Promise 공유
+  let promise = inflight.get(cacheKey);
+  if (!promise) {
+    promise = runDnstwist(domain, limit)
+      .then((variants) => {
+        cacheSet(cacheKey, variants);
+        return variants;
+      })
+      .finally(() => inflight.delete(cacheKey));
+    inflight.set(cacheKey, promise);
+  }
+
   try {
-    const variants = await runDnstwist(domain, limit);
+    const variants = await promise;
     return {
       content: variants.map((v) => ({ type: "text", text: JSON.stringify(v) })),
     };
