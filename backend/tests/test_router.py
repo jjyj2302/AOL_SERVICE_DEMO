@@ -64,34 +64,47 @@ def test_cost_analysis_endpoint(client):
     resp = client.get("/api/lg/cost-analysis")
     assert resp.status_code == 200
     body = resp.json()
-    # 5 전략: all_opus(naive), all_sonnet(realistic), all_haiku(lower), mixed, mixed_cached_batch
+    # Phase 26: 6 전략 (mixed_batch 추가 — caching 가정 없는 실현 가능 best)
     assert set(body["strategies"].keys()) == {
-        "all_opus", "all_sonnet", "all_haiku", "mixed", "mixed_cached_batch",
+        "all_opus", "all_sonnet", "all_haiku",
+        "mixed", "mixed_batch", "mixed_cached_batch",
     }
-    # 가격 순서: opus > sonnet > mixed > cached > haiku
     s = body["strategies"]
+    # 가격 순서: opus > sonnet > mixed > mixed_batch > mixed_cached_batch > (haiku 별도)
     assert s["all_opus"]["total_cost_usd"] > s["all_sonnet"]["total_cost_usd"]
     assert s["all_sonnet"]["total_cost_usd"] > s["mixed"]["total_cost_usd"]
-    assert s["mixed"]["total_cost_usd"] > s["mixed_cached_batch"]["total_cost_usd"]
+    assert s["mixed"]["total_cost_usd"] > s["mixed_batch"]["total_cost_usd"]
+    assert s["mixed_batch"]["total_cost_usd"] > s["mixed_cached_batch"]["total_cost_usd"]
 
-    # 정직한 헤드라인: realistic Sonnet 대비 mixed_cached_batch 가 의미 있는 절감
+    # Phase 26 정직 헤드라인: realized (caching 가정 X) + assumed (caching 가정 O) 둘 다
     headline = body["headline_savings"]
-    assert headline["realistic_vs_sonnet_pct"] > 40  # 캐싱+배치로 최소 40%+
-    assert headline["realistic_vs_sonnet_pct"] < 80  # 정직성 — 90%+ 는 과대표기 신호
-    # 호환: 옛 91.8% (naive vs opus) 헤드라인도 보존
-    assert headline["naive_vs_opus_pct"] > 85
+    # realized — caching 없이 실현 가능 (mixed_batch vs sonnet)
+    assert 40 <= headline["realized_vs_sonnet_pct"] <= 75  # batch 만으로 50% 부근
+    assert headline["realized_best_strategy"] == "mixed_batch"
+    # assumed — caching 90% 가정 시 (옛 호환)
+    assert headline["assumed_vs_sonnet_pct"] > headline["realized_vs_sonnet_pct"]
+    assert headline["assumed_vs_opus_pct"] > 85
+    # 호환 alias 보존
+    assert "realistic_vs_sonnet_pct" in headline
+    assert "naive_vs_opus_pct" in headline
     assert headline["best_strategy"] == "mixed_cached_batch"
 
     # 두 baseline 모두 대비 절감률 노출
     assert "savings_vs_realistic_pct" in s["mixed_cached_batch"]
     assert "savings_vs_naive_pct" in s["mixed_cached_batch"]
+    assert "savings_vs_realistic_pct" in s["mixed_batch"]
 
-    # 월간 데이터 3종 (1k/10k/50k) 노출 + 두 baseline 모두 비용 표시
+    # methodology 에 정직성 표기 (Phase 26 — caching 가정 미작동 명시)
+    assert "Phase 26" in body["methodology"]["token_source"]
+    assert "minimum cache tokens" in body["methodology"]["caching"]
+
+    # 월간 데이터 3종 (1k/10k/50k) + realized/assumed 둘 다
     assert len(body["monthly_at_scale"]) == 3
     monthly = body["monthly_at_scale"][0]
     assert "monthly_realistic_sonnet_usd" in monthly
-    assert "monthly_naive_opus_usd" in monthly
-    assert "monthly_savings_vs_realistic_usd" in monthly
+    assert "monthly_mixed_batch_usd" in monthly
+    assert "monthly_savings_vs_realistic_realized_usd" in monthly
+    assert "monthly_savings_vs_realistic_assumed_usd" in monthly
 
 
 @pytest.mark.parametrize("sid", ["S1", "S2", "S3", "S4", "S5"])

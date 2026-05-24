@@ -227,19 +227,38 @@ def call_agent(
     agent_name: str,
     user_message: str,
     max_tokens: int = 2500,
+    *,
+    enable_prompt_cache: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """에이전트 LLM 호출.
 
+    Phase 26: enable_prompt_cache=True 면 system 프롬프트에 ephemeral
+    cache_control 마커 적용. Anthropic Prompt Caching 작동 시
+    cache_read_input_tokens / cache_creation_input_tokens 가 usage 에 노출됨.
+
+    ⚠ 현재 시스템 프롬프트 길이 (241~372 추정 토큰) 는 Anthropic 최소
+    요구치 (Sonnet 1024 / Haiku 2048) 미달 → cache_control 마커는 적용
+    되지만 실제 cache hit 은 0 으로 측정될 가능성. 정직성을 위해 마커는
+    유지하고 실측 결과로 가정값을 검증.
+
     반환: (parsed_dict, meta).
-    parsed_dict 는 {"findings": {...}, "chat_message": "..."} 형식의 JSON.
-    실패 시 빈 dict 와 error 메타.
     """
     if not has_anthropic_key():
         return {}, {"error": "no_anthropic_key"}
-    system = AGENT_PROMPTS.get(agent_name)
+    system_text = AGENT_PROMPTS.get(agent_name)
     model = AGENT_MODELS.get(agent_name)
-    if not system or not model:
+    if not system_text or not model:
         return {}, {"error": f"unknown_agent={agent_name}"}
+
+    # Phase 26: system 을 list 로 전달해야 cache_control 적용 가능
+    if enable_prompt_cache:
+        system: Any = [{
+            "type": "text",
+            "text": system_text,
+            "cache_control": {"type": "ephemeral"},
+        }]
+    else:
+        system = system_text
 
     client = anthropic.Anthropic()
     t0 = time.perf_counter_ns()
@@ -263,13 +282,19 @@ def call_agent(
         except json.JSONDecodeError:
             parsed = {}
 
-    return parsed, {
+    usage = resp.usage
+    meta: dict[str, Any] = {
         "model": model,
-        "input_tokens": resp.usage.input_tokens,
-        "output_tokens": resp.usage.output_tokens,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
         "elapsed_ms": elapsed_ms,
         "raw_text": text,
+        # Phase 26: prompt caching 실측 필드
+        "cache_read_input_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
+        "cache_creation_input_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
+        "cache_enabled": enable_prompt_cache,
     }
+    return parsed, meta
 
 
 def unwrap_findings(parsed: dict[str, Any]) -> tuple[dict[str, Any], str]:

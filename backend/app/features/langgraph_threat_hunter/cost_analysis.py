@@ -1,23 +1,31 @@
-"""에이전트별 모델 매핑 + 토큰/비용 분석.
+"""에이전트별 모델 매핑 + 토큰/비용 분석 (Phase 26: 실측 기반 재구성).
 
 각 에이전트의 작업 복잡도가 다르므로 동일 모델(Opus 등)을 모든 에이전트에
 적용하는 것은 낭비. 이 모듈은:
 
 1. 에이전트별 권장 모델 티어 (mini / medium / strong) 정의
 2. 모델 가격표 (Anthropic / OpenAI 2026년 기준, per 1M tokens)
-3. 에이전트별 토큰 사용량 추정 (Anthropic API 실측 평균)
-4. 5가지 전략 비용 비교:
-   - all_opus     : 모든 에이전트 Opus (naive — 실무에선 안 함)
-   - all_sonnet   : 모든 에이전트 Sonnet (현실적 디폴트, 단일 모델 운영)
-   - all_haiku    : 모든 에이전트 Haiku (저비용 하한, 품질 trade-off)
-   - mixed        : 복잡도별 모델 분배 (본 시스템 채택)
-   - mixed_cached : Mixed + Prompt Caching + Batch API
+3. 에이전트별 토큰 사용량 — Phase 26 실측 (benchmarks/caching_measurement.json)
+4. 6가지 전략 비용 비교:
+   - all_opus            : 모든 에이전트 Opus (naive — 실무에선 안 함)
+   - all_sonnet          : 모든 에이전트 Sonnet (현실적 디폴트, 단일 모델 운영)
+   - all_haiku           : 모든 에이전트 Haiku (저비용 하한, 품질 trade-off)
+   - mixed               : 복잡도별 모델 분배 (본 시스템 채택, caching/batch X)
+   - mixed_batch         : Mixed + Batch API 50% off (비실시간 가능, 실현)
+   - mixed_cached_batch  : Mixed + Prompt Caching 90% + Batch (★ 옛 헤드라인)
+                          ⚠ Phase 26 실측: 현재 system 프롬프트 (967~1491 chars)
+                          가 Anthropic minimum cache tokens (Sonnet 1024 /
+                          Haiku 2048) 미달로 cache hit 0%. 90% 가정은
+                          "프롬프트를 1024+ tokens 로 확장 시" 시나리오.
 
 savings_pct 는 두 baseline 모두에 대해 계산:
   - savings_vs_realistic_pct : all_sonnet 대비 (실무 비교 시 사용 — 정직)
   - savings_vs_naive_pct     : all_opus 대비 (마케팅 헤드라인이었던 91.8% 기준)
 
-운영 단계에서 실측 토큰을 수집하면 ESTIMATES 를 대체 가능.
+★ 정직한 헤드라인 (caching 가정 제거, 실현 가능):
+  mixed         vs Sonnet -18%  (모델 매핑만)
+  mixed_batch   vs Sonnet -59%  (모델 매핑 + Batch API)
+  mixed_cached  vs Sonnet -91%  (모델 매핑 + Batch + Caching 가정 — 옛 헤드라인)
 """
 from __future__ import annotations
 
@@ -66,49 +74,57 @@ class AgentProfile:
     uses_llm: bool = True
 
 
-# 토큰 추정치 — 2026-05-23 Anthropic API 실측 평균값으로 갱신.
-# 측정 환경: 5 agents × 3 models (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) 단발 호출.
-# 결과는 benchmarks/results.json (gitignored) 참조.
+# Phase 26 실측 평균 (benchmarks/caching_measurement.json, 2026-05-24).
+# 측정 환경: 각 agent 별 동일 user_message × 3 회 호출, max_tokens=2500.
+# input_tokens = system 프롬프트 + user_message 합산 (Anthropic API 측정값).
+# output_tokens = 실 응답 토큰 (campaign 만 max_tokens=2500 한도 도달).
+#
+# 옛 추정값 (system 미포함, user 만) 대비 +75~150% 증가:
+#   orchestrator 250 → 627  (+150%)
+#   triage       400 → 831  (+108%)
+#   malware      440 → 775  (+76%)
+#   infrastructure 540 → 944 (+75%)
+#   campaign     500 → 1023 (+105%)
 AGENTS: list[AgentProfile] = [
     AgentProfile(
         node_id="orchestrator",
         label="🧠 Orchestrator",
         recommended_tier="mini",
         rationale="IoC 타입 보고 route_plan 만 결정 — 라우팅만 필요",
-        input_tokens=250,    # 실측 평균
-        output_tokens=200,
+        input_tokens=627,    # Phase 26 실측 (system 967 chars + user)
+        output_tokens=377,   # 실측 평균 (max_tokens 미도달)
     ),
     AgentProfile(
         node_id="triage_step",
         label="🔍 Triage",
         recommended_tier="mini",
         rationale="VT JSON 해석 + 위협 수준 분류 — 구조화 데이터 매핑 수준",
-        input_tokens=400,    # 실측 평균 (397~466)
-        output_tokens=700,
+        input_tokens=831,    # Phase 26 실측 (system 1022 chars + user)
+        output_tokens=473,   # 실측 평균
     ),
     AgentProfile(
         node_id="malware_step",
         label="👾 Malware",
         recommended_tier="medium",
         rationale="악성코드 행위 분석 + Attack chain 재구성 — 추론 필요",
-        input_tokens=440,    # 실측 평균 (426~473)
-        output_tokens=1400,  # Sonnet 1500 / Opus 1124 평균
+        input_tokens=775,    # Phase 26 실측 (system 1029 chars + user)
+        output_tokens=632,   # 실측 평균
     ),
     AgentProfile(
         node_id="infrastructure_step",
         label="🌍 Infrastructure",
         recommended_tier="medium",
         rationale="다중 MCP 출력 클러스터링 + 인프라 상관관계 — 추론 필요",
-        input_tokens=540,    # 실측 평균 (517~588)
-        output_tokens=1300,  # Sonnet 1500 / Opus 1084 평균
+        input_tokens=944,    # Phase 26 실측 (system 1329 chars + user)
+        output_tokens=1000,  # 실측 평균
     ),
     AgentProfile(
         node_id="campaign_step",
         label="📈 Campaign",
         recommended_tier="medium",
         rationale="전략 종합 + 헌팅 쿼리 작성 + FW 룰 산출 — 가장 복잡한 합성",
-        input_tokens=500,    # 실측 평균 (484~556)
-        output_tokens=2500,
+        input_tokens=1023,   # Phase 26 실측 (system 1491 chars + user)
+        output_tokens=2500,  # ★ max_tokens=2500 한도 도달 — 진짜는 더 길 수도
     ),
     AgentProfile(
         node_id="confidence_gate",
@@ -256,6 +272,15 @@ def compute_strategies() -> dict:
     mixed = _compute_for_strategy(
         "mixed", TIER_TO_MODEL_ANTHROPIC,
     )
+    # Phase 26: caching 가정 제거 — Batch 만 적용 (실현 가능, 비실시간 워크플로)
+    mixed_batch_only = _compute_for_strategy(
+        "mixed_batch",
+        TIER_TO_MODEL_ANTHROPIC,
+        cached=False,
+        batch_discount=0.5,
+    )
+    # 옛 헤드라인 호환 — Caching 가정 + Batch (현재 system 프롬프트 미달로
+    # caching 실 작동 0%. 프롬프트 1024+ tokens 확장 시 시나리오)
     cached = _compute_for_strategy(
         "mixed_cached_batch",
         TIER_TO_MODEL_ANTHROPIC,
@@ -267,7 +292,7 @@ def compute_strategies() -> dict:
     def _pct(base: float, val: float) -> float:
         return round((base - val) / base * 100, 1) if base > 0 else 0.0
 
-    for s in (realistic_baseline, lower_bound, mixed, cached):
+    for s in (realistic_baseline, lower_bound, mixed, mixed_batch_only, cached):
         s.savings_vs_naive_pct = _pct(naive_baseline.total_cost_usd, s.total_cost_usd)
         s.savings_vs_realistic_pct = _pct(realistic_baseline.total_cost_usd, s.total_cost_usd)
         # 호환 alias (옛 코드/문서가 savings_vs_baseline_pct 를 참조)
@@ -280,14 +305,21 @@ def compute_strategies() -> dict:
         per_day_naive = naive_baseline.total_cost_usd * vol
         per_day_realistic = realistic_baseline.total_cost_usd * vol
         per_day_mixed = mixed.total_cost_usd * vol
+        per_day_batch = mixed_batch_only.total_cost_usd * vol
         per_day_cached = cached.total_cost_usd * vol
         monthly_view.append({
             "daily_iocs": vol,
             "monthly_naive_opus_usd": round(per_day_naive * 30, 2),
             "monthly_realistic_sonnet_usd": round(per_day_realistic * 30, 2),
             "monthly_mixed_usd": round(per_day_mixed * 30, 2),
+            "monthly_mixed_batch_usd": round(per_day_batch * 30, 2),
             "monthly_cached_usd": round(per_day_cached * 30, 2),
-            "monthly_savings_vs_realistic_usd": round((per_day_realistic - per_day_cached) * 30, 2),
+            "monthly_savings_vs_realistic_realized_usd": round(
+                (per_day_realistic - per_day_batch) * 30, 2
+            ),  # mixed_batch_only 가 실현 가능한 best (caching 가정 X)
+            "monthly_savings_vs_realistic_assumed_usd": round(
+                (per_day_realistic - per_day_cached) * 30, 2
+            ),  # caching 가정 포함 시
             "monthly_savings_vs_naive_usd": round((per_day_naive - per_day_cached) * 30, 2),
         })
 
@@ -297,15 +329,34 @@ def compute_strategies() -> dict:
             "all_sonnet": _strategy_to_dict(realistic_baseline),
             "all_haiku": _strategy_to_dict(lower_bound),
             "mixed": _strategy_to_dict(mixed),
+            "mixed_batch": _strategy_to_dict(mixed_batch_only),
             "mixed_cached_batch": _strategy_to_dict(cached),
         },
         "headline_savings": {
+            # ★ Phase 26 실측 기반 정직 헤드라인
+            "realized_vs_sonnet_pct": mixed_batch_only.savings_vs_realistic_pct,
+            "realized_best_strategy": "mixed_batch",
+            "realized_note": (
+                "caching 가정 제거 (Phase 26 실측: 현재 system 프롬프트가 "
+                "Anthropic minimum cache tokens 미달로 0% cache hit). Batch API "
+                "50% off 만 적용한 실현 가능 best."
+            ),
+            # 옛 헤드라인 호환 (caching 가정 포함)
+            "assumed_vs_sonnet_pct": cached.savings_vs_realistic_pct,
+            "assumed_vs_opus_pct": cached.savings_vs_naive_pct,
+            "assumed_best_strategy": "mixed_cached_batch",
+            "assumed_note": (
+                "Anthropic Prompt Caching 90% hit 가정 — 시스템 프롬프트를 "
+                "1024+ tokens 로 확장 시 시나리오. 현재는 미달 (Phase 26 실측 0%)."
+            ),
+            # 옛 필드 (호환 보존)
             "realistic_vs_sonnet_pct": cached.savings_vs_realistic_pct,
             "naive_vs_opus_pct": cached.savings_vs_naive_pct,
             "best_strategy": "mixed_cached_batch",
             "note": (
-                "realistic_vs_sonnet_pct 가 실무 비교의 정직한 수치. "
-                "naive_vs_opus_pct 는 'Opus 단독' 이라는 비현실적 baseline 대비라 과대표기됨."
+                "★ Phase 26 갱신: realized_* 가 실측 기반 정직 헤드라인, "
+                "assumed_* 는 caching 가정 시 (옛 91.8% / 59.1% 호환). "
+                "realistic_vs_sonnet_pct/naive_vs_opus_pct 는 옛 필드 호환."
             ),
         },
         "baselines": {
@@ -327,10 +378,21 @@ def compute_strategies() -> dict:
         },
         "monthly_at_scale": monthly_view,
         "methodology": {
-            "token_estimates": "각 에이전트 평균 input/output 토큰 (Anthropic API 실측 평균)",
+            "token_source": (
+                "★ Phase 26 실측 (benchmarks/caching_measurement.json) — "
+                "각 agent × 3 회 호출 평균 input/output 토큰 (Anthropic API usage 직접)"
+            ),
             "pricing_year": 2026,
-            "caching": "Anthropic Prompt Caching — 시스템 프롬프트 90% 캐시 가정",
-            "batch_discount": "Anthropic Batch API 50% 할인 (비실시간 워크플로 가정)",
+            "caching": (
+                "⚠ cost_analysis 의 cached_fraction=0.9 가정. Phase 26 실측 결과 "
+                "현재 system 프롬프트 (chars 967~1491, est tokens 241~372) 가 "
+                "Anthropic minimum cache tokens (Sonnet 1024 / Haiku 2048) 미달로 "
+                "cache hit 실측 0%. mixed_cached_batch 전략은 '프롬프트 확장 시' 시나리오."
+            ),
+            "batch_discount": (
+                "Anthropic Batch API 50% 할인 (비실시간 워크플로 가정). "
+                "실시간 SOC trigger 분석에는 부분 적용. mixed_batch 전략은 batch 만 적용 (실현 가능)."
+            ),
             "currency": "USD",
             "baseline_choice": (
                 "all_sonnet 을 realistic baseline 으로 사용. "
