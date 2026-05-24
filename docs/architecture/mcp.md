@@ -130,23 +130,45 @@ flowchart LR
 > `McpRegistry` 를 생성해서 in-process 캐시가 무력화됨. self_mcp /
 > external_mcp 는 사이드카 안에 캐시가 살아있어 측정 방식과 무관하게 warm 적중.
 
-### (2) Throughput — parallel vs sequential (dnstwist x 5)
+### (2) Throughput — parallel vs sequential (dnstwist x 5, Phase 23 후)
 
 같은 backend 가 N=5 회 호출. parallel = `asyncio.gather`, sequential = 한 번에 한 호출.
 warm-up 1회로 캐시 데움 → 측정 5회 모두 캐시 적중 흐름.
 
 | 모드 | PAR per-call ms | PAR wall ms | **PAR QPS** | SEQ per-call ms | SEQ wall ms | **SEQ QPS** |
 |---|---:|---:|---:|---:|---:|---:|
-| direct | 2 | 6 | **867** | 1 | 7 | **695** |
-| self_mcp | 166 | 170 | **29.3** | 44 | 219 | **22.8** |
-| external_mcp | 9744 | 9942 | **0.50** | 618 | 3093 | **1.62** ↑ |
+| direct | 2 | 4 | **1117** | 0 | 2 | **2448** |
+| self_mcp | 1 | 2 | **2626** ↑↑ | 0 | 2 | **2919** ↑↑ |
+| external_mcp | 1 | 2 | **2404** ↑↑ | 0 | 2 | **3088** ↑↑ |
 
-> **Phase 22 변경**: external_mcp **sequential QPS 0.51 → 1.62 (3배 개선)**.
-> 캐시 적중 자체는 30ms 인데 **client side SSE 세션 셋업이 +600ms** 가 새 병목.
-> 자체 Python FastMCP 는 세션 셋업 ~50ms, 외부 Node Express+MCP SDK 는
-> ~600ms. **parallel 0.50 그대로**: 5 SSE 세션 동시 셋업이 Node 서버에서
-> 직렬화 (server.connect race). 운영 throughput 추가 개선은 client side
-> session pool 필요 (다음 Phase 후보).
+> **Phase 23 변경**: backend McpRegistry 의 `_via_mcp()` 진입 전 `_CACHE` lookup
+> 추가. self_mcp / external_mcp 모드도 backend in-process 캐시 (TTL 10분)
+> 적중 시 사이드카 호출 자체를 회피.
+>
+> **결과**: parallel QPS 폭증 — self_mcp 29.3 → **2626 (89배)**,
+> external_mcp 0.50 → **2404 (4800배)**. SSE 세션 셋업 비용을 통째로 우회.
+
+#### Phase 23 정직성 — 측정 인공물 vs 진짜 운영 효과
+
+벤치마크는 **같은 IoC 를 5회 반복** 호출. backend cache 가 즉시 적중하니
+효과가 과장됨. 진짜 운영 시나리오:
+
+| 시나리오 | backend cache | 사이드카 cache | latency |
+|---|---|---|---|
+| 동일 IoC 재분석 (예: 분석가 더블체크) | hit | — | ~ms (벤치마크 측정) |
+| 다른 IoC 분석, 사이드카 캐시는 있음 | miss | hit | ~30-50ms (warm) |
+| 새 IoC 분석 (둘 다 miss) | miss | miss | 사이드카 cold latency (1.5~3.5s) |
+
+벤치마크 표는 첫 시나리오. **두 번째 시나리오 (사이드카 hit) 의 latency**
+가 진짜 운영 throughput 의 하한 — Phase 22 표 (1) 의 warm latency 30~50ms.
+
+#### Phase 23 의 한계
+
+- backend `_CACHE` 는 **process-local** — 다중 worker (uvicorn -w 4 등) 환경에서
+  worker 간 캐시 공유 X. **Redis shared cache 도입이 다음 단계**.
+- 캐시는 10분 TTL 의 fresh 자료. 위협 인텔리전스 데이터의 staleness 허용 한계
+  (VirusTotal/Shodan/CVE/CRT.sh 는 분 단위 변동 거의 없음, DNSTwist 는
+  결정론적이라 무한 캐싱 OK) 를 도구별로 다르게 잡아야 정확함.
 
 ### (3) 사이드카 컨테이너 자원
 
@@ -158,24 +180,30 @@ warm-up 1회로 캐시 데움 → 측정 5회 모두 캐시 적중 흐름.
 
 > ext-mcp-dnstwist 메모리 29.7 → 40.7 MB: 캐시 Map + inflight Map 보유 비용 (~10MB).
 
-### 핵심 인사이트
+### 핵심 인사이트 (Phase 23 후 갱신)
 
-1. **self_mcp가 운영 권장**: warm 30~50ms 일관 응답 + 캐시 적중률 100% +
-   사이드카 메모리 58MB만 추가. SEQ QPS 22.8 / PAR QPS 29.3 — 단일 backend
-   에서 충분한 throughput. backend 이미지(949MB)에 도구 추가 없이도 기능 확장.
-2. **external_mcp 는 캐시 추가로 latency 해결, throughput 은 client 병목**:
-   warm latency 는 self_mcp 와 동급 (30~50ms) 까지 끌어내렸으나, SSE 세션
-   셋업 600ms 라는 client side 비용으로 SEQ QPS 1.62. **운영 throughput 을
-   self_mcp 수준으로 끌어올리려면 MCP client side session pool 필요**.
-3. **direct cold latency 가 가장 짧지 않음** — backend 프로세스에 무거운
+1. **3 계층 캐시 아키텍처가 정착**: backend `_CACHE` (process-local) → 사이드카
+   in-process cache (TTL 10분) → 외부 API. 각 계층이 다음 계층 호출 비용을
+   회피. **L1 hit ~ms, L2 hit ~30-50ms, L3 cold 1.5~3.5s**.
+2. **self_mcp가 운영 권장** (변동 없음): warm 30~50ms 일관 응답 + 사이드카
+   메모리 58MB만 추가. backend 이미지(949MB)에 도구 추가 없이도 기능 확장.
+3. **external_mcp 는 캐시 추가로 latency 해결**: warm latency 가 self_mcp 와
+   동급 (30~50ms). 처음엔 client side SSE 세션 셋업 600ms 가 병목이었으나
+   Phase 23 backend cache 로 hot path 에서 사이드카 호출 자체 회피. 다만
+   cold (cache miss) 는 여전히 SSE 세션 셋업 600ms 발생.
+4. **direct cold latency 가 가장 짧지 않음** — backend 프로세스에 무거운
    라이브러리(dnstwist, requests) 로드 비용 + 매 호출마다 외부 API 왕복.
    사이드카 분리 후 캐시 적중 시 self_mcp 가 압도적.
-4. **MCP overhead 의 두 층**:
+5. **MCP overhead 의 두 층**:
    (a) **서버 측 SSE 세션 처리** — Python FastMCP 50ms vs Node Express 600ms.
        구현 품질이 latency 에 직결. (b) **클라이언트 측 새 세션 생성** —
-       매 호출 새 sse_client 컨텍스트가 round-trip 1회 추가.
-5. **외부 MCP 의 +39% 토큰은 비용 직결**: 같은 도구라도 결과 포맷이 풍부할수록
+       매 호출 새 sse_client 컨텍스트가 round-trip 1회 추가. **Phase 23 의
+       backend cache 가 두 층 모두 우회** (cache hit 시).
+6. **외부 MCP 의 +39% 토큰은 비용 직결**: 같은 도구라도 결과 포맷이 풍부할수록
    LLM 비용이 비례 증가. 91.8% 비용 절감 분석과 같은 결의 정직한 수치.
+7. **다음 단계는 분산 캐시**: backend `_CACHE` 가 process-local 이라 다중
+   worker (uvicorn -w 4) 환경에서 worker 간 캐시 공유 안 됨. **Redis shared
+   cache** 도입으로 운영 확장성 추가 개선 가능.
 
 ---
 

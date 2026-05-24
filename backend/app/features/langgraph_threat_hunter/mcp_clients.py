@@ -112,14 +112,30 @@ class McpRegistry:
         return get_scenario(self._scenario_id) if self._scenario_id else None
 
     def _via_mcp(self, tool_alias: str, arguments: dict[str, Any]) -> Any:
-        """진짜 MCP 프로토콜로 도구 호출. 실패 시 None 반환 (호출부가 폴백 결정)."""
+        """진짜 MCP 프로토콜로 도구 호출. 실패 시 None 반환 (호출부가 폴백 결정).
+
+        Phase 23: backend 측 캐시를 self_mcp/external_mcp 모드에서도 활성화.
+        사이드카 안에도 캐시가 있지만, backend 캐시 적중 시 SSE 세션 셋업
+        (Node ~600ms / Python ~50ms) 자체를 회피 → parallel throughput 개선.
+        """
         if self._live_client is None:
             return None
+
+        # backend-side 캐시 key — 도구 + arguments 직렬화
+        cache_key = f"mcp:{tool_alias}:" + ",".join(f"{k}={v}" for k, v in sorted(arguments.items()))
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         try:
-            return self._live_client.call(tool_alias, arguments)
+            result = self._live_client.call(tool_alias, arguments)
         except Exception as e:  # noqa: BLE001
             logger.warning("MCP call '%s' 실패: %s", tool_alias, e)
             return None
+
+        if result is not None:
+            _cache_set(cache_key, result)
+        return result
 
     # ============================================================
     # 1. VirusTotal — 평판 조회 (실 HTTP)

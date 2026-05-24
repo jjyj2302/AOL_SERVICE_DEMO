@@ -1,6 +1,6 @@
 {
   "schema": "mcp_comparison.v2",
-  "generated_at": 1779586672,
+  "generated_at": 1779587739,
   "cases": [
     [
       "dnstwist",
@@ -43,11 +43,11 @@
         {
           "tool": "dnstwist",
           "input": "shinhan-secure-banking.kr",
-          "cold_ms": 2008.6,
-          "warm_avg_ms": 0.0,
+          "cold_ms": 2005.9,
+          "warm_avg_ms": 0.1,
           "samples_ms": [
-            2008.6,
-            0.0,
+            2005.9,
+            0.2,
             0.0
           ],
           "result_count_or_fields": 29,
@@ -58,10 +58,10 @@
         {
           "tool": "dnstwist",
           "input": "kakaobank-secure-login.com",
-          "cold_ms": 1904.3,
+          "cold_ms": 1865.7,
           "warm_avg_ms": 0.0,
           "samples_ms": [
-            1904.3,
+            1865.7,
             0.0,
             0.0
           ],
@@ -73,10 +73,10 @@
         {
           "tool": "cve",
           "input": "CVE-2024-21762",
-          "cold_ms": 11877.7,
+          "cold_ms": 10357.9,
           "warm_avg_ms": 0.0,
           "samples_ms": [
-            11877.7,
+            10357.9,
             0.0,
             0.0
           ],
@@ -88,25 +88,25 @@
         {
           "tool": "cve",
           "input": "CVE-2023-44487",
-          "cold_ms": 15889.5,
+          "cold_ms": 9935.2,
           "warm_avg_ms": 0.0,
           "samples_ms": [
-            15889.5,
+            9935.2,
             0.0,
             0.0
           ],
-          "result_count_or_fields": 5,
+          "result_count_or_fields": 9,
           "result_source": "live",
-          "result_bytes": 108,
-          "llm_tokens_est": 27
+          "result_bytes": 405,
+          "llm_tokens_est": 101
         },
         {
           "tool": "osint",
           "input": "shinhan.com",
-          "cold_ms": 1250.9,
+          "cold_ms": 16293.2,
           "warm_avg_ms": 0.0,
           "samples_ms": [
-            1250.9,
+            16293.2,
             0.0,
             0.0
           ],
@@ -122,35 +122,35 @@
         "n": 5,
         "parallel": {
           "per_call_ms": [
-            4.4,
-            1.1,
+            3.9,
+            1.9,
+            1.8,
             1.0,
-            1.3,
-            1.3
+            0.6
           ],
-          "wall_ms": 5.8,
+          "wall_ms": 4.5,
           "per_call_avg_ms": 1.8,
-          "qps": 867.23
+          "qps": 1116.59
         },
         "sequential": {
           "per_call_ms": [
-            0.7,
-            2.0,
-            3.1,
             0.6,
-            0.5
+            0.3,
+            0.4,
+            0.2,
+            0.3
           ],
-          "wall_ms": 7.2,
-          "per_call_avg_ms": 1.4,
-          "qps": 694.83
+          "wall_ms": 2.0,
+          "per_call_avg_ms": 0.4,
+          "qps": 2448.07
         }
       },
       "container_stats": [
         {
           "name": "backend",
-          "memory_mb": 117.8,
-          "memory_use_raw": "117.8MiB / 7.472GiB",
-          "cpu_pct": "0.32%",
+          "memory_mb": 118.0,
+          "memory_use_raw": "118MiB / 7.472GiB",
+          "cpu_pct": "0.27%",
           "memory_pct": "1.54%"
         }
       ],
@@ -171,12 +171,12 @@
         {
           "tool": "dnstwist",
           "input": "shinhan-secure-banking.kr",
-          "cold_ms": 679.7,
-          "warm_avg_ms": 46.0,
+          "cold_ms": 2754.1,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            679.7,
-            44.1,
-            47.9
+            2754.1,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 29,
           "result_source": "?",
@@ -186,12 +186,12 @@
         {
           "tool": "dnstwist",
           "input": "kakaobank-secure-login.com",
-          "cold_ms": 40.8,
-          "warm_avg_ms": 40.4,
+          "cold_ms": 2105.5,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            40.8,
-            40.0,
-            40.7
+            2105.5,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 29,
           "result_source": "?",
@@ -201,12 +201,12 @@
         {
           "tool": "cve",
           "input": "CVE-2024-21762",
-          "cold_ms": 42.4,
-          "warm_avg_ms": 37.6,
+          "cold_ms": 4601.2,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            42.4,
-            41.4,
-            33.8
+            4601.2,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 9,
           "result_source": "live",
@@ -216,12 +216,12 @@
         {
           "tool": "cve",
           "input": "CVE-2023-44487",
-          "cold_ms": 32.3,
-          "warm_avg_ms": 38.5,
+          "cold_ms": 4308.6,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            32.3,
-            40.9,
-            36.2
+            4308.6,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 9,
           "result_source": "live",
@@ -231,12 +231,12 @@
         {
           "tool": "osint",
           "input": "shinhan.com",
-          "cold_ms": 37.9,
-          "warm_avg_ms": 36.8,
+          "cold_ms": 16052.5,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            37.9,
-            35.3,
-            38.4
+            16052.5,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 1,
           "result_source": "osint_live",
@@ -250,36 +250,36 @@
         "n": 5,
         "parallel": {
           "per_call_ms": [
-            165.6,
-            169.0,
-            167.7,
-            166.6,
-            163.7
+            1.4,
+            0.8,
+            0.7,
+            0.5,
+            0.5
           ],
-          "wall_ms": 170.5,
-          "per_call_avg_ms": 166.5,
-          "qps": 29.33
+          "wall_ms": 1.9,
+          "per_call_avg_ms": 0.8,
+          "qps": 2626.11
         },
         "sequential": {
           "per_call_ms": [
-            42.1,
-            49.5,
-            43.8,
-            42.4,
-            40.6
+            0.5,
+            0.3,
+            0.2,
+            0.2,
+            0.2
           ],
-          "wall_ms": 219.0,
-          "per_call_avg_ms": 43.7,
-          "qps": 22.83
+          "wall_ms": 1.7,
+          "per_call_avg_ms": 0.3,
+          "qps": 2918.52
         }
       },
       "container_stats": [
         {
           "name": "aol-mcp",
-          "memory_mb": 58.7,
-          "memory_use_raw": "58.68MiB / 7.472GiB",
-          "cpu_pct": "0.31%",
-          "memory_pct": "0.77%"
+          "memory_mb": 61.6,
+          "memory_use_raw": "61.56MiB / 7.472GiB",
+          "cpu_pct": "0.40%",
+          "memory_pct": "0.80%"
         }
       ],
       "image_sizes": [
@@ -299,12 +299,12 @@
         {
           "tool": "dnstwist",
           "input": "shinhan-secure-banking.kr",
-          "cold_ms": 3588.1,
-          "warm_avg_ms": 37.5,
+          "cold_ms": 3590.6,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            3588.1,
-            36.8,
-            38.2
+            3590.6,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 29,
           "result_source": "external_node_mcp",
@@ -314,27 +314,27 @@
         {
           "tool": "dnstwist",
           "input": "kakaobank-secure-login.com",
-          "cold_ms": 32.8,
-          "warm_avg_ms": 29.9,
+          "cold_ms": 2868.8,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            32.8,
-            28.3,
-            31.5
+            2868.8,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 29,
           "result_source": "external_node_mcp",
-          "result_bytes": 3857,
-          "llm_tokens_est": 964
+          "result_bytes": 3364,
+          "llm_tokens_est": 841
         },
         {
           "tool": "cve",
           "input": "CVE-2024-21762",
-          "cold_ms": 35.2,
-          "warm_avg_ms": 51.7,
+          "cold_ms": 41.0,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            35.2,
-            49.7,
-            53.7
+            41.0,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 9,
           "result_source": "live",
@@ -344,12 +344,12 @@
         {
           "tool": "cve",
           "input": "CVE-2023-44487",
-          "cold_ms": 44.9,
-          "warm_avg_ms": 48.5,
+          "cold_ms": 35.2,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            44.9,
-            53.2,
-            43.7
+            35.2,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 9,
           "result_source": "live",
@@ -359,12 +359,12 @@
         {
           "tool": "osint",
           "input": "shinhan.com",
-          "cold_ms": 39.2,
-          "warm_avg_ms": 45.4,
+          "cold_ms": 38.9,
+          "warm_avg_ms": 0.0,
           "samples_ms": [
-            39.2,
-            41.0,
-            49.7
+            38.9,
+            0.0,
+            0.0
           ],
           "result_count_or_fields": 1,
           "result_source": "osint_live",
@@ -378,43 +378,43 @@
         "n": 5,
         "parallel": {
           "per_call_ms": [
-            9849.1,
-            9237.9,
-            9847.4,
-            9846.5,
-            9937.3
+            2.0,
+            1.5,
+            1.4,
+            0.8,
+            0.7
           ],
-          "wall_ms": 9941.7,
-          "per_call_avg_ms": 9743.6,
-          "qps": 0.5
+          "wall_ms": 2.1,
+          "per_call_avg_ms": 1.3,
+          "qps": 2403.77
         },
         "sequential": {
           "per_call_ms": [
-            2942.0,
-            41.3,
-            37.8,
-            38.0,
-            33.5
+            0.6,
+            0.2,
+            0.2,
+            0.2,
+            0.2
           ],
-          "wall_ms": 3093.2,
-          "per_call_avg_ms": 618.5,
-          "qps": 1.62
+          "wall_ms": 1.6,
+          "per_call_avg_ms": 0.3,
+          "qps": 3088.02
         }
       },
       "container_stats": [
         {
           "name": "aol-mcp",
-          "memory_mb": 58.7,
-          "memory_use_raw": "58.66MiB / 7.472GiB",
-          "cpu_pct": "0.37%",
-          "memory_pct": "0.77%"
+          "memory_mb": 61.6,
+          "memory_use_raw": "61.56MiB / 7.472GiB",
+          "cpu_pct": "0.41%",
+          "memory_pct": "0.80%"
         },
         {
           "name": "ext-mcp-dnstwist",
-          "memory_mb": 40.7,
-          "memory_use_raw": "40.69MiB / 7.472GiB",
-          "cpu_pct": "0.02%",
-          "memory_pct": "0.53%"
+          "memory_mb": 29.8,
+          "memory_use_raw": "29.82MiB / 7.472GiB",
+          "cpu_pct": "0.03%",
+          "memory_pct": "0.39%"
         }
       ],
       "image_sizes": [
