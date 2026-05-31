@@ -1,0 +1,380 @@
+{
+  "schema": "caching_measurement.v1",
+  "generated_at": 1779607633,
+  "repeats": 3,
+  "agents": {
+    "orchestrator": {
+      "system_prompt_chars": 967,
+      "system_prompt_est_tokens": 241,
+      "cache_eligible_by_min_tokens": false,
+      "cache_enabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 627,
+          "output_tokens": 398,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4231,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 627,
+          "output_tokens": 318,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 3613,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 627,
+          "output_tokens": 416,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4593,
+          "error": null
+        }
+      ],
+      "cache_disabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 627,
+          "output_tokens": 389,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4051,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 627,
+          "output_tokens": 285,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 3384,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 627,
+          "output_tokens": 418,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4267,
+          "error": null
+        }
+      ],
+      "summary": {
+        "enabled_total_input_tokens": 1881,
+        "enabled_total_cache_creation": 0,
+        "enabled_total_cache_read": 0,
+        "enabled_total_processed": 1881,
+        "actual_cache_hit_ratio": 0.0,
+        "assumption_was": 0.9,
+        "assumption_realized": false
+      }
+    },
+    "triage": {
+      "system_prompt_chars": 1022,
+      "system_prompt_est_tokens": 255,
+      "cache_eligible_by_min_tokens": false,
+      "cache_enabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 831,
+          "output_tokens": 452,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4723,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 831,
+          "output_tokens": 527,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 5816,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 831,
+          "output_tokens": 439,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4334,
+          "error": null
+        }
+      ],
+      "cache_disabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 831,
+          "output_tokens": 475,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4451,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 831,
+          "output_tokens": 464,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4712,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 831,
+          "output_tokens": 492,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 4821,
+          "error": null
+        }
+      ],
+      "summary": {
+        "enabled_total_input_tokens": 2493,
+        "enabled_total_cache_creation": 0,
+        "enabled_total_cache_read": 0,
+        "enabled_total_processed": 2493,
+        "actual_cache_hit_ratio": 0.0,
+        "assumption_was": 0.9,
+        "assumption_realized": false
+      }
+    },
+    "malware": {
+      "system_prompt_chars": 1029,
+      "system_prompt_est_tokens": 257,
+      "cache_eligible_by_min_tokens": false,
+      "cache_enabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 775,
+          "output_tokens": 795,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 12887,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 775,
+          "output_tokens": 531,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 9552,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 775,
+          "output_tokens": 571,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 10772,
+          "error": null
+        }
+      ],
+      "cache_disabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 775,
+          "output_tokens": 556,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 9346,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 775,
+          "output_tokens": 694,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 11133,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 775,
+          "output_tokens": 624,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 11080,
+          "error": null
+        }
+      ],
+      "summary": {
+        "enabled_total_input_tokens": 2325,
+        "enabled_total_cache_creation": 0,
+        "enabled_total_cache_read": 0,
+        "enabled_total_processed": 2325,
+        "actual_cache_hit_ratio": 0.0,
+        "assumption_was": 0.9,
+        "assumption_realized": false
+      }
+    },
+    "infrastructure": {
+      "system_prompt_chars": 1329,
+      "system_prompt_est_tokens": 332,
+      "cache_eligible_by_min_tokens": false,
+      "cache_enabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 944,
+          "output_tokens": 850,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 12450,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 944,
+          "output_tokens": 877,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 12807,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 944,
+          "output_tokens": 1272,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 19483,
+          "error": null
+        }
+      ],
+      "cache_disabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 944,
+          "output_tokens": 1194,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 20437,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 944,
+          "output_tokens": 1311,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 21103,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 944,
+          "output_tokens": 1096,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 17689,
+          "error": null
+        }
+      ],
+      "summary": {
+        "enabled_total_input_tokens": 2832,
+        "enabled_total_cache_creation": 0,
+        "enabled_total_cache_read": 0,
+        "enabled_total_processed": 2832,
+        "actual_cache_hit_ratio": 0.0,
+        "assumption_was": 0.9,
+        "assumption_realized": false
+      }
+    },
+    "campaign": {
+      "system_prompt_chars": 1491,
+      "system_prompt_est_tokens": 372,
+      "cache_eligible_by_min_tokens": false,
+      "cache_enabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 1023,
+          "output_tokens": 2500,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 44502,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 1023,
+          "output_tokens": 2500,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 44981,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 1023,
+          "output_tokens": 2500,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 46694,
+          "error": null
+        }
+      ],
+      "cache_disabled_calls": [
+        {
+          "call_index": 0,
+          "input_tokens": 1023,
+          "output_tokens": 2170,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 39375,
+          "error": null
+        },
+        {
+          "call_index": 1,
+          "input_tokens": 1023,
+          "output_tokens": 2212,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 38880,
+          "error": null
+        },
+        {
+          "call_index": 2,
+          "input_tokens": 1023,
+          "output_tokens": 2261,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "elapsed_ms": 44217,
+          "error": null
+        }
+      ],
+      "summary": {
+        "enabled_total_input_tokens": 3069,
+        "enabled_total_cache_creation": 0,
+        "enabled_total_cache_read": 0,
+        "enabled_total_processed": 3069,
+        "actual_cache_hit_ratio": 0.0,
+        "assumption_was": 0.9,
+        "assumption_realized": false
+      }
+    }
+  },
+  "cost_analysis_assumption": {
+    "cached_fraction": 0.9,
+    "note": "cost_analysis.py 에서 input_cost = (cached_fraction × cached_price + (1-cached_fraction) × input_price) 가정. 실측으로 검증."
+  },
+  "grand_total": {
+    "cache_read_input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "non_cached_input_tokens": 12600,
+    "total_processed_input": 12600,
+    "actual_cache_hit_ratio": 0.0,
+    "assumption": 0.9,
+    "conclusion": "❌ 가정 미달 — cost_analysis.py 의 cached_fraction=0.9 가정이 비현실적. 원인 분석: 시스템 프롬프트 길이가 Anthropic 최소 요구치 미달 가능 / Sonnet 1024 tokens / Haiku 2048 tokens 필요"
+  }
+}

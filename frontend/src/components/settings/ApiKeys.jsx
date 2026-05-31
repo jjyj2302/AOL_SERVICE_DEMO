@@ -270,7 +270,6 @@ export default function ApiKeys() {
       <Grid container spacing={3}>
         {filteredServices.map(([serviceKey, service]) => {
           const isFullyConfigured = service.available;
-          const hasMultipleKeys = service.required_keys.length > 1;
 
           return (
             <Grid item xs={12} lg={6} key={serviceKey}>

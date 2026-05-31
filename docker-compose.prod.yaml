@@ -1,0 +1,112 @@
+# =====================================================================
+# Production overlay for AOL_SERVICE_DEMO
+# Usage:
+#   docker compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d
+#
+# 이 파일은 base docker-compose.yaml 의 override 입니다.
+# - env_file: EC2 user-data 가 /etc/aol/.env 에 시크릿을 기록한 후 로딩
+# - healthcheck: 서비스 자가 모니터링
+# - logging: 로그 로테이션으로 디스크 무한 증가 방지
+# - restart: always (EC2 재부팅 후 자동 복구)
+# - 백엔드 포트는 외부 노출하지 않음 (프론트엔드의 nginx가 프록시)
+# =====================================================================
+
+services:
+  redis:
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    restart: always
+    # /etc/aol/.env 의 POSTGRES_PASSWORD 등을 EC2 user-data 가 SSM 에서 주입
+    env_file:
+      - path: /etc/aol/.env
+        required: false
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aol} -d ${POSTGRES_DB:-aol}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  backend:
+    restart: always
+    # /etc/aol/.env 는 EC2 user-data 가 SSM Parameter Store 에서 자동 생성합니다.
+    # 로컬 검증에서는 누락되어도 컴포즈가 실패하지 않도록 required:false 처리.
+    env_file:
+      - path: /etc/aol/.env
+        required: false
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - AOL_ENV=production
+      - AOL_LOG_LEVEL=INFO
+      - AOL_SIMULATION_MODE=enabled
+    # 외부 노출 제거: 프론트엔드 nginx 가 내부 네트워크로 프록시
+    expose:
+      - "8000"
+    healthcheck:
+      # 신규 LangGraph 모듈의 health — 그래프 컴파일 상태까지 검증
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/lg/health', timeout=3)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 4G
+        reservations:
+          memory: 1G
+
+  frontend:
+    restart: always
+    ports:
+      - "4000:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M

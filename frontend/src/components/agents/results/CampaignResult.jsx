@@ -13,8 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Card,
-  CardContent,
   Grid,
   LinearProgress,
   useTheme,

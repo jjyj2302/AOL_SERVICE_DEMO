@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useSetRecoilState } from 'recoil';
 import { kisaDialogsState } from '../state/kisaAtoms';
 import { kisaApi } from '../api/kisaApi';

@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import { useDropzone } from "react-dropzone";
-import { useRecoilState } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { newsfeedListState } from "../../../state";
 import api from "../../../api";
 
@@ -29,7 +29,7 @@ const ManageNewsfeeds = () => {
   const [feeds, setFeeds] = useState({});
   const [fetchingFeeds, setFetchingFeeds] = useState(true);
   const [alert, setAlert] = useState({ show: false, message: '', severity: 'info' });
-  const [newsfeedList, setNewsfeedList] = useRecoilState(newsfeedListState);
+  const setNewsfeedList = useSetRecoilState(newsfeedListState);
 
   useEffect(() => {
     const fetchFeeds = async () => {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Autocomplete,
-    Box,
   Grid,
   TextField,
   Tooltip,

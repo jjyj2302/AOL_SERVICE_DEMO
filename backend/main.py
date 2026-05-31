@@ -28,13 +28,8 @@ from app.features.ioc_tools.ioc_defanger.routers import internal_defang_routes
 from app.features.ioc_tools.ioc_lookup.bulk_lookup.routers import bulk_ioc_lookup_routes
 from app.features.ioc_tools.ioc_lookup.single_lookup.routers import single_ioc_lookup_routes
 
-# Deep Analysis imports (formerly threat_hunter_copy)
-from app.features.deep_analysis.routers.threat_hunter_routes import threat_hunter_routes as deep_analysis_router
-# from app.features.deep_analysis.test_router import router as deep_analysis_test_router
-from app.features.crew_solo.solo_router import router as crew_solo_router
-
-# Bulk Analysis Async imports (parallel IOC analysis with aggregation)
-from app.features.bulk_analysis_async import bulk_analysis_router
+# Legacy CrewAI 모듈 (Phase 9 폐기) — backend/app/legacy/ 로 이관됨.
+# 멀티에이전트 분석은 langgraph_threat_hunter 모듈이 단독으로 담당.
 
 # History imports (analysis history with DB storage)
 from app.features.history import history_router
@@ -43,6 +38,10 @@ from app.features.history.models import AnalysisSession, IocAnalysis, Aggregatio
 # Threat Intel imports (KISA IoC Integration)
 from app.features.threat_intel.models import KISAIoC, KISASyncHistory
 from app.features.threat_intel.routers import kisa_router
+
+# LangGraph Threat Hunter (금융권 AX 신규 멀티에이전트 + MCP + Simulation Mode)
+from app.features.langgraph_threat_hunter.router import router as langgraph_threat_hunter_router
+from app.features.langgraph_threat_hunter.legacy_wrappers import legacy_router as crewai_compat_router
 
 from app.core.settings.general.models.general_settings_models import Settings
 from app.core.settings.modules.models.modules_settings_models import ModuleSettings
@@ -134,19 +133,20 @@ routers = [
     bulk_ioc_lookup_routes.router,
     single_ioc_lookup_routes.router,
 
-    # Deep Analysis (CrewAI hierarchical - detailed IOC investigation)
-    deep_analysis_router,
-    # deep_analysis_test_router,  # Temporary test endpoint for Pydantic outputs
-    crew_solo_router,  # Individual agent execution endpoints
-
-    # Bulk Analysis Async (parallel IOC analysis with Phase 2 aggregation)
-    bulk_analysis_router,
+    # (CrewAI 기반 deep_analysis/crew_solo/bulk_analysis_async 는 Phase 9 에서 legacy 로 이동)
 
     # History (analysis history with DB storage)
     history_router,
 
     # KISA IoC (한국인터넷진흥원 침해사고 공격 IoC 지표)
     kisa_router,
+
+    # LangGraph Threat Hunter (금융권 AX 전환 — 신규 멀티에이전트 + MCP + Simulation Mode)
+    langgraph_threat_hunter_router,
+
+    # 레거시 호환 wrapper — 기존 frontend 페이지 (Deep Analysis / AI Agents) 가
+    # 호출하던 /api/crew-solo/* /api/threat-hunter/* 를 LangGraph 로 처리
+    crewai_compat_router,
 ]
 
 for router in routers:

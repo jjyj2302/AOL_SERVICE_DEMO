@@ -18,14 +18,12 @@ import {
   Circle as CircleIcon,
   AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles";
 import { format } from "date-fns";
 import he from "he";
 import AnalyzeSection from "./AnalyzeSection";
 import NotesSection from "./NotesSection";
 import IOCSection from "./IOCSection";
 import KeywordsSection from "./KeywordsSection";
-import api from "../../../api";
 
 export default function NewsArticleItem(props) {
   const {
@@ -36,8 +34,6 @@ export default function NewsArticleItem(props) {
     api,
     tlpColors,
   } = props;
-
-  const theme = useTheme();
 
   const [tlpAnchorEl, setTlpAnchorEl] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);

@@ -4,7 +4,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Chip,
   Accordion,
   AccordionSummary,
   AccordionDetails,

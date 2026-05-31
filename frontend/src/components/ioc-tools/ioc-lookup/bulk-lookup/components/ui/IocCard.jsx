@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Card, CardHeader, CardContent, Collapse, IconButton, Typography, Box,
+  Card, CardHeader, CardContent, Collapse, IconButton, Typography,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';

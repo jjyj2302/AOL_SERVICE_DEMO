@@ -21,7 +21,6 @@ import {
   Email as EmailIcon,
   BugReport as BugReportIcon,
 } from "@mui/icons-material";
-import { grey } from "@mui/material/colors";
 
 export default function IOCSection({ item }) {
   console.log('IOCSection received item:', item);

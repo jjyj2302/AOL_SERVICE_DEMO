@@ -51,7 +51,6 @@ export default function BaseScore() {
   const [cvssScores, setCvssScores] = useRecoilState(cvssScoresAtom);
   const [openModal, setOpenModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", text: "" });
-  const [expanded, setExpanded] = useState(true);
 
   const handleOpenModal = (title, text) => {
     setModalContent({ title, text });

@@ -5,15 +5,14 @@ pydantic==2.10.6
 
 # Database & Cache
 SQLAlchemy==2.0.36
+psycopg2-binary>=2.9.9      # PostgreSQL 드라이버 (운영 환경 권장)
 redis==5.0.1
 
 # HTTP & Networking
 aiohttp==3.11.0
 Requests==2.32.3
 
-# AI/ML - CrewAI & LangChain (CrewAI dependencies)
-crewai
-crewai-tools
+# AI/ML - LangChain (LangGraph 모듈의 도구 추상화 + 외부 LLM 클라이언트)
 langchain
 langchain-community==0.3.20
 langchain_core==0.3.49
@@ -21,6 +20,18 @@ langchain_openai==0.3.11
 langchain-anthropic==0.3.10
 langchain-google-genai==2.1.2
 openai==1.68.2
+anthropic>=0.40,<1
+
+# AI/ML - LangGraph 기반 신규 멀티에이전트 (금융권 AX 전환)
+# langchain-core 0.3.x 와 호환되는 마지막 메이저 라인 (1.x 는 langchain-core 1.x 강제 → CrewAI 충돌)
+langgraph>=0.2.50,<0.3
+langgraph-checkpoint>=2.0.0,<3
+
+# MCP - Model Context Protocol 도구 메시 (langchain-core 0.3.x 호환 라인)
+langchain-mcp-adapters>=0.0.6,<0.1
+# MCP SDK — 진짜 MCP 프로토콜 (JSON-RPC over sse/stdio) 클라이언트
+# self_mcp / external_mcp 모드에서 사이드카 컨테이너에 sse 로 접근
+mcp>=1.2,<2
 
 # Utilities
 regex>=2024.0.0
@@ -28,7 +39,13 @@ lxml[html_clean]
 
 # PDF & Document Processing
 PyPDF2==3.0.1
-pdfplumber>=0.11.4  # CrewAI 호환성
+pdfplumber>=0.11.4
+reportlab>=4.2  # 분석 리포트 PDF 생성 (langgraph_threat_hunter.pdf_report)
 
 # Threat Intelligence
 stix2==3.0.1
+dnstwist>=20240120        # MCP live: 도메인 타이포스쿼트 탐지 (API 키 불필요)
+
+# Testing
+pytest>=8.0,<9
+httpx>=0.27,<1   # FastAPI TestClient 의존성

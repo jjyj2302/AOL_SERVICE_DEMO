@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import NotFound from '../NotFound'
 
-import General from './General'
 import About from './About'
 import ApiKeys from './ApiKeys'
 import Modules from './Modules'

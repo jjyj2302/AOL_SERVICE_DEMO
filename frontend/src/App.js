@@ -1,5 +1,5 @@
 import { useEffect, useMemo, createContext, useState } from "react";
-import { useSetRecoilState, useRecoilValue } from "recoil";
+import { useSetRecoilState } from "recoil";
 import { Routes, Route } from 'react-router-dom';
 import api from "./api";
 
@@ -14,6 +14,7 @@ import IocTools from "./components/ioc-tools/IocTools";
 import Settings from "./components/settings/Settings";
 import Agents from "./components/agents/Agents";
 import KisaIocManager from "./components/kisa-ioc/KisaIocManager";
+import ThreatHunterPage from "./components/threat-hunter/ThreatHunterPage";
 
 import {
   apiKeysState,
@@ -31,8 +32,6 @@ function App() {
   const setModules = useSetRecoilState(modulesState);
   const setGeneralSettings = useSetRecoilState(generalSettingsState);
   const setNewsfeedList = useSetRecoilState(newsfeedListState);
-
-  const generalSettings = useRecoilValue(generalSettingsState);
 
   // Initialize theme mode from local storage or default to light
   const [mode, setMode] = useState(() => {
@@ -112,6 +111,7 @@ function App() {
               <Route path="agents" element={<Agents />} />
               <Route path="settings/*" element={<Settings />} />
               <Route path="kisa-ioc" element={<KisaIocManager />} />
+              <Route path="threat-hunter" element={<ThreatHunterPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

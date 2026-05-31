@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import InfoIcon from "@mui/icons-material/Info";
-import { List, ListItem, ListItemIcon, ListItemText, Grid } from "@mui/material";
+import { List, ListItem, ListItemIcon, ListItemText } from "@mui/material";
 import Typography from "@mui/material/Typography";
 
 import ConfTable from "./ConfTable";

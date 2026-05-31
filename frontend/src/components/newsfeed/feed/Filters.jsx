@@ -39,10 +39,6 @@ export default function Filters({ filters, setFilters, applyFilters, resetFilter
     });
   };
 
-  const handleSubmit = () => {
-    applyFilters(filters); 
-  };
-
   const handleReset = () => {
     resetFilters();
   };
@@ -66,8 +62,8 @@ export default function Filters({ filters, setFilters, applyFilters, resetFilter
       if (!response.ok) {
         throw new Error("Failed to fetch and get news");
       }
-      
-      const data = await response.json();
+
+      await response.json();
       refreshData();
     } catch (error) {
       console.error("Error fetching news:", error);

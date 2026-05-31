@@ -10,7 +10,7 @@ import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
-import { Typography, Link } from "@mui/material";
+import { Typography } from "@mui/material";
 
 import NoDetails from "../NoDetails";
 

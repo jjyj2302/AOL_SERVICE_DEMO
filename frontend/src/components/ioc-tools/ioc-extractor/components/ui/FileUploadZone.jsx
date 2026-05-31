@@ -21,7 +21,6 @@ export default function FileUploadZone({
     acceptedFiles,
     isFocused,
     isDragAccept,
-    isDragReject,
   } = useDropzone({
     accept: {
       "text/csv": [".csv"],
