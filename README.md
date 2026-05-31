@@ -1,5 +1,6 @@
-# 🛡️ AOL Threat Hunter
-> **금융권 네트워크 위협 인텔리전스 AX — LangGraph 6-Agent · MCP 도구 메시 · 대화형 SOC 어시스턴트**
+# 🛡️ AOL IOC Intelligence
+
+> **금융권 보안관제 업무를 도와주는 대화형 AI 분석 도우미** — 여러 개의 AI가 협력해서 "이 인터넷 주소/파일이 위험한지" 조사하고, 막을 방법까지 정리해 줍니다.
 
 <p align="center">
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" />
@@ -9,805 +10,423 @@
   <img src="https://img.shields.io/badge/PostgreSQL_16-336791?style=flat-square&logo=postgresql&logoColor=white" />
   <img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" />
   <img src="https://img.shields.io/badge/pytest-51_passing-3DDC84?style=flat-square&logo=pytest&logoColor=white" />
-  <img src="https://img.shields.io/badge/cost_59%25↓_(vs_Sonnet,_실측)-success?style=flat-square" />
 </p>
 
 <div align="center">
-  <img src="docs/screenshots/04-threat-hunter-current.png" alt="AOL Threat Hunter — NotebookLM 3-Panel UI" width="850"/>
+  <img src="docs/screenshots/04-threat-hunter-current.png" alt="AOL IOC Intelligence — 3-패널 화면" width="850"/>
   <br>
-  <em>NotebookLM 스타일 3-패널 UI · 좌(자료실) | 가운데(대화) | 우(Agent Studio)</em>
+  <em>NotebookLM 스타일 3-패널 화면 · 왼쪽(자료실) | 가운데(대화) | 오른쪽(분석 과정 보기)</em>
 </div>
 
 <br>
 
-## ⚡ 30초 요약
+---
 
-이 시스템은 **한국 금융권 SOC Tier-1 분석가의 IoC 트리아지 업무를 LangGraph 멀티에이전트로 자동화**합니다.
-사용자가 자연어로 상황을 설명하면 Claude 가 **IoC 를 어디서 찾을지 안내**하고, IoC 가 입력되면 **6개 전문가 에이전트가 자동으로 협업**하여 위협 평가·인프라 상관·캠페인 분석·헌팅 쿼리·방화벽 규칙까지 한 번에 산출합니다.
+## 📖 이게 뭔가요? (1분 설명)
 
-- 🤖 **6 Agents** — Orchestrator + Triage + Malware + Infrastructure + Campaign + Confidence Gate
-- 🧩 **5 MCP Tools** — VirusTotal · DNSTwist · Shodan · crt.sh · NVD+EPSS+KEV (모두 실 HTTP 호출)
-- 💬 **대화형 + Tool Use** — Claude 가 진행자 역할, 필요 시 specialist 자문
-- 💰 **비용 59% 절감 (실측)** vs Sonnet 단독 — Haiku/Sonnet 티어드 매핑 + Batch API 50% off. Phase 26 Anthropic API 실측: Prompt Caching 가정값(90%)은 system 프롬프트 길이 미달로 실 0% — `mixed_batch` 가 진짜 실현 가능 best
-- 🏦 **금융권 컴플라이언스** — 전자금융감독규정 §13·§15, ISMS-P, FSI C-TAS, DORA 매핑
+은행·증권 같은 금융회사에는 **보안관제실(SOC)** 이 있습니다. 여기서 일하는 분석가들은 하루 종일 "이 인터넷 주소가 악성인가?", "이 파일이 바이러스인가?" 같은 의심 신호를 하나하나 확인합니다. 그런데 신호가 너무 많고, 하나를 조사하려면 여러 사이트를 일일이 찾아봐야 해서 시간이 오래 걸립니다.
+
+**이 프로젝트는 그 반복 조사 작업을 AI가 대신 해 줍니다.**
+
+사용자가 채팅창에 평소 말하듯이 상황을 설명하면(예: *"직원 PC가 랜섬웨어에 걸린 것 같아요"*), AI가 어디를 확인해야 하는지 안내합니다. 그리고 의심스러운 주소나 파일 정보를 입력하면, **6개의 AI 전문가가 자동으로 나눠서 조사**하고 — 얼마나 위험한지, 공격자가 쓰는 다른 주소는 없는지, 어떻게 차단하면 되는지까지 — 한 번에 정리해 줍니다.
+
+마지막 결정과 실제 차단은 **사람이 검토한 뒤** 하도록 설계되어 있어서, AI가 멋대로 중요한 조치를 하지 않습니다.
 
 ---
 
-## 🎬 Live Demo — 실 검증된 4가지 시나리오
+## 🔑 먼저, 자주 나오는 용어부터
 
-> 백엔드에 `ANTHROPIC_API_KEY` 만 주입하면 즉시 실 LLM 으로 동작 (시뮬레이션 모드는 키 없이 가능)
+이 문서에 나오는 줄임말과 보안 용어를 먼저 풀어 둡니다.
 
-### 시나리오 A — 자유 대화 + IoC 유도
+| 용어 | 쉽게 말하면 |
+|---|---|
+| **SOC (보안관제실)** | 회사의 보안 상황을 24시간 지켜보는 팀/공간. "Security Operations Center" |
+| **분석가 (Tier-1)** | 들어오는 의심 신호를 가장 먼저 확인하는 1차 담당자 |
+| **IoC (침해지표)** | "공격당했다는 흔적/단서". 예를 들면 악성 인터넷 주소(도메인), 의심스러운 IP, 파일의 지문값(해시) 같은 것 |
+| **AI 에이전트** | 한 가지 역할을 맡아 스스로 판단하고 일하는 AI. 이 프로젝트는 역할이 다른 6개의 에이전트가 협력합니다 |
+| **LLM / Claude** | 사람 말을 이해하고 답하는 거대 AI 모델. 여기서는 Anthropic의 Claude를 사용합니다 |
+| **MCP** | AI가 외부 보안 조회 도구(바이러스 검사 사이트 등)를 표준화된 방식으로 불러 쓰게 해 주는 연결 규격 |
+| **LangGraph** | 여러 AI 에이전트가 "누가 먼저, 누가 다음에" 일할지 흐름을 짜 주는 도구 |
+| **피싱 / 사칭 도메인** | 진짜 은행 사이트인 척 흉내 낸 가짜 주소 (예: `shinhan-secure-banking.kr`) |
+| **방화벽 규칙 / 헌팅 쿼리** | 공격을 막거나(차단), 내부에 같은 흔적이 더 있는지 찾아내는(검색) 설정·명령문 |
 
-```text
-[me] 회사 직원 PC에 랜섬웨어 의심돼요. 어떻게 해야 하나요?
-```
-
-→ Claude (Sonnet) 가 **IR 4단계 가이드 + IoC 소스 4종** (EDR/방화벽/Windows 이벤트/사용자 PC) 자동 안내
-→ "IoC 붙여넣으면 6-Agent 자동 분석 시작" 유도
-
-### 시나리오 B — Tool Use 멀티에이전트 자문
-
-```text
-[me] LockBit 4.0 변종이 VSS 와 백업 무력화하는 행위 패턴이랑 EDR 헌팅 룰 알려줘
-```
-
-→ Claude 가 specialist 자문 필요성 자가 판단 → 직접 답변 가능하면 단독, 깊은 분석 필요하면 `consult_malware` 도구 호출
-→ Sigma 룰 4개 + 구체적 Windows 명령어 검출 패턴 산출
-
-### 시나리오 C — 직접 IoC 입력 (라이브 풀체인)
-
-```text
-[me] shinhan-secure-banking.kr
-```
-
-→ regex 자동 감지 (`domain`) → **LangGraph 6-Agent 풀체인 실행 (~1분)**
-- 🧠 Orchestrator (3초): 라우팅 결정 `[triage, infrastructure, campaign]`
-- 🔍 Triage (5초): **CRITICAL** + "신한 사칭 피싱 사기"
-- 🌍 Infrastructure (15초): **실 DNSTwist 15개 타이포 도메인** + 클러스터 `FINPHISH-KR-2025Q1-SHINHAN` 자동 명명
-- 📈 Campaign (37초): 위협그룹 추정 + 헌팅 쿼리 + FW 규칙 + 임원 요약
-- 🛡️ Gate: 신뢰도 60% → **L1 + `shinhan` 키워드로 휴먼 승인 필수**
-
-### 시나리오 D — 멀티턴 (상황 → IoC 추출 → 자동 분석)
-
-```text
-[me] 우리 SIEM에서 어제부터 비정상 outbound 트래픽이 보여요. 어디서부터 봐야 할까요?
-[🤖] (IoC 4단계 가이드 — SIEM/EDR/방화벽/DNS 별 확인 항목 안내)
-
-[me] 방화벽 로그에서 update-windowsdefender-patch.kr 차단 200회 잡혔어요
-[🤖] (자동 analysis mode 전환 → LangGraph 풀체인 시작)
-```
-
-→ history 컨텍스트 유지 + regex 가 도메인 자동 추출 → 풀체인 분석 자동 트리거
+> 더 자세한 내용을 보기 전에, 이 표만 알고 있어도 아래 내용을 따라올 수 있습니다.
 
 ---
 
-## 🏗️ 1. 전체 인프라 구조
+## ⚡ 핵심 기능 요약
 
-docker-compose 기반 4-서비스 + 외부 API 연동:
+- 🤖 **6개의 AI 전문가** — 총괄(Orchestrator) + 위험도 판단 + 악성코드 분석 + 인프라 추적 + 캠페인 분석 + 최종 검증(Confidence Gate)
+- 🧩 **5개의 외부 조회 도구 연동** — VirusTotal(평판 조회) · DNSTwist(사칭 도메인 탐지) · Shodan(노출 자산 점검) · crt.sh(인증서 조회) · 취약점 DB(NVD/EPSS/KEV). 모두 실제로 인터넷에서 조회합니다
+- 💬 **그냥 말로 물어보면 됩니다** — AI가 진행자 역할을 하고, 깊은 분석이 필요하면 알아서 전문가 AI에게 자문을 구합니다
+- 💰 **비용 효율** — 쉬운 일은 저렴한 모델(Haiku), 어려운 일은 똑똑한 모델(Sonnet)로 나눠서 처리. Anthropic API로 실제 측정한 결과 Sonnet만 쓸 때보다 약 59% 저렴 (자세한 측정은 아래 비용 섹션)
+- 🏦 **금융권 맞춤** — 보이스피싱·은행 사칭 같은 한국 금융권에서 자주 보이는 위협 유형에 초점. 전자금융감독규정·ISMS-P 등 컴플라이언스 항목과의 연결 관계도 매핑 자료로 제공
+
+---
+
+## 🎬 직접 써 보는 4가지 방식
+
+> 백엔드에 `ANTHROPIC_API_KEY`(Claude 사용 키)만 넣으면 실제 AI로 동작합니다. 키가 없어도 미리 준비된 예시 데이터로 똑같이 시연할 수 있습니다(시뮬레이션 모드).
+
+### 방식 A — 그냥 상황을 설명하기
+
+```text
+[나] 회사 직원 PC에 랜섬웨어가 의심돼요. 어떻게 해야 하나요?
+```
+
+→ AI가 **대응 4단계 가이드와, 단서를 어디서 찾을 수 있는지**(백신 프로그램/방화벽/Windows 기록/직원 PC)를 안내합니다.
+→ "찾은 흔적을 붙여넣으면 6개 AI가 자동 분석을 시작합니다"라고 알려 줍니다.
+
+### 방식 B — 전문 지식을 물어보기
+
+```text
+[나] LockBit 4.0 랜섬웨어 변종이 백업을 무력화하는 행동 패턴과, 이를 잡아낼 탐지 규칙을 알려줘
+```
+
+→ AI가 "이건 깊은 분석이 필요하겠다"고 스스로 판단해서, 필요하면 악성코드 전문 AI에게 자문을 구합니다.
+→ 탐지 규칙(Sigma)과 구체적인 Windows 명령어 패턴을 정리해 줍니다.
+
+### 방식 C — 의심스러운 주소를 바로 입력하기
+
+```text
+[나] shinhan-secure-banking.kr
+```
+
+→ 입력값이 도메인 주소임을 자동 인식 → **6개 AI가 순서대로 약 1분간 조사**합니다.
+- 🧠 총괄 AI: 어떤 전문가들을 부를지 결정
+- 🔍 위험도 판단: **위험(CRITICAL)** + "신한은행 사칭 피싱으로 추정"
+- 🌍 인프라 추적: **실제로 비슷한 사칭 도메인 15개**를 찾아내고, 같은 공격 묶음으로 자동 분류
+- 📈 캠페인 분석: 공격 그룹 추정 + 탐지용 검색문 + 차단 규칙 + 경영진 보고용 요약
+- 🛡️ 최종 검증: 신뢰도가 충분치 않거나 'shinhan' 같은 민감 키워드가 있으면 **사람의 승인을 반드시 거치도록** 표시
+
+### 방식 D — 대화하면서 단서 찾아가기
+
+```text
+[나] SIEM에서 어제부터 이상한 외부 통신이 보여요. 어디부터 봐야 할까요?
+[🤖] (어디를 확인하면 되는지 단계별 안내 — SIEM/백신/방화벽/DNS 기록)
+
+[나] 방화벽 로그에서 update-windowsdefender-patch.kr 차단이 200번 잡혔어요
+[🤖] (자동으로 분석 모드로 전환 → 6개 AI 조사 시작)
+```
+
+→ 앞 대화 내용을 기억하면서, 메시지에서 도메인 주소를 자동으로 뽑아내 분석을 시작합니다.
+
+---
+
+## 🏗️ 1. 전체 시스템 구성
+
+이 시스템은 Docker라는 도구로 4개의 프로그램을 한 번에 띄웁니다. 아래 그림이 전체 구조입니다.
 
 ```mermaid
 flowchart LR
-    subgraph "EC2 / 로컬 (docker-compose)"
-        FE["💻 frontend<br/>nginx + React 18<br/>port 4000"]
-        BE["🐍 backend<br/>FastAPI + LangGraph<br/>port 8000 (내부)"]
-        PG[("🗄️ postgres:16<br/>port 5432<br/>aol DB")]
-        RD[("🔴 redis:7-alpine<br/>port 6379<br/>cache/session")]
+    subgraph "서버 (docker-compose 로 한 번에 실행)"
+        FE["💻 화면(frontend)<br/>nginx + React<br/>port 4000"]
+        BE["🐍 두뇌(backend)<br/>FastAPI + LangGraph<br/>port 8000"]
+        PG[("🗄️ 데이터 저장소<br/>postgres:16")]
+        RD[("🔴 임시 캐시<br/>redis:7")]
 
-        FE -->|/api/* proxy| BE
+        FE -->|/api/* 요청 전달| BE
         BE --> PG
         BE --> RD
     end
 
-    subgraph "외부 API (HTTPS)"
-        AT[Anthropic API<br/>Claude Haiku/Sonnet]
-        VT[VirusTotal API]
-        NVD[NVD CVE API]
-        EPSS[FIRST EPSS]
-        KEV[CISA KEV catalog]
-        CRT[crt.sh CT logs]
-        SHO[Shodan InternetDB]
+    subgraph "외부 조회 사이트 (인터넷)"
+        AT[Anthropic API<br/>Claude AI]
+        VT[VirusTotal]
+        NVD[취약점 DB]
+        CRT[crt.sh 인증서]
+        SHO[Shodan]
     end
 
     BE --> AT
     BE --> VT
     BE --> NVD
-    BE --> EPSS
-    BE --> KEV
     BE --> CRT
     BE --> SHO
 
-    User[👤 SOC 분석가] -->|brower :4000| FE
+    User[👤 분석가] -->|브라우저 :4000| FE
 ```
 
-| 구성 요소 | 책임 | 외부 의존성 |
-|---|---|---|
-| **frontend** | nginx + React SPA — 3-패널 UI / SSE 스트림 클라이언트 | — |
-| **backend** | FastAPI + LangGraph orchestration · 6-Agent 호출 · MCP 게이트웨이 | Anthropic API key |
-| **postgres** | 분석 세션 영속화 · Audit Ledger · 향후 LangGraph PostgresSaver | — |
-| **redis** | API key cache · session state · 향후 rate limiting | — |
+| 구성 요소 | 하는 일 |
+|---|---|
+| **화면 (frontend)** | 분석가가 보는 웹 화면. 3-패널 구성, 분석 진행을 실시간으로 보여 줌 |
+| **두뇌 (backend)** | 실제 분석 로직. 6개 AI를 부르고, 외부 도구를 호출하는 핵심 |
+| **데이터 저장소 (postgres)** | 분석 기록을 영구 보관 (나중에 감사·증빙용) |
+| **임시 캐시 (redis)** | 자주 쓰는 값을 잠깐 저장해서 속도를 높임 |
 
-EC2 단일 t3.large 인스턴스에 `docker-compose -f docker-compose.yaml -f docker-compose.prod.yaml up -d` 한 번으로 전체 스택 부팅. AWS SSM Parameter Store 에서 시크릿 자동 주입.
+> AWS EC2 서버 한 대에 명령어 한 줄로 전체를 띄울 수 있게 만들어 두었습니다. 비밀 키들은 AWS의 안전한 보관소(SSM Parameter Store)에서 자동으로 불러옵니다.
 
 ---
 
-## 🔀 2. LangGraph StateGraph 상세 구조
+## 🔀 2. 6개의 AI가 협력하는 방식 (LangGraph)
 
-### State 스키마 (`ThreatHuntState`)
-
-```python
-class ThreatHuntState(BaseModel):
-    # 입력
-    ioc: str
-    ioc_type: Literal["domain", "ip", "hash", "cve", "url", "unknown"]
-    mode: Literal["live", "simulation"]
-
-    # Orchestrator 라우팅 결정
-    route_plan: list[str]           # ["triage", "infra", "campaign"] etc.
-    routing_rationale: str
-
-    # 각 specialist 산출물
-    triage: TriageFindings | None
-    malware: MalwareFindings | None
-    infrastructure: InfraFindings | None
-    campaign: CampaignFindings | None
-
-    # 게이팅
-    confidence_score: float
-    automation_level: Literal["L0", "L1", "L2", "L3", "L4"]
-    human_approval_required: bool
-    gate_chat_message: str
-
-    # 누적 (Annotated[..., add] reducer 사용 — LangGraph 자동 concat)
-    audit_ledger: list[LedgerEntry]
-    mcp_calls: list[McpCallRecord]
-```
-
-### 그래프 토폴로지 — 조건부 엣지로 동적 라우팅
+여러 AI가 무작정 다 같이 일하면 느리고 비쌉니다. 그래서 **입력된 단서의 종류에 따라 필요한 전문가만 골라서** 일하게 했습니다. 이 "누가 다음에 일할지" 흐름을 LangGraph로 짰습니다.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> orchestrator: IoC 입력
-    orchestrator --> triage_step: route_plan[0]
-    orchestrator --> confidence_gate: plan 비어있으면
-
-    triage_step --> malware_step: plan 에 malware 다음
-    triage_step --> infrastructure_step: plan 에 infra 다음
-    triage_step --> campaign_step: plan 에 campaign 다음
-    triage_step --> confidence_gate: plan 종료
-
-    malware_step --> infrastructure_step: plan 다음
-    malware_step --> campaign_step: plan 다음
-    malware_step --> confidence_gate: plan 종료
-
-    infrastructure_step --> campaign_step: plan 다음
-    infrastructure_step --> confidence_gate: plan 종료
-
-    campaign_step --> confidence_gate
-
-    confidence_gate --> [*]: L0~L4 결정
+    [*] --> 총괄: 단서 입력
+    총괄 --> 위험도판단: 조사 계획 결정
+    위험도판단 --> 악성코드분석: 필요하면
+    위험도판단 --> 인프라추적: 필요하면
+    악성코드분석 --> 인프라추적: 필요하면
+    인프라추적 --> 캠페인분석: 필요하면
+    캠페인분석 --> 최종검증
+    최종검증 --> [*]: 위험 등급(L0~L4) 결정
 ```
 
-`graph.add_conditional_edges(node, router_func, branch_dict)` 로 각 specialist 종료 시 다음 노드를 동적 결정. `route_plan` 에 없는 specialist 는 스킵 → 토큰/시간 절약.
+예를 들어 **취약점 번호**가 들어오면 악성코드·인프라 단계는 건너뛰고, **파일 해시값**이 들어오면 전체 단계를 다 거칩니다. 필요 없는 단계를 건너뛰니 시간과 비용이 절약됩니다.
 
-### 노드 간 협업 — Delta + Reducer 패턴
+또한 각 AI가 한 일은 모두 **감사 기록(audit ledger)** 에 차곡차곡 쌓입니다. 나중에 "왜 이런 결론을 냈는지" 추적하거나 컴플라이언스 증빙으로 쓸 수 있습니다.
 
-각 노드는 **전체 state 가 아닌 delta dict** 반환:
+<details>
+<summary>📂 기술 상세 — 내부 상태(State) 구조와 동작 원리 (펼쳐 보기)</summary>
+
+각 AI는 전체 데이터가 아니라 자기가 바꾼 부분(delta)만 돌려주고, LangGraph가 이를 자동으로 합칩니다.
 
 ```python
-def triage_node(state, mcp) -> dict:
-    findings, _ = call_agent("triage", build_prompt(state, mcp_data))
-    return {
-        "triage": TriageFindings(**findings),    # 새 값
-        "audit_ledger": [LedgerEntry(...)],      # 누적 (add reducer)
-        "mcp_calls": [McpCallRecord(...)],        # 누적
-    }
+class ThreatHuntState(BaseModel):
+    ioc: str                               # 입력된 단서
+    ioc_type: Literal["domain", "ip", "hash", "cve", "url", "unknown"]
+    route_plan: list[str]                  # 부를 전문가 목록
+    triage / malware / infrastructure / campaign  # 각 전문가 결과
+    confidence_score: float                # 신뢰도 점수
+    automation_level: Literal["L0", "L1", "L2", "L3", "L4"]
+    human_approval_required: bool          # 사람 승인 필요 여부
+    audit_ledger: list[LedgerEntry]        # 누적되는 감사 기록
+    mcp_calls: list[McpCallRecord]         # 누적되는 외부 도구 호출 기록
 ```
 
-LangGraph 가 `Annotated[list, operator.add]` 리듀서를 자동 적용 → `audit_ledger` / `mcp_calls` 는 노드 간 누적되어 최종 state 에 모든 추적이 남음 (감사 추적·컴플라이언스 증빙용).
+`audit_ledger`와 `mcp_calls`는 `Annotated[list, operator.add]` 리듀서로 노드 간 자동 누적됩니다.
+
+</details>
 
 ---
 
-## 🤝 3. Agent 협력 패턴 — 3가지 모드
+## 🤝 3. AI가 일하는 3가지 모드
 
-| 모드 | 트리거 | 협력 방식 | 사용 예 |
-|---|---|---|---|
-| **A. Free Dialogue** | 자연어, IoC 없음 | Claude Sonnet 단독 (보안 분석가 페르소나) — IoC 유도, 일반 IR/컴플라이언스 답변 | "랜섬웨어 의심돼요" |
-| **B. Tool Use** | 자연어, 깊은 전문 자문 필요 | Claude (진행자) → `consult_*` 도구로 specialist 1명 자문 → 결과 종합 | "LockBit 변종 헌팅 룰" |
-| **C. Full Chain** | IoC 패턴 감지 | LangGraph 6-Agent 풀체인 (조건부 라우팅) | `kakaobank-fake.kr` |
+상황에 따라 AI가 알아서 다르게 동작합니다.
 
-### 모드 B (Tool Use) 시퀀스
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Claude as Claude (진행자)
-    participant Tool as consult_infrastructure
-    participant Spec as Infrastructure Specialist
-
-    User->>Claude: "사칭 도메인 호스팅 클러스터 패턴?"
-    Claude->>Claude: 도구 호출 결정 (stop_reason=tool_use)
-    Claude->>Tool: tool_use(question="...")
-    Tool->>Spec: call_agent("infrastructure", question)
-    Spec-->>Tool: findings JSON
-    Tool-->>Claude: tool_result
-    Claude->>Claude: 결과 + 일반 지식 종합
-    Claude-->>User: 자연어 답변 (단계별 정리)
-```
-
-채팅창에 `🔧 [Specialist] 자문 요청` → `✅ [Specialist] 자문 응답 (Nms)` → Claude 종합 응답 순서로 표시.
-
-### 모드 C (Full Chain) 시퀀스 — SSE 실시간 스트림
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant FE as Frontend
-    participant API as FastAPI /chat/dialogue
-    participant LG as LangGraph
-    participant Claude as Anthropic API
-
-    User->>FE: IoC 입력
-    FE->>API: POST { message, history }
-    API-->>FE: SSE: start {mode: analysis}
-
-    API->>LG: graph.stream(state)
-    LG->>Claude: Orchestrator (Haiku)
-    Claude-->>LG: route_plan
-    LG-->>API: chunk
-    API-->>FE: SSE: node {orchestrator, delta.route_plan}
-    Note over FE: route_plan 받자마자<br/>예정 specialist 들의<br/>"🌀 분석 중..." 버블 미리 추가
-
-    loop 각 specialist in route_plan
-        LG->>Claude: Specialist (Haiku/Sonnet)
-        Claude-->>LG: findings + chat_message
-        LG-->>API: chunk
-        API-->>FE: SSE: node {specialist, delta}
-        Note over FE: "🌀 분석 중..." 버블을<br/>실제 chat_message 로 교체
-    end
-
-    LG->>LG: Confidence Gate (Python)
-    LG-->>API: chunk
-    API-->>FE: SSE: node {confidence_gate}
-    API-->>FE: SSE: done
-    Note over FE: 최종 종합 메시지 (메트릭+산출물) 채팅창 출력
-```
-
----
-
-## 🧩 4. MCP — 왜 적용했고 어떻게 작동하나
-
-### Why MCP — 기존 직접 API 호출 vs MCP 추상화
-
-| 항목 | 직접 API 호출 | MCP 패턴 (본 시스템) |
+| 모드 | 언제 | 어떻게 |
 |---|---|---|
-| 도구 추가 | 코드 수정 + 재배포 | **표준 인터페이스만 맞으면 즉시 통합** |
-| 다른 LLM 으로 전환 | 도구별 어댑터 재작성 | LangChain MCP Adapter 로 무관 |
-| 호출 기록 | 도구마다 별도 로깅 | **단일 `McpCallRecord` 추상** → Audit Ledger 통합 |
-| 시뮬레이션·테스트 | mock 라이브러리 별도 | `mode="simulation"` 한 플래그로 분기 |
-| 향후 사이드카 분리 | 큰 리팩토링 | **stdio/sse transport 만 교체** |
+| **A. 일반 대화** | 단서 없이 그냥 물어볼 때 | Claude 한 명이 보안 전문가처럼 답하고, 어디서 단서를 찾을지 안내 |
+| **B. 전문가 자문** | 깊은 전문 지식이 필요할 때 | Claude(진행자)가 필요한 전문 AI 한 명을 호출해서 자문받고 종합 |
+| **C. 전체 조사** | 의심 단서(IoC)가 입력됐을 때 | 6개 AI가 순서대로 풀 조사 (위 2번 흐름) |
 
-### How — `McpRegistry` 게이트웨이 + 5종 실 wire-up
+<details>
+<summary>📂 기술 상세 — 모드 C의 실시간 스트리밍 동작 (펼쳐 보기)</summary>
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as 화면
+    participant API as FastAPI
+    participant LG as LangGraph
+    participant Claude as Claude AI
+
+    User->>FE: 단서 입력
+    FE->>API: POST { message, history }
+    API-->>FE: SSE: 분석 시작
+    API->>LG: graph.stream(state)
+    LG->>Claude: 총괄 AI 호출
+    Claude-->>LG: 조사 계획
+    API-->>FE: SSE: "분석 중..." 버블 미리 표시
+    loop 계획된 전문가마다
+        LG->>Claude: 전문가 AI 호출
+        Claude-->>LG: 결과 + 설명 메시지
+        API-->>FE: SSE: 버블을 실제 결과로 교체
+    end
+    LG->>LG: 최종 검증 (Python 규칙)
+    API-->>FE: SSE: 완료 (종합 결과 표시)
+```
+
+채팅창에 진행 상황이 실시간으로 나타났다가, 분석이 끝나면 실제 결과로 바뀝니다.
+
+</details>
+
+---
+
+## 🧩 4. 외부 보안 도구 연동 (MCP) — 왜, 어떻게?
+
+AI 혼자서는 "이 주소가 위험한지" 알 수 없습니다. 실제 보안 데이터베이스를 조회해야 합니다. 이때 **MCP**라는 표준 방식으로 도구들을 붙였습니다.
+
+**왜 MCP를 썼나요?** 도구를 그냥 직접 호출하면, 도구를 추가하거나 AI 모델을 바꿀 때마다 코드를 많이 고쳐야 합니다. MCP라는 표준 인터페이스로 감싸 두면, 새 도구를 붙이거나 다른 AI로 바꿔도 손이 훨씬 덜 갑니다. 또 모든 도구 호출이 한 가지 형식(`McpCallRecord`)으로 기록되어 감사에도 좋습니다.
+
+### 연동된 5개 도구 — 금융권에서 이렇게 쓰입니다
+
+| 도구 | 무슨 데이터 | 이 시스템에서 하는 일 | 비용 |
+|---|---|---|---|
+| **VirusTotal** | 주소·파일의 평판, 백신 탐지율 | 1차로 "이미 알려진 악성인가?" 확인 | 무료 (분당 4회) |
+| **DNSTwist** | 사칭용으로 만들 수 있는 도메인 변형들 | **은행 사칭 가짜 도메인을 자동으로 찾아냄** (금융권 핵심) | 무료 (파이썬 라이브러리) |
+| **Shodan** | 인터넷에 노출된 자산·열린 포트 | 우리 자산이 외부에 위험하게 노출됐는지 점검 | 무료(InternetDB) |
+| **crt.sh** | 발급된 SSL 인증서 기록 | 공격자가 만든 관련 도메인·인증서 추적 | 무료 |
+| **취약점 DB (NVD/EPSS/KEV)** | 알려진 취약점, 악용 확률, 실제 악용 여부 | 어떤 취약점부터 막아야 할지 우선순위 결정 | 무료 |
+
+이렇게 조회한 **실제 데이터를 AI에게 전달**해서 분석하게 합니다. 그래서 미리 준비된 예시가 아닌, 처음 보는 주소가 들어와도 제대로 조사할 수 있습니다.
+
+<details>
+<summary>📂 기술 상세 — McpRegistry 게이트웨이 코드 (펼쳐 보기)</summary>
 
 ```python
 @dataclass
 class McpRegistry:
-    mode: str = "simulation"  # 또는 "live"
+    mode: str = "simulation"  # 또는 "live" (실제 조회)
 
     def virustotal(state, ioc, type) -> dict:
-        if mode == "simulation": return seed_data
         # live: requests.get("https://www.virustotal.com/api/v3/...")
-        # 자가 레이트리밋 (무료 4 req/min) + 10분 TTL 캐시
+        # 무료 한도(분당 4회) 자가 제한 + 10분 캐시
 
     def dnstwist(state, domain) -> list[dict]:
-        # live: import dnstwist; Fuzzer(domain).permutations() 상위 30개
+        # live: dnstwist 로 변형 도메인 생성 후 상위 30개
 
-    def shodan(state, target) -> list[dict]:
-        # live: requests.get("https://internetdb.shodan.io/{ip}") 무료
-        # SHODAN_API_KEY 있으면 paid Shodan API 추가
-
-    def osint(state, target) -> list[dict]:
-        # live: requests.get("https://crt.sh/?q={target}&output=json")
-
-    def cve(state, cve_id) -> dict:
-        # live: NVD CVE + FIRST EPSS + CISA KEV 카탈로그 (모두 무료 API)
+    def shodan / osint(crt.sh) / cve(NVD+EPSS+KEV) ...
 ```
 
-### 5종 MCP 도구 — 금융권 SOC 활용 매핑
+라이브 모드에서는 위 결과를 모아 프롬프트로 만들어 전문가 AI에게 넘깁니다. 토큰 절약을 위해 변형 도메인은 상위 15개만 전달합니다.
 
-| MCP | 데이터 | 본 시스템 적용 | API 키 |
-|---|---|---|---|
-| **VirusTotal** | IoC 평판, 멀웨어 vendor 탐지율 | Triage / Malware 의 1차 평판 검증 | 무료 (4 req/min) |
-| **DNSTwist** | 도메인 호모그래프·하이픈·TLD 변형 생성 | Infrastructure 의 사칭 도메인 자동 탐지 (한국 금융권 핵심) | 불필요 (Python lib) |
-| **Shodan** | 외부 노출 자산·열린 포트·서비스 버전 | Infrastructure 의 노출 자산 점검 (전자금융감독규정 §13) | InternetDB 무료 / Shodan paid |
-| **crt.sh** | Certificate Transparency 로그 (모든 SSL 인증서) | Infrastructure 의 관련 인증서·도메인 발견 | 무료 |
-| **NVD+EPSS+KEV** | CVE 메타·악용 확률·실제 악용 카탈로그 | Campaign 의 취약점 우선순위화 | 모두 무료 |
-
-### 데이터 흐름 — MCP 결과가 LLM 까지 전달
-
-```python
-# nodes.py 라이브 모드
-vt_result = mcp.virustotal(state, state.ioc, state.ioc_type)
-dt_result = mcp.dnstwist(state, state.ioc)
-
-prompt = _live_user_prompt(state, prior_findings, mcp_data={
-    "virustotal": vt_result,
-    "dnstwist": dt_result[:15],   # 상위 15건만 (토큰 절약)
-    "shodan": sh_result,
-    "osint_crtsh": os_result[:5],
-})
-
-findings, _ = call_agent("infrastructure", prompt, max_tokens=1300)
-```
-
-→ Specialist Claude 가 **실 데이터 (VT 탐지율·DNSTwist 변형 목록·crt.sh 인증서) 를 JSON 형태로 받아** 분석. 시드 없는 임의 IoC 도 정확히 처리.
+</details>
 
 ---
 
-## 💰 5. LLM 차등 적용 — 토큰·비용 경제 (Anthropic API 실측)
+## 💰 5. 비용은 어떻게 아꼈나 (실제 측정값)
 
-### 모델 매핑 전략 — 작업 복잡도별 티어드
+AI 모델은 똑똑할수록 비쌉니다. 그래서 **쉬운 일은 저렴한 모델(Haiku), 어려운 일은 똑똑한 모델(Sonnet)** 로 나눴습니다.
 
-| Agent | 작업 복잡도 | 권장 모델 | 평균 입력/출력 토큰 (실측) |
-|---|---|---|---|
-| 🧠 Orchestrator | 단순 라우팅 결정 | **Haiku 4.5** (mini) | 250 / 200 |
-| 🔍 Triage | JSON 해석 + 분류 | **Haiku 4.5** (mini) | 400 / 700 |
-| 👾 Malware | 행위 분석 + Attack chain | **Sonnet 4.5** (medium) | 440 / 1400 |
-| 🌍 Infrastructure | 다중 MCP 결과 클러스터링 | **Sonnet 4.5** (medium) | 540 / 1300 |
-| 📈 Campaign | 전략 종합 + 헌팅 쿼리 + FW 룰 | **Sonnet 4.5** (medium) | 500 / 2500 |
-| 🛡️ Gate | 결정론적 규칙 | (LLM 무관) | 0 / 0 |
-
-### 6가지 전략 IoC 1건당 비용 비교 (Phase 26 — 2026-05-24 실 API 실측)
-
-**Phase 26 핵심 발견**: 옛 cost_analysis 의 "Prompt Caching 90% hit" 가정이
-**실측 0%** — system 프롬프트 (chars 967~1491, est tokens 241~372) 가
-Anthropic minimum cache tokens (Sonnet 1024 / Haiku 2048) **미달**.
-caching 가정 제거한 `mixed_batch` 가 진짜 실현 가능 best.
-
-| 전략 | 모델 매핑 | 비용/IoC | vs **Sonnet (현실)** | vs Opus (naive) |
-|---|---|---|---|---|
-| All-Opus (naive baseline) | 5 에이전트 모두 Opus 4.7 | $0.437 | +400% | 0% (옛 기준선) |
-| **All-Sonnet (★ 현실 baseline)** | 5 에이전트 모두 Sonnet 4.5 | **$0.087** | 0% (★ 기준선) | −80.0% |
-| All-Haiku (저비용 하한) | 5 에이전트 모두 Haiku 4.5 | $0.007 | −91.7% (품질↓) | −98.3% |
-| Mixed (모델 매핑만) | Haiku/Sonnet 티어드 | $0.072 | **−18.0%** | −83.6% |
-| **★ Mixed + Batch (실현 가능 best)** | + Anthropic Batch API 50% off | **$0.036** | **−59.0%** | **−91.8%** |
-| Mixed + Cache + Batch (가정값) | + Caching 90% off (실 작동 안 함) | $0.032 | −63.0% | −92.6% |
-
-> Phase 26 정직 헤드라인 (caching 가정 제거): **`-59% (vs Sonnet)` 또는 `-91.8% (vs Opus)`**.
->
-> 옛 mixed_cached_batch 의 -91.8% 도 같은 수치로 수렴 — 차이는 caching 가정 +4%pt 뿐.
-> 즉 **Batch API 50% off 가 진짜 가치고, Prompt Caching 가정은 미미한 부가** (그것도
-> 시스템 프롬프트 1024+ tokens 로 확장 시에만 실 작동).
-
-### 금융권 SOC 규모별 월간 비용 (10k IoCs/일 기준, Phase 26 실측)
-
-| 전략 | 월간 비용 | 절감 vs Sonnet (현실) | 절감 vs Opus (옛 기준) |
-|---|---|---|---|
-| All-Opus | $130,995 | — | — |
-| **All-Sonnet (현실)** | **$26,199** | (기준선) | $104,796 ↓ |
-| Mixed | $21,490 | $4,709 ↓ | $109,505 ↓ |
-| **★ Mixed + Batch (실현)** | **$10,745** | **$15,454 ↓** | **$120,250 ↓** |
-| Mixed + Cache + Batch (가정) | $9,701 | $16,498 ↓ | $121,294 ↓ |
-
-→ 실현 가능 best (Sonnet baseline) 대비 연간 약 **$185K (≈ 2.4억원)** 절감
-   (caching 가정 제거 — Phase 26 실측 기반). Opus naive 대비라면 연간 $1.44M.
-
-### 검증 방법 — 실제 Anthropic API 호출 벤치마크
-
-```bash
-ANTHROPIC_API_KEY=sk-... python3 benchmarks/run_model_comparison.py
-# 결과: benchmarks/results.json
-# - 15 (agent × model) 조합 실호출
-# - 예산 $7 한도 (실 사용 $0.57)
-# - 토큰 사용량/지연시간/비용 정확 측정
-```
-
-`backend/app/features/langgraph_threat_hunter/cost_analysis.py` 가 위 실측 토큰을 기반으로 비용 계산 → `GET /api/lg/cost-analysis` 엔드포인트로 우측 Agent Studio 패널에 항상 가시화.
-
----
-
-- 🏦 **금융권 표적 위협 우선순위화**: 보이스피싱 도메인, 금융사 사칭 피싱 URL, 사기 결제 인프라 등 금융 산업 특화 IoC를 우선 식별
-- 🔍 **공격자 인프라 상관 분석**: 단일 IoC에서 출발해 C2 서버, 피싱 인프라, 캠페인 클러스터까지 자동 확장 추적
-- 🌍 **지리·ASN 기반 출처 프로파일링**: 국가별·ASN별 위협 출처 매핑으로 망분리 환경 차단 정책 의사결정 지원
-- 🛡️ **방어 산출물 자동 생성**: 방화벽 차단 규칙, 헌팅 쿼리, SOC 리포트 등 SecOps 워크플로에 바로 투입 가능한 결과물 산출
-- 📋 **컴플라이언스 친화 설계**: 전자금융감독규정 §13(전자금융기반시설 보호) · §15(침해사고 대응), 금융보안원 C-TAS, ISMS-P 침해사고 대응 통제와 매핑 가능
-
-이 플랫폼은 **금융권 SecOps 팀의 Tier-1 분석 인력 부담을 80% 이상 절감**하고, **위협 인텔리전스 → 방어 정책 적용까지의 평균 처리 시간(MTTR)을 시간 단위에서 분 단위로 단축**하는 것을 목표로 합니다.
-
----
-
-## 🧭 Why → How → Impact → Deliverable (AX 4단 서사)
-
-### 1️⃣ Why — 금융권 네트워크 보안 운영의 구조적 문제
-
-| 문제 | 현황 | 영향 |
+| AI 역할 | 일의 난이도 | 쓰는 모델 |
 |---|---|---|
-| **Tier-1 분석가 번아웃** | 1인당 일일 알람 처리량 한계 도달, 인력난 심화 | SOC 인건비 증가·이직률 상승 |
-| **알람 피로 (Alert Fatigue)** | 실 위협 대비 False Positive **90%+** | 진짜 침해가 노이즈에 묻힘 |
-| **IoC 보강의 수동성** | VT·URLScan·WHOIS를 분석가가 직접 클릭 | 1건당 **15~30분** 소요 |
-| **위협 인텔리전스 사일로** | KISA C-TAS·FSI·사내 SIEM 분리 | 상관 분석 불가, 캠페인 단위 의사결정 지연 |
-| **금융권 표적 위협의 휘발성** | 보이스피싱·스미싱 도메인 수명 **≤24시간** | 사람이 따라가지 못함 |
-| **망분리 환경 AI 도입 장벽** | 클라우드 LLM 사용 불가 | 금융권 SecOps의 AX 공백 |
-| **장기 MTTR** | 침해 탐지 → 봉쇄까지 평균 **4~12시간** | 컴플라이언스 미달·금융 피해 확산 |
+| 🧠 총괄 / 🔍 위험도 판단 | 단순 분류 | **Haiku** (저렴) |
+| 👾 악성코드 / 🌍 인프라 / 📈 캠페인 | 복잡한 추론 | **Sonnet** (성능) |
+| 🛡️ 최종 검증 | AI 없이 규칙으로 처리 | (모델 사용 안 함) |
 
-### 2️⃣ How — Hierarchical Multi-Agent + MCP 도구 생태계
+**단서 1건을 조사하는 비용** (Anthropic API로 실제 측정, 2026-05-24 기준):
 
-본 시스템은 **LangGraph 기반 Hierarchical Multi-Agent** 구조와 **Model Context Protocol (MCP)** 도구 생태계를 결합하여 위 문제를 해결합니다. `Correlation Orchestrator`가 전체 조사를 지휘하며 각 분야의 전문가(Specialist) 에이전트들을 동적으로 호출하고, MCP를 통해 위협 인텔리전스 도구들을 표준 인터페이스로 통합합니다.
-
-<div align="center">
-  <img src="YOUR_AGENT_STRUCTURE_IMAGE_URL_HERE" alt="Agent Structure Diagram" width="700"/>
-  <br>
-  <em>LangGraph-based Hierarchical Multi-Agent + MCP Tool Mesh</em>
-</div>
-
-#### 🔄 System Flow — LangGraph StateGraph (6 Agents + 동적 라우팅)
-
-```mermaid
-graph TD
-    User[🏦 SOC 분석가] -->|자연어 or IoC| FE[💻 React Frontend<br/>NotebookLM 3-Panel]
-    FE -->|POST /api/lg/chat/dialogue<br/>SSE 스트림| API[🚀 FastAPI Gateway]
-    API --> Parse{IoC 패턴<br/>감지?}
-
-    Parse -->|No - 자연어| Claude[💬 Claude Sonnet<br/>보안 분석가 페르소나]
-    Claude -.->|Tool Use<br/>consult_*| Tools[🔧 Specialist 자문]
-    Claude --> FE
-
-    Parse -->|Yes - IoC 감지| LG[🧠 LangGraph<br/>StateGraph]
-
-    subgraph "🤖 6-Agent Hierarchical (LangGraph)"
-        ORCH[🧠 Orchestrator<br/>route_plan 결정] -->|조건부 엣지| T[🔍 Triage]
-        ORCH -.->|hash 만| M[👾 Malware]
-        ORCH -.->|모든 IoC| I[🌍 Infrastructure]
-        ORCH -.->|모든 IoC| C[📈 Campaign]
-        T --> M
-        M --> I
-        I --> C
-        C --> GATE[🛡️ Confidence Gate<br/>L0~L4]
-    end
-
-    LG --> ORCH
-
-    subgraph "🧩 MCP Tool Mesh (실 HTTP)"
-        VT[VirusTotal API]
-        DT[DNSTwist Python]
-        SH[Shodan InternetDB]
-        OS[crt.sh CT 로그]
-        CV[NVD + EPSS + CISA KEV]
-    end
-
-    T --> VT
-    M --> VT
-    I --> DT
-    I --> SH
-    I --> OS
-    C --> CV
-
-    GATE -->|결과 종합| FE
-
-    subgraph "🧩 MCP Tool Mesh"
-        DT[DNSTwist MCP<br/>타이포스쿼트]
-        SH[Shodan MCP<br/>노출자산]
-        VT[VirusTotal MCP<br/>평판]
-        OS[OSINT MCP<br/>Censys·BGP·인증서]
-        CVE[CVE MCP<br/>EPSS·KEV·MITRE]
-    end
-
-    TS --> VT
-    MS --> VT
-    IH --> DT
-    IH --> SH
-    IH --> OS
-    CA --> CVE
-
-    GATE -->|L0~L2: 권고| Report[📋 Intelligence Report]
-    GATE -->|L3: 자동 케이스| SIRP[🗂️ SIRP / Audit Ledger]
-    GATE -->|L4: 자동 차단| FW[🛡️ FW/IPS Rules]
-
-    Report --> User
-    SIRP --> User
-    FW --> User
-```
-
-#### 🛡️ Confidence-Gated Automation (L0–L4)
-
-| 등급 | 신뢰도 | 자동화 수준 | 금융권 적용 예 |
-|---|---|---|---|
-| **L0** | <0.50 | 권고만 (Recommend) | 임의 정보성 IoC |
-| **L1** | 0.50–0.70 | 분석가 확인 후 처리 | 의심 도메인 |
-| **L2** | 0.70–0.85 | 자동 케이스 생성 | 검증된 피싱 인프라 |
-| **L3** | 0.85–0.95 | 자동 SIEM 헌팅 트리거 | 확정된 캠페인 IoC |
-| **L4** | ≥0.95 | **자동 FW/IPS 차단** | KISA C-TAS 확정 악성 |
-
-핵심 자산(임원 PC·코어 뱅킹 서버 등)은 신뢰도와 **무관하게 휴먼 승인 필수** — 금융권 안전성 보장.
-
-### 🧩 6 Specialized Agents × MCP Tool Mesh
-
-각 에이전트는 명확한 R&R 과 **티어드 모델 매핑** (단순작업 = Haiku, 추론 = Sonnet) 으로 비용 효율 + 분야별 전문성 확보. 모든 MCP 도구는 실 HTTP/Python 라이브러리로 wire-up.
-
-| Agent | 역할 | Claude 모델 | MCP 도구 | Key Deliverables |
-|-------|---|---|---|---|
-| **🧠 Investigation Orchestrator** | IoC 타입 분석 → `route_plan` 동적 결정 | **Haiku 4.5** (mini) | — | route_plan, rationale |
-| **🔍 Triage Specialist** | 초기 위협 평가, MITRE ATT&CK 매핑, 우선순위 | **Haiku 4.5** (mini) | VirusTotal | threat_level, detection_ratio, mitre_tactics |
-| **👾 Malware Specialist** | 행위·C2·페이로드 분석, Attack Chain 재구성 | **Sonnet 4.5** (medium) | VirusTotal, OSINT | malware_family, behaviors, c2_targets |
-| **🌍 Infrastructure Hunter** | 타이포스쿼트·인프라 클러스터링·노출 자산 | **Sonnet 4.5** (medium) | **DNSTwist**, Shodan, crt.sh | typosquat_domains, exposed_assets, campaign_cluster_id |
-| **📈 Campaign Analyst** | 위협 그룹 추정, 헌팅 쿼리, FW 규칙, 임원 요약 | **Sonnet 4.5** (medium) | CVE-MCP (NVD/EPSS/KEV) | threat_group, attack_chain, hunt_hypotheses, firewall_rules, executive_summary |
-| **🛡️ Confidence Gate** | L0~L4 등급 + 핵심 자산 휴먼 승인 강제 | (Python 결정론) | — | confidence_score, automation_level, human_approval_required |
-
-> 💡 **동적 라우팅 예시**:
-> - `CVE-2024-21762` → `[triage, campaign]` (malware/infra 스킵)
-> - `44d88612fea...` (hash) → `[triage, malware, infrastructure, campaign]` (풀체인)
-> - `kakaobank-fake.kr` (domain) → `[triage, infrastructure, campaign]` (malware 스킵)
-
----
-
-## 🎯 Impact — Before / After 정량 효과
-
-> **금융권 SOC Tier-1 분석가 1인의 실 업무 단위별 측정 결과 (실측·산업 평균 기반)**
-
-### 업무 시나리오별 시간 감축
-
-| # | 업무 시나리오 | Before (수동) | After (본 시스템) | 개선율 |
-|---|---|---|---|---|
-| 1 | **단일 의심 IoC 평판 조사** | 15~30분/건 | **3~5초/건** | **≈ 99.6% ↓** |
-| 2 | **다중 IoC 캠페인 상관 분석 (50건)** | 2~4시간 | **5~10분** | **≈ 96% ↓** |
-| 3 | **악성코드 행위·C2 인프라 추적** | 1~2시간 | **30초~1분** | **≈ 99% ↓** |
-| 4 | **방화벽 차단 규칙 작성·배포 (20건)** | 30분~1시간 | **5~10초** | **≈ 99% ↓** |
-| 5 | **침해사고 인텔리전스 리포트 작성** | 2~4시간 | **1~2분** | **≈ 98% ↓** |
-| 6 | **헌팅 쿼리 작성 (SPL/KQL)** | 30분~1시간 | **즉시 (리포트 포함)** | **≈ 99% ↓** |
-
-### SOC 운영 KPI 종합
-
-| KPI | Before | After | 개선 |
-|---|---|---|---|
-| **분석가 1인 일일 IoC 처리량** | 30~50건 | **5,000~10,000건** | **≈ 200배 ↑** |
-| **MTTR (탐지 → 봉쇄)** | 4~12시간 | **5~15분** | **≈ 95% ↓** |
-| **신규 캠페인 식별 소요** | 1~3일 | **10~30분** | **≈ 97% ↓** |
-| **Tier-1 인건비 환산 절감 (100건/일 기준)** | — | — | **60~80% ↓** |
-| **LLM 토큰 비용 (vs. CrewAI)** | 기준선 | **−18%** | LangGraph 마이그레이션 효과 |
-
----
-
-## 📦 Deliverables — SecOps 워크플로에 즉시 투입 가능한 산출물
-
-각 분석 세션 종료 시 다음 산출물이 **자동 생성·다운로드** 됩니다:
-
-| 산출물 | 형식 | 활용 대상 |
+| 전략 | 단서 1건당 비용 | Sonnet만 쓸 때 대비 |
 |---|---|---|
-| 📈 **캠페인 인텔리전스 리포트** | PDF (Voice Phishing Style) | C-Level / 금융감독원 보고 |
-| 📄 **구조화 JSON 리포트** | JSON Schema 검증 | SIRP / SOAR 자동 연동 |
-| 🛡️ **방화벽 차단 규칙** | 텍스트 (벤더별 문법) | FW/IPS 즉시 적용 |
-| 🔍 **헌팅 쿼리** | Splunk SPL / Elastic KQL / Sigma | SIEM 직접 실행 |
-| 📋 **감사 추적 로그 (Audit Ledger)** | DB + JSON Export | ISMS-P / 전자금융감독규정 증빙 |
-| 🌐 **인프라 관계도** | Mermaid / JSON Graph | 위협 분석 보고서 시각자료 |
+| Sonnet만 사용 (기준) | $0.087 | — |
+| 모델 나눠 쓰기 (Mixed) | $0.072 | **-18%** |
+| **모델 나눠 쓰기 + Batch 할인** | **$0.036** | **-59%** ← 가장 현실적인 최선 |
+
+> **정직하게 밝히는 점:** 예전에는 "Prompt Caching으로 90% 절감" 가정을 넣었지만, 실제로 측정해 보니 시스템 프롬프트 길이가 짧아 캐싱이 거의 작동하지 않았습니다(0%). 진짜 효과는 **Batch API 50% 할인**에서 나옵니다. 그래서 과장 없이 **"Sonnet 대비 -59%"** 를 기준 수치로 씁니다.
+
+검증 방법: `ANTHROPIC_API_KEY=sk-... python3 benchmarks/run_model_comparison.py` (15개 조합을 실제로 호출, 실측 비용 $0.57). 이 측정값은 화면 오른쪽 패널에서도 항상 볼 수 있습니다.
 
 ---
 
-## 🎬 Simulation Mode — API 키 없이 재현 가능한 5대 금융권 시나리오
+## 🏦 SOC에서 이렇게 활용할 수 있습니다
 
-운영 환경 API 키나 외부 호출 없이도 **시드 데이터 기반으로 동일 결과를 재현**할 수 있어, 보안 PoC·시연·교육에 즉시 활용 가능합니다.
+이 시스템이 보안관제 업무에서 자동화하는 일들입니다. **모든 결과물은 분석가가 검토한 뒤 적용하는 "초안"** 입니다.
 
-| # | 시나리오 | 사용 에이전트 + MCP | 핵심 산출물 |
-|---|---|---|---|
-| **S1** | 🏦 **카카오뱅크 사칭 피싱 캠페인 추적** | Triage + Infrastructure Hunter<br>**DNSTwist + URLScan MCP** | 타이포스쿼트 도메인 12종 + FW 차단 규칙 |
-| **S2** | 📞 **보이스피싱 C2 인프라 클러스터링** | Malware + Infrastructure Hunter<br>**VirusTotal + Shodan MCP** | C2 인프라 관계도 + 캠페인 보고서 |
-| **S3** | 🔐 **금융권 표적 랜섬웨어 IoC 심층 분석** | 4-Agent 풀 협업<br>**VT + OSINT MCP** | 공격체인 + Sigma 헌팅 룰 |
-| **S4** | 🌐 **사내 외부노출 자산 점검** (전자금융감독규정 §13) | Triage<br>**Shodan MCP** | 노출 자산 리포트 + 조치 권고 |
-| **S5** | 🛠️ **금융권 표적 CVE 패치 우선순위화** | Triage + Campaign Analyst<br>**CVE MCP (EPSS/KEV)** | 패치 우선순위 매트릭스 |
+- 🔍 **의심 주소·파일 1차 조사 자동화** — 여러 사이트를 일일이 안 찾아봐도, VirusTotal·crt.sh·DNSTwist 결과를 모아서 요약
+- 🎣 **은행 사칭 가짜 도메인 찾기** — 진짜 은행 주소를 흉내 낸 변형 주소들을 자동으로 생성·확인 (한국 금융권에서 특히 유용)
+- 🕸️ **공격 인프라 확장 추적** — 단서 하나에서 출발해 연관된 도메인·인증서·노출 자산까지 넓혀 가며 조사
+- 🛡️ **방어 설정 초안 만들기** — 방화벽 차단 규칙, 내부 검색용 헌팅 쿼리, 보고서를 자동 생성 (검토 후 적용)
+- 📋 **감사·컴플라이언스 기록** — 모든 조사 과정이 자동 기록되어 사후 추적·증빙에 활용
 
-각 시나리오는 **Before/After 타임스탬프**가 자동 측정되어 시연 시 정량 효과가 즉시 가시화됩니다.
+### 🛡️ 위험 등급에 따른 자동화 단계 (L0~L4)
 
----
+AI가 매긴 신뢰도에 따라 어디까지 자동으로 할지 정해 둡니다. 신뢰도가 낮으면 사람이 더 많이 개입합니다.
 
-## 🏛️ 금융권 컴플라이언스 매핑
-
-본 시스템은 국내·국제 금융권 보안 컴플라이언스 통제와 다음과 같이 매핑됩니다:
-
-| 컴플라이언스 | 통제 항목 | 본 시스템의 충족 방식 |
+| 등급 | 신뢰도 | 자동화 수준 |
 |---|---|---|
-| **전자금융감독규정 §13** | 전자금융기반시설 보호 | 외부노출 자산 자동 점검(S4), 취약점 우선순위화(S5) |
-| **전자금융감독규정 §15** | 침해사고 대응 절차 | LangGraph state graph 기반 표준화된 IR 워크플로 + Audit Ledger |
-| **금융보안원(FSI) C-TAS** | 위협 정보 공유 | KISA C-TAS 동기화 모듈 (FSI C-TAS 확장 가능) |
-| **ISMS-P A.11** | 침해사고 관리 | Full Audit Trail + 분석 세션 영구 저장 |
-| **DORA (EU)** | ICT 위협 관리·보고 | 자동 보고서 생성 + 헌팅 쿼리 export |
-| **MITRE ATT&CK 정렬** | TTP 표준 매핑 | Triage Specialist 산출물에 tactic/technique 태그 자동 부여 |
+| **L0** | 0.50 미만 | 참고용 제안만 |
+| **L1** | 0.50~0.70 | 분석가가 확인 후 처리 |
+| **L2** | 0.70~0.85 | 자동으로 사건 등록 |
+| **L3** | 0.85~0.95 | 자동으로 내부 검색(헌팅) 시작 |
+| **L4** | 0.95 이상 | 자동 차단 |
 
----
+> ⚠️ **중요:** 임원 PC나 핵심 뱅킹 서버 같은 중요한 자산과 관련된 일은, 신뢰도가 아무리 높아도 **반드시 사람이 승인**하도록 막아 두었습니다. AI가 멋대로 중요한 차단을 하지 않습니다.
 
-## 🆚 비교 — 왜 본 시스템인가
+### 6개 AI 전문가의 역할
 
-| 항목 | 기존 SOAR (Splunk SOAR 등) | 단일 AI 도구 (SecureBERT 등) | 본 시스템 |
+| AI | 맡은 일 | 쓰는 모델 | 사용하는 도구 |
 |---|---|---|---|
-| **자율적 의사결정** | 사전 정의된 플레이북만 | 단일 추론 결과 | **Hierarchical Multi-Agent 동적 라우팅** |
-| **데이터 주권 (망분리)** | ❌ 클라우드 의존 | ❌ 외부 API 필수 | ✅ **LLM 추상화 → sLLM On-Prem 교체 가능** |
-| **MCP 도구 확장성** | ❌ 폐쇄 생태계 | ❌ 단일 도구 | ✅ **표준 MCP — 도구 추가가 코드 변경 없이 가능** |
-| **금융권 특화 시나리오** | 범용 | 범용 | ✅ **DNSTwist + 보이스피싱 + 사내 노출 자산** |
-| **Audit Trail / 컴플라이언스** | 부분적 | ❌ | ✅ **Investigation Ledger + 컴플라이언스 매핑** |
-| **라이선스 비용** | $$$ (연 수억) | 중 | **오픈소스 + LLM 사용량만** |
+| 🧠 **총괄 (Orchestrator)** | 단서 종류를 보고 어떤 전문가를 부를지 결정 | Haiku | — |
+| 🔍 **위험도 판단 (Triage)** | 초기 위험도 평가, 공격 기법 분류, 우선순위 매기기 | Haiku | VirusTotal |
+| 👾 **악성코드 분석 (Malware)** | 악성코드의 행동·통신 방식 분석 | Sonnet | VirusTotal |
+| 🌍 **인프라 추적 (Infrastructure)** | 사칭 도메인 탐지, 연관 인프라 묶기, 노출 자산 점검 | Sonnet | DNSTwist, Shodan, crt.sh |
+| 📈 **캠페인 분석 (Campaign)** | 공격 그룹 추정, 헌팅 쿼리·방화벽 규칙·요약 작성 | Sonnet | 취약점 DB |
+| 🛡️ **최종 검증 (Confidence Gate)** | 위험 등급 결정, 중요 자산은 사람 승인 강제 | (규칙 기반) | — |
 
----
+### 자동으로 만들어 주는 결과물
 
-## 🛠️ Tech Stack
-
-<table border="0">
-    <tr>
-        <td align="center" width="200px"><b>Category</b></td>
-        <td align="center"><b>Technologies</b></td>
-    </tr>
-    <tr>
-        <td align="center"><b>Backend Framework</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
-            <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" />
-            <img src="https://img.shields.io/badge/Pydantic-E92063?style=flat-square&logo=pydantic&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>AI & Agents</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" />
-            <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=flat-square&logo=langchain&logoColor=white" />
-            <img src="https://img.shields.io/badge/MCP-000000?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" />
-            <img src="https://img.shields.io/badge/sLLM--Ready (Ollama)-000000?style=flat-square&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>Data Processing</b></td>
-        <td>
-             <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white" />
-             <img src="https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>Security MCP Tools</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/VirusTotal-394EFF?style=flat-square&logo=virustotal&logoColor=white" />
-            <img src="https://img.shields.io/badge/URLScan.io-000000?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/DNSTwist-2563EB?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/Shodan-D81B60?style=flat-square&logo=shodan&logoColor=white" />
-            <img src="https://img.shields.io/badge/CVE/EPSS/KEV-9333EA?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/MITRE ATT%26CK-D32F2F?style=flat-square&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>Compliance Frame</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/전자금융감독규정-1F2937?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/FSI C--TAS-0F766E?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/ISMS--P-7C2D12?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/DORA (EU)-1E3A8A?style=flat-square&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>Frontend</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" />
-            <img src="https://img.shields.io/badge/Tailwind CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
-            <img src="https://img.shields.io/badge/Recoil-3578E5?style=flat-square&logo=recoil&logoColor=white" />
-            <img src="https://img.shields.io/badge/Axios-5A29E4?style=flat-square&logo=axios&logoColor=white" />
-        </td>
-    </tr>
-     <tr>
-        <td align="center"><b>Visualization</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/Recharts-22B5BF?style=flat-square&logoColor=white" />
-            <img src="https://img.shields.io/badge/Nivo-F47560?style=flat-square&logoColor=white" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center"><b>DevOps</b></td>
-        <td>
-            <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" />
-            <img src="https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white" />
-        </td>
-    </tr>
-</table>
-
----
-
-## ✨ Detailed Features — 금융권 SOC 운영 모듈
-
-본 시스템은 금융권 SecOps 운영 흐름을 4개 핵심 모듈로 자동화합니다.
-
-### 1️⃣ AI Threat Hunter — NotebookLM 3-패널 챗 UI
-**대화형 멀티에이전트 위협 분석 (메인 진입점)**
-- **6-Agent Hierarchical**: 🧠 Orchestrator + 🔍 Triage + 👾 Malware + 🌍 Infrastructure + 📈 Campaign + 🛡️ Confidence Gate 가 LangGraph state graph 로 협업
-- **동적 라우팅 (Conditional Edges)**: IoC 타입별로 specialist 스킵 — CVE → Triage+Campaign만 / Hash → 전체 풀체인
-- **SSE 실시간 스트리밍**: 노드별 진행이 실시간으로 채팅창 + Agent Studio 에 동시 갱신
-- **NotebookLM 3-패널**: 좌(자료실: 시나리오·리포트) | 가운데(자연어 대화) | 우(Agent Studio: 파이프라인·메트릭·산출물)
-- **Confidence-Gated Output**: L0~L4 등급별 권고/자동 케이스/자동 차단 — 핵심 자산은 휴먼 승인 필수
-
-### 2️⃣ 비용 최적화 — 에이전트별 모델 매핑 + 정직한 baseline (Phase 26 실측)
-**Anthropic API 실측 기반 비용 절감 (caching 가정 제거)**
-- **티어 분배**: Orchestrator/Triage = Haiku (mini), Malware/Infra/Campaign = Sonnet (medium)
-- **vs Sonnet 단독 (현실 baseline, 실현 가능 best)**: Mixed -18.0% / **Mixed+Batch -59.0%** ← 정직 헤드라인
-- **vs Opus 단독 (naive baseline)**: Mixed -83.6% / **Mixed+Batch -91.8%** ← 옛 헤드라인과 동일 수치 도달
-- **금융권 SOC 10k IoCs/day**: Sonnet 단독 $26K/월 → Mixed+Batch $11K/월 = **$15.5K/월 = 연 $185K (≈2.4억원) 절감**
-- **★ Phase 26 정직성**: `cost_analysis.py` 옛 가정 "Prompt Caching 90% hit" 가 Anthropic API 실측 0% (system 프롬프트 길이 미달). caching 적용분은 가정값 ±4%pt 만, **Batch API 50% off 가 진짜 핵심**.
-- **실측 검증**: `benchmarks/run_caching_measurement.py` (Phase 26) + `benchmarks/run_model_comparison.py` (15 조합 실호출 $0.57)
-
-### 3️⃣ Threat Intel Integration (KISA C-TAS / FSI 확장)
-**국내 금융권 위협 인텔리전스 자동 연동**
-- **KISA C-TAS Sync**: 한국인터넷진흥원 IoC 자동 동기화 (시간 단위 갱신)
-- **FSI C-TAS 확장 가능**: 금융보안원 위협정보 공유체계와의 인터페이스 준비됨
-- **FW/IPS Rule Auto-Gen**: 확정 IoC → 벤더별 차단 규칙 텍스트 자동 산출
-- **Geo·ASN Statistical Dashboard**: 국가·ASN·공격유형별 추세 시각화로 정책 의사결정 지원
-
-### 4️⃣ Investigation Ledger (Audit Trail)
-**컴플라이언스 증빙 가능한 감사 추적**
-- **Full LangGraph State 보존**: 에이전트 입력·출력·도구 호출 전 단계 DB 영속화
-- **재현 가능한 조사 경로**: 동일 입력 → 동일 산출물 (감사 대응 시 재현 보고서 자동 생성)
-- **ISMS-P / 전자금융감독규정 §15 매핑 가능**: 침해사고 대응 통제의 증빙 자료로 직접 활용
-- **PDF/JSON Export**: 외부 감사·금융감독 보고용 산출물 즉시 추출
-
----
-
-## 🔌 LLM Abstraction Layer — 망분리 환경 PoC 옵션
-
-본 시스템은 **LangChain의 `ChatModel` 추상화**를 사용하여 LLM 백엔드를 한 줄 교체로 전환할 수 있습니다. 금융권 망분리 환경에서는 운영팀이 보유한 GPU 인프라에 Ollama·vLLM 등으로 sLLM을 띄우고 본 시스템을 가리키게 하면 됩니다.
-
-| 환경 | LLM | 비고 |
+| 결과물 | 형식 | 어디에 쓰나 |
 |---|---|---|
-| **현재 데모 / 본 저장소 기본** | OpenAI GPT-4 (cloud) | EC2 t3.large CPU에서 데모 가능 |
-| **금융권 망분리 PoC (예시)** | Llama-3-8B / Qwen2.5-7B (on-prem) | 사내 GPU 서버(예: NVIDIA L4 24GB) 필요 |
-| **교체 작업량** | `ChatOpenAI(...)` → `ChatOllama(model="llama3:8b", base_url=...)` | 단일 파일 1줄 변경 + endpoint 환경변수 추가 |
-
-> ⚠️ **명확화**: 본 저장소가 sLLM을 "지금 구동 중"인 것은 아닙니다. 망분리 PoC 단계에서 사내 GPU 인프라와 결합해야 실 구동 가능합니다. 본 시스템은 그 교체가 **코드 변경 최소화**로 가능한 아키텍처를 제공합니다.
+| 📈 위협 분석 리포트 | PDF | 경영진·금융감독 보고용 |
+| 📄 구조화된 데이터 | JSON | 다른 보안 시스템과 자동 연동 |
+| 🛡️ 방화벽 차단 규칙 | 텍스트 | 방화벽에 바로 적용 (검토 후) |
+| 🔍 헌팅 쿼리 | Splunk/Elastic/Sigma | 내부에 같은 흔적이 더 있는지 검색 |
+| 📋 감사 기록 | DB + JSON | 컴플라이언스 증빙 |
 
 ---
 
-## 🛠️ Getting Started
+## 🎬 API 키 없이 체험하는 시뮬레이션 모드
 
-### 1. Prerequisites
+외부 API 키 없이도 미리 준비된 예시 데이터로 똑같은 결과를 재현할 수 있습니다. 시연·교육·평가(PoC)에 바로 쓸 수 있습니다.
+
+| 시나리오 | 내용 |
+|---|---|
+| **S1** | 🏦 카카오뱅크 사칭 피싱 캠페인 추적 |
+| **S2** | 📞 보이스피싱 공격 인프라 묶어 보기 |
+| **S3** | 🔐 금융권 표적 랜섬웨어 심층 분석 |
+| **S4** | 🌐 외부에 노출된 사내 자산 점검 |
+| **S5** | 🛠️ 어떤 보안 취약점부터 패치할지 우선순위 |
+
+---
+
+## 🏛️ 컴플라이언스 매핑 (참고 자료)
+
+> 이 표는 "이 시스템의 기능이 어떤 규정 항목과 연결되는지" 정리한 **참고 매핑**입니다. 인증을 받았다는 뜻은 아닙니다.
+
+| 규정 | 항목 | 연결되는 기능 |
+|---|---|---|
+| **전자금융감독규정 §13** | 전자금융기반시설 보호 | 외부 노출 자산 점검, 취약점 우선순위화 |
+| **전자금융감독규정 §15** | 침해사고 대응 | 표준화된 조사 흐름 + 감사 기록 |
+| **ISMS-P** | 침해사고 관리 | 전체 조사 과정 기록·보관 |
+| **금융보안원 C-TAS** | 위협 정보 공유 | 위협 정보 연동 (확장 가능) |
+
+---
+
+## 🛠️ 기술 스택
+
+| 분류 | 사용 기술 |
+|---|---|
+| **백엔드** | FastAPI, Python, Pydantic |
+| **AI / 에이전트** | LangGraph, LangChain, MCP, Anthropic Claude |
+| **데이터** | PostgreSQL 16, Redis |
+| **보안 도구** | VirusTotal, DNSTwist, Shodan, crt.sh, NVD/EPSS/KEV |
+| **프론트엔드** | React 18, Tailwind CSS, Recoil, Axios |
+| **인프라** | Docker, Docker Compose, AWS EC2 + SSM |
+
+> 💡 **망분리 환경 참고:** LLM 부분을 LangChain의 표준 인터페이스로 감싸 두어서, 인터넷이 안 되는 금융권 내부망에서는 회사가 보유한 GPU에 자체 AI 모델(Llama 등)을 띄워 연결하도록 바꿀 수 있는 구조입니다. (단, 이 저장소가 지금 자체 모델을 돌리고 있는 것은 아니며, 교체 작업이 최소화되도록 설계했다는 의미입니다.)
+
+---
+
+## 🚀 시작하기
+
+### 1. 준비물
 
 - Docker & Docker Compose
-- (선택) API Keys: OpenAI · VirusTotal · URLScan.io
-- **시뮬레이션 모드만 사용 시 API Key 불필요** ✅
+- (선택) API 키: Anthropic(Claude)·VirusTotal 등
+- **시뮬레이션 모드만 쓸 거면 키 없이도 됩니다** ✅
 
-### 2. Local Run with Docker (개발/검증)
+### 2. 로컬에서 실행
 
 ```bash
-# Clone & enter
 git clone https://github.com/jyj0203/AOL_SERVICE_DEMO.git
 cd AOL_SERVICE_DEMO
 
-# (Optional) .env 작성 — 시뮬레이션 모드만 쓸 거면 생략 가능
+# (선택) .env 작성 — 시뮬레이션 모드만 쓸 거면 생략 가능
 cat > .env <<'ENV'
-OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-...
 VIRUSTOTAL_API_KEY=...
-URLSCAN_API_KEY=...
 ENV
 
-# Build & Run
 docker-compose up --build -d
 ```
 
-- **Frontend**: http://localhost:4000
-- **Backend API**: http://localhost:8000/docs
-- **시뮬레이션 시나리오**: http://localhost:4000 → 좌측 메뉴 `🎬 Simulation`
+- **화면**: http://localhost:4000
+- **백엔드 API 문서**: http://localhost:8000/docs
+- **시뮬레이션 시나리오**: 화면 왼쪽 메뉴 `🎬 Simulation`
 
-### 3. Production on AWS EC2 (단일 인스턴스)
+### 3. AWS EC2 배포
 
-t3.large(2 vCPU / 8 GB RAM) 단일 인스턴스에 전체 스택을 배포합니다. API 키는 **AWS SSM Parameter Store** 에서 안전하게 주입됩니다.
-
-```bash
-# 0) 사전 준비: SSM Parameter Store에 시크릿 등록
-aws ssm put-parameter --name /aol/openai_api_key --value sk-... --type SecureString
-aws ssm put-parameter --name /aol/virustotal_api_key --value ... --type SecureString
-aws ssm put-parameter --name /aol/urlscan_api_key --value ... --type SecureString
-
-# 1) EC2 인스턴스 생성 시 user-data 스크립트 주입
-#    (deploy/ec2-userdata.sh 가 Docker 설치 + 코드 클론 + 시크릿 주입 + compose up 까지 자동 수행)
-aws ec2 run-instances \
-  --image-id ami-... \
-  --instance-type t3.large \
-  --iam-instance-profile Name=AOL-SSM-ReadOnly \
-  --user-data file://deploy/ec2-userdata.sh \
-  --security-group-ids sg-...
-
-# 2) 인스턴스 부팅 ~3분 후 접속
-open http://<ec2-public-ip>:4000
-```
-
-상세 배포 가이드: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
-프로덕션 오버레이: [`docker-compose.prod.yaml`](docker-compose.prod.yaml)
+t3.large 서버 한 대에 전체를 배포할 수 있습니다. 비밀 키는 AWS SSM Parameter Store에서 안전하게 주입됩니다. 자세한 내용은 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)를 참고하세요.
